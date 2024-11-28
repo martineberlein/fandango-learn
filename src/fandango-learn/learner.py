@@ -1,10 +1,11 @@
-from typing import Iterable, List, Optional, Set
+from typing import Iterable, List, Optional, Set, Tuple
 from abc import ABC, abstractmethod
 
+from debugging_framework.input.oracle import OracleResult
 from fandango.language.grammar import Grammar
 
 from .candidate import ConstraintCandidate, FandangoConstraintCandidate
-from .input import TestInput, FandangoInput
+from .input import Input as TestInput, FandangoInput
 from .metric import FitnessStrategy, RecallPriorityLengthFitness
 
 
@@ -61,7 +62,7 @@ class PatternCandidateLearner(ConstraintCandidateLearner, ABC):
         self.patterns: Set[str] = set(patterns)
 
 
-class FandangoLearner(PatternCandidateLearner):
+class BaseFandangoLearner(PatternCandidateLearner):
 
     def __init__(
         self,
@@ -149,3 +150,17 @@ class FandangoLearner(PatternCandidateLearner):
         # 5. evaluate composite candidates on all test inputs
 
         pass
+
+    @staticmethod
+    def categorize_inputs(test_inputs: Set[FandangoInput]) -> Tuple[Set[FandangoInput], Set[FandangoInput]]:
+        """
+        Categorize the inputs into positive and negative inputs based on their oracle results.
+        """
+        positive_inputs = {
+            inp for inp in test_inputs if inp.oracle == OracleResult.FAILING
+        }
+        negative_inputs = {
+            inp for inp in test_inputs if inp.oracle == OracleResult.PASSING
+        }
+        return positive_inputs, negative_inputs
+
