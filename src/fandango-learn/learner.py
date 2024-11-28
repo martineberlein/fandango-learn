@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from fandango.language.grammar import Grammar
 
 from .candidate import ConstraintCandidate, FandangoConstraintCandidate
-from .input import TestInput
+from .input import TestInput, FandangoInput
 from .metric import FitnessStrategy, RecallPriorityLengthFitness
 
 
@@ -64,12 +64,12 @@ class PatternCandidateLearner(ConstraintCandidateLearner, ABC):
 class FandangoLearner(PatternCandidateLearner):
 
     def __init__(
-            self,
-            grammar: Grammar,
-            patterns: Optional[Iterable[str]] = None,
-            min_precision: float = 0.6,
-            min_recall: float = 0.9,
-            sorting_strategy: FitnessStrategy = RecallPriorityLengthFitness(),
+        self,
+        grammar: Grammar,
+        patterns: Optional[Iterable[str]] = None,
+        min_precision: float = 0.6,
+        min_recall: float = 0.9,
+        sorting_strategy: FitnessStrategy = RecallPriorityLengthFitness(),
     ):
         super().__init__(patterns)
         self.grammar = grammar
@@ -86,8 +86,7 @@ class FandangoLearner(PatternCandidateLearner):
         :param recall_value_: The recall value.
         """
         return (
-            precision_value_ >= self.min_precision
-            and recall_value_ >= self.min_recall
+            precision_value_ >= self.min_precision and recall_value_ >= self.min_recall
         )
 
     def get_candidates(self) -> Optional[List[FandangoConstraintCandidate]]:
@@ -114,7 +113,9 @@ class FandangoLearner(PatternCandidateLearner):
         if candidates:
             return self._get_best_candidates(candidates)
 
-    def _get_best_candidates(self, candidates: List[FandangoConstraintCandidate]) -> List[FandangoConstraintCandidate]:
+    def _get_best_candidates(
+        self, candidates: List[FandangoConstraintCandidate]
+    ) -> List[FandangoConstraintCandidate]:
         """
         Selects the best formulas based on the precision and recall values.
         :param candidates: The candidates to select the best from.
@@ -133,6 +134,18 @@ class FandangoLearner(PatternCandidateLearner):
         """
         self.candidates = []
 
-    def learn_constraints(self, test_inputs: Iterable[TestInput], **kwargs) -> Optional[List[FandangoConstraintCandidate]]:
-        pass
+    def learn_constraints(
+        self, test_inputs: Iterable[FandangoInput], **kwargs
+    ) -> Optional[List[FandangoConstraintCandidate]]:
 
+        # Todo: Implement learning of atomic and composite candidates
+        # 1. sort test inputs according to usefulness; maybe k-paths? for atomic candidate construction we only need
+        # a hand full
+        # 2. learn atomic candidates from test inputs
+        # 3. evaluate atomic candidates on all test inputs
+        # 4. learn composite candidates from atomic candidates (disjunctions, conjunctions) - for conjunctions,
+        # we need to check if the recall of the combination is greater than the minimum - for disjunctions,
+        # we need to check if the specificity of the new disjunction is greater than the minimum
+        # 5. evaluate composite candidates on all test inputs
+
+        pass
