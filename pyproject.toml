@@ -33,7 +33,8 @@ dependencies = [
     "Faker>=30.4.0",
     "docutils>=0.21.2",
     "tccbox==2024.7.1",
-    "deprecation"
+    "deprecation",
+    "debugging-benchmark @ git+https://github.com/martineberlein/debugging-benchmark.git"
 ]
 
 [project.optional-dependencies]

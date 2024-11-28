@@ -1,5 +1,5 @@
 """
-This is a copy of the ranking metrics from the Avicenna Debugging Prototype.
+This is a copy of the ranking metrics from the Avicenna Tool.
 """
 
 from abc import ABC, abstractmethod
