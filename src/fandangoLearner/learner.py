@@ -1,5 +1,6 @@
-from typing import Iterable, List, Optional, Set, Tuple
+from typing import Iterable, List, Optional, Set, Tuple, Callable
 from abc import ABC, abstractmethod
+import copy
 
 from debugging_framework.input.oracle import OracleResult
 from fandango.language.grammar import Grammar
@@ -59,7 +60,7 @@ class PatternCandidateLearner(ConstraintCandidateLearner, ABC):
         :param patterns: The patterns to use.
         """
         super().__init__()
-        self.patterns: Set[str] = set(patterns)
+        self.patterns: Set[str] = set(patterns) if patterns else {}
 
 
 class BaseFandangoLearner(PatternCandidateLearner):
@@ -136,8 +137,17 @@ class BaseFandangoLearner(PatternCandidateLearner):
         self.candidates = []
 
     def learn_constraints(
-        self, test_inputs: Iterable[FandangoInput], **kwargs
+        self, test_inputs: Set[FandangoInput], **kwargs
     ) -> Optional[List[FandangoConstraintCandidate]]:
+
+        positive_inputs, negative_inputs = self.categorize_inputs(test_inputs)
+        assert all(inp.oracle == OracleResult.FAILING for inp in positive_inputs)
+        assert all(inp.oracle == OracleResult.PASSING for inp in negative_inputs)
+
+        exclude_nonterminals: set[str] = set()
+        atomic_candidates = self.compute_atomic_candidates(
+            self.patterns, positive_inputs
+        )
 
         # Todo: Implement learning of atomic and composite candidates
         # 1. sort test inputs according to usefulness; maybe k-paths? for atomic candidate construction we only need
@@ -149,10 +159,12 @@ class BaseFandangoLearner(PatternCandidateLearner):
         # we need to check if the specificity of the new disjunction is greater than the minimum
         # 5. evaluate composite candidates on all test inputs
 
-        pass
+        return None
 
     @staticmethod
-    def categorize_inputs(test_inputs: Set[FandangoInput]) -> Tuple[Set[FandangoInput], Set[FandangoInput]]:
+    def categorize_inputs(
+        test_inputs: Set[FandangoInput],
+    ) -> Tuple[Set[FandangoInput], Set[FandangoInput]]:
         """
         Categorize the inputs into positive and negative inputs based on their oracle results.
         """
@@ -164,3 +176,35 @@ class BaseFandangoLearner(PatternCandidateLearner):
         }
         return positive_inputs, negative_inputs
 
+    def compute_atomic_candidates(self, patterns, positive_inputs):
+        results = set()
+
+        for pattern in patterns:
+            instantiated_patterns = self.instantiate_pattern(pattern, positive_inputs)
+            for instantiated_pattern in instantiated_patterns:
+                results.add(instantiated_pattern)
+
+    def instantiate_pattern(self, pattern, positive_inputs, exclude_non_terminals):
+        steps: list[Callable] = [
+            self._instantiate_non_terminal_placeholders,
+            self._instantiate_int_placeholders,
+        ]
+
+        instantiated_patterns = set()
+        for step in steps:
+            instantiated_patterns = step(
+                pattern, positive_inputs, exclude_non_terminals
+            )
+
+        assert True  # Check if all placeholders are resolved
+        return set()
+
+    def _instantiate_non_terminal_placeholders(
+        self, pattern, positive_inputs, exclude_nonterminals
+    ):
+        pass
+
+    def _instantiate_int_placeholders(
+        self, pattern, positive_inputs, exclude_nonterminals
+    ):
+        pass
