@@ -1,0 +1,125 @@
+from typing import Dict, List, Set, Sequence
+from abc import ABC, abstractmethod
+
+from debugging_framework.input.oracle import OracleResult
+
+from fandango.constraints.base import (
+    Constraint,
+    ConjunctionConstraint,
+    DisjunctionConstraint,
+)
+from .input import FandangoInput
+
+
+class ConstraintCandidate(ABC):
+
+    def __init__(self, constraint):
+        self.constraint = constraint
+
+    @abstractmethod
+    def evaluate(self, inputs):
+        pass
+
+    @abstractmethod
+    def precision(self):
+        pass
+
+    @abstractmethod
+    def recall(self):
+        pass
+
+    @abstractmethod
+    def specificity(self):
+        pass
+
+    @abstractmethod
+    def __and__(self, other):
+        pass
+
+    @abstractmethod
+    def __or__(self, other):
+        pass
+
+
+class FandangoConstraintCandidate(ConstraintCandidate):
+
+    def __init__(self, constraint: Constraint):
+        super().__init__(constraint)
+        self.failing_inputs_eval_results = []
+        self.passing_inputs_eval_results = []
+
+    def evaluate(self, inputs):
+        for inp in inputs:
+            eval_result = self.constraint.check(inp.tree)
+            self._update_eval_results_and_combination(eval_result, inp)
+
+    def specificity(self) -> float:
+        """
+        Return the specificity of the candidate.
+        """
+        if len(self.passing_inputs_eval_results) == 0:
+            return 0.0
+        return sum(not int(entry) for entry in self.passing_inputs_eval_results) / len(
+            self.passing_inputs_eval_results
+        )
+
+    def recall(self) -> float:
+        """
+        Return the recall of the candidate.
+        """
+        if len(self.failing_inputs_eval_results) == 0:
+            return 0.0
+        return sum(int(entry) for entry in self.failing_inputs_eval_results) / len(
+            self.failing_inputs_eval_results
+        )
+
+    def precision(self) -> float:
+        """
+        Return the precision of the candidate.
+        """
+        tp = sum(int(entry) for entry in self.failing_inputs_eval_results)
+        fp = sum(int(entry) for entry in self.passing_inputs_eval_results)
+        return tp / (tp + fp) if tp + fp > 0 else 0.0
+
+    def __and__(self, other):
+        """
+        Return the conjunction of the candidate with another candidate.
+
+        :param other: The other candidate.
+        :return: The conjunction of the candidate with the other candidate.
+        """
+        return FandangoConstraintCandidate(
+            constraint=ConjunctionConstraint(
+                [self.constraint, other.constraint],
+                local_variables=self.constraint.local_variables,
+                global_variables=self.constraint.global_variables,
+                # lazy=self.constraint.lazy,
+            )
+        )
+
+    def __or__(self, other):
+        """
+        Return the disjunction of the candidate with another candidate.
+
+        :param other: The other candidate.
+        :return: The disjunction of the candidate with the other candidate.
+        """
+        return FandangoConstraintCandidate(
+            constraint=DisjunctionConstraint(
+                [self.constraint, other.constraint],
+                local_variables=self.constraint.local_variables,
+                global_variables=self.constraint.global_variables,
+                # lazy=self.constraint.lazy,
+            )
+        )
+
+    def _update_eval_results_and_combination(
+        self, eval_result: bool, inp: FandangoInput
+    ):
+        """
+        Update the evaluation results and combination with a new input and its evaluation result.
+        """
+        if inp.oracle == OracleResult.FAILING:
+            self.failing_inputs_eval_results.append(eval_result)
+        else:
+            self.passing_inputs_eval_results.append(eval_result)
