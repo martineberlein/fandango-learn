@@ -149,7 +149,12 @@ if __name__ == "__main__":
     ]
     relevant_non_terminals = ["<number>", "<maybeminus>", "<function>"]
 
-    filtered_candidates = learn_constraints_from_inputs(patterns, list(initial_inputs), relevant_non_terminals)
+    from fandangoLearner.learner import FandangoStringPatternLearner
+
+    learner = FandangoStringPatternLearner(grammar, patterns=patterns)
+    filtered_candidates = learner.learn_constraints(initial_inputs, relevant_non_terminals=relevant_non_terminals)
+
+    # filtered_candidates = learn_constraints_from_inputs(patterns, list(initial_inputs), relevant_non_terminals)
 
     print("Filtered Atomic Constraints: ")
     for candidate in filtered_candidates:
