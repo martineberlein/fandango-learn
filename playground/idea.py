@@ -140,7 +140,7 @@ if __name__ == "__main__":
         test_inputs.append((str(inp), calculator_oracle(inp)))
 
     initial_inputs = {FandangoInput.from_str(grammar, inp, result) for inp, result in test_inputs}
-    print("Initial inputs:", len(initial_inputs), "(Failing inputs:", len([inp for inp in initial_inputs if inp.oracle == OracleResult.FAILING]), ")")
+    print("Initial inputs:", len(initial_inputs), "(Failing inputs:", len([inp for inp in initial_inputs if inp.oracle == OracleResult.FAILING]), ")", end="\n\n")
 
     patterns = [
         "int(<?NON_TERMINAL>) <= <?INTEGER>;",
@@ -151,9 +151,11 @@ if __name__ == "__main__":
 
     filtered_candidates = learn_constraints_from_inputs(patterns, list(initial_inputs), relevant_non_terminals)
 
+    print("Filtered Atomic Constraints: ")
     for candidate in filtered_candidates:
         candidate.evaluate(initial_inputs)
         print("Constraint:", candidate.constraint, "Recall:", candidate.recall(), "Precision:", candidate.precision())
+    print("\n")
 
     cand1 = filtered_candidates[-1]
     cand2 = filtered_candidates[-2]
@@ -166,5 +168,3 @@ if __name__ == "__main__":
     cand4.evaluate(initial_inputs)
     print("Disjunct Constraints:")
     print("Constraint:", cand4.constraint, "Recall:", cand4.recall(), "Precision:", cand4.precision())
-
-
