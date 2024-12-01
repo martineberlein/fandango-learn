@@ -1,9 +1,14 @@
-from typing import Iterable, List, Optional, Set, Tuple, Callable
+from typing import List, Dict, Iterable, Optional, Set, Tuple, Callable
 from abc import ABC, abstractmethod
-import copy
+import re
+from itertools import product
 
 from debugging_framework.input.oracle import OracleResult
 from fandango.language.grammar import Grammar
+from fandango.language.parse import parse, parse_file
+from fandangoLearner.input import FandangoInput, OracleResult
+from fandango.language.symbol import NonTerminal
+from fandangoLearner.candidate import FandangoConstraintCandidate
 
 from .candidate import ConstraintCandidate, FandangoConstraintCandidate
 from .input import Input as TestInput, FandangoInput
@@ -208,3 +213,109 @@ class BaseFandangoLearner(PatternCandidateLearner):
         self, pattern, positive_inputs, exclude_nonterminals
     ):
         pass
+
+
+class FandangoStringPatternLearner(BaseFandangoLearner):
+
+    def learn_constraints(
+        self, test_inputs: Set[FandangoInput], relevant_non_terminals=None, **kwargs
+    ) -> Optional[List[FandangoConstraintCandidate]]:
+
+        positive_inputs, negative_inputs = self.categorize_inputs(test_inputs)
+        assert all(inp.oracle == OracleResult.FAILING for inp in positive_inputs)
+        assert all(inp.oracle == OracleResult.PASSING for inp in negative_inputs)
+
+        extracted_values = self.extract_non_terminal_values(relevant_non_terminals, positive_inputs)
+
+        patterns_with_non_terminals = self.replace_non_terminals(self.patterns, relevant_non_terminals)
+        patterns_with_strings = self.replace_strings(patterns_with_non_terminals, extracted_values["string_values"])
+        final_patterns = self.replace_integers(patterns_with_strings, extracted_values["int_values"])
+
+        constraints = [parse(pattern)[1][0] for pattern in final_patterns if not re.search(r"<\?([A-Z_]+)>", pattern)]
+
+        candidates = []
+        for constraint in constraints:
+            candidate = FandangoConstraintCandidate(constraint)
+            candidate.evaluate(positive_inputs)
+            if candidate.recall() >= 0.8:
+                candidates.append(candidate)
+
+        return candidates
+
+    @staticmethod
+    def replace_non_terminals(patterns: Set[str], non_terminal_values: Iterable[str]) -> List[Dict[str, List[str]]]:
+        non_terminal_placeholder = re.compile(r"<\?NON_TERMINAL>")
+        replaced_patterns = []
+        for pattern in patterns:
+            matches = non_terminal_placeholder.findall(pattern)
+            if matches:
+                for replacements in product(non_terminal_values, repeat=len(matches)):
+                    updated_pattern = pattern
+                    used_non_terminals = []
+                    for replacement in replacements:
+                        updated_pattern = updated_pattern.replace("<?NON_TERMINAL>", replacement, 1)
+                        used_non_terminals.append(replacement)
+                    replaced_patterns.append({"pattern": updated_pattern, "non_terminals": used_non_terminals})
+            else:
+                replaced_patterns.append({"pattern": pattern, "non_terminals": []})
+        return replaced_patterns
+
+    @staticmethod
+    def replace_strings(patterns_with_non_terminals: List[Dict[str, List[str]]],
+                        string_values: Dict[str, Iterable[str]]) -> List[Dict[str, List[str]]]:
+        string_placeholder = re.compile(r"<\?STRING>")
+        replaced_patterns = []
+        for item in patterns_with_non_terminals:
+            pattern, non_terminals = item["pattern"], item["non_terminals"]
+            if string_placeholder.search(pattern):
+                for non_terminal in non_terminals:
+                    if non_terminal in string_values:
+                        for string_value in string_values[non_terminal]:
+                            updated_pattern = pattern.replace("<?STRING>", f'"{string_value}"', 1)
+                            replaced_patterns.append({"pattern": updated_pattern, "non_terminals": non_terminals})
+            else:
+                replaced_patterns.append(item)
+        return replaced_patterns
+
+    @staticmethod
+    def replace_integers(patterns_with_strings: List[Dict[str, List[str]]], int_values: Dict[str, Iterable[str]]) -> \
+    List[str]:
+        int_placeholder = re.compile(r"<\?INTEGER>")
+        final_patterns = []
+        for item in patterns_with_strings:
+            pattern, non_terminals = item["pattern"], item["non_terminals"]
+            if int_placeholder.search(pattern):
+                for non_terminal in non_terminals:
+                    if non_terminal in int_values:
+                        for int_value in int_values[non_terminal]:
+                            updated_pattern = pattern.replace("<?INTEGER>", int_value, 1)
+                            final_patterns.append(updated_pattern)
+            else:
+                final_patterns.append(pattern)
+        return final_patterns
+
+    @staticmethod
+    def is_number(value: str) -> bool:
+        try:
+            int(value)
+            return True
+        except ValueError:
+            return False
+
+    def extract_non_terminal_values(self, relevant_non_terminals: List[str], initial_inputs: Set[FandangoInput]) -> Dict[
+        str, Dict[str, List[str]]]:
+        string_values = {}
+        int_values = {}
+        for non_terminal in relevant_non_terminals:
+            for inp in initial_inputs:
+                found_trees = inp.tree.find_all_trees(NonTerminal(non_terminal))
+                for tree in found_trees:
+                    value = str(tree)
+                    if self.is_number(value):
+                        int_values.setdefault(non_terminal, []).append(value)
+                    else:
+                        string_values.setdefault(non_terminal, []).append(value)
+        return {
+            "string_values": {k: list(set(v)) for k, v in string_values.items()},
+            "int_values": {k: list(set(v)) for k, v in int_values.items()},
+        }
