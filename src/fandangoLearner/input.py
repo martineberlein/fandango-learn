@@ -5,11 +5,11 @@ It can also hold features and an index for the derivation tree.
 For Fandango, we use the provided Derivation tree implementation.
 """
 
-
 from abc import ABC, abstractmethod
 from typing import Generator, Optional, Final
 
 from fandango.language.tree import DerivationTree
+from fandango.language.grammar import Grammar
 from debugging_framework.input.oracle import OracleResult
 
 # This is not great but works for now
@@ -32,7 +32,7 @@ class Input(ABC):
         """
         assert isinstance(
             tree, DerivationTree
-        ), "tree must be an instance of DerivationTree"
+        ), f"tree must be an instance of DerivationTree, but is {type(tree)}"
         self.__tree: Final[DerivationTree] = tree
         self.__oracle: Optional[OracleResult] = oracle
 
@@ -138,13 +138,17 @@ class FandangoInput(Input):
         super().__init__(tree, oracle)
 
     def __hash__(self) -> int:
-        raise NotImplementedError("This functionality is not implemented yet.")
+        return hash(self.tree)
 
     @classmethod
-    def from_str(cls, grammar, input_string, oracle: Optional[OracleResult] = None):
-        return cls(
-            DerivationTree.from_tree(
-                next(EarleyParser(grammar).parse(input_string))
-            ),
-            oracle,
-        )
+    def from_str(
+        cls, grammar: Grammar, input_string, oracle: Optional[OracleResult] = None
+    ):
+        tree = grammar.parse(input_string)
+        if tree:
+            return cls(
+                grammar.parse(input_string),
+                oracle,
+            )
+        else:
+            raise SyntaxError(f"Could not parse input_string {input_string}.")
