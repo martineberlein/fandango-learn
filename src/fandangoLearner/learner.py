@@ -2,12 +2,17 @@ from typing import List, Dict, Iterable, Optional, Set, Tuple, Callable, Any
 from abc import ABC, abstractmethod
 from itertools import product
 from copy import deepcopy
+import itertools
 
 from debugging_framework.input.oracle import OracleResult
 from fandango.language.grammar import Grammar
 from fandango.language.parse import parse
 from fandango.language.symbol import NonTerminal
-from fandango.constraints.base import Constraint, ComparisonConstraint
+from fandango.constraints.base import (
+    Constraint,
+    ComparisonConstraint,
+    ConjunctionConstraint,
+)
 from fandango.language.search import RuleSearch
 
 from .candidate import ConstraintCandidate, FandangoConstraintCandidate
@@ -196,6 +201,7 @@ class FandangoLearner(BaseFandangoLearner):
         self, grammar: Grammar, patterns: Optional[Iterable[str]] = None, **kwargs
     ):
         super().__init__(grammar, patterns, **kwargs)
+        self.max_conjunction_size = 4
 
     def learn_constraints(
         self, test_inputs: Set[FandangoInput], relevant_non_terminals=None, **kwargs
@@ -223,6 +229,8 @@ class FandangoLearner(BaseFandangoLearner):
             lambda x: x,
         )
         self.generate_candidates(instantiated_patterns, test_inputs)
+        self.get_conjunctions()
+
         return self.candidates
 
     def generate_candidates(
@@ -347,3 +355,64 @@ class FandangoLearner(BaseFandangoLearner):
                 new_patterns.append((pattern, non_terminals))
 
         return new_patterns
+
+    def check_minimum_recall(
+        self, candidates: Tuple[FandangoConstraintCandidate, ...]
+    ) -> bool:
+        """
+        Check if the recall of the candidates in the combination is greater than the minimum
+        """
+        return all(candidate.recall() >= self.min_recall for candidate in candidates)
+
+    def is_new_conjunction_valid(
+        self,
+        conjunction: FandangoConstraintCandidate,
+        combination: Tuple[FandangoConstraintCandidate, ...],
+    ) -> bool:
+        """
+        Check if the new conjunction is valid based on the minimum specificity and the recall of the candidates in
+        the combination. The specificity of the new conjunction should be greater than the minimum specificity and
+        the specificity of the conjunction should be greater than the specificity of the individual formula.
+        """
+        new_precision = conjunction.precision()
+        return new_precision > self.min_precision and all(
+            new_precision > candidate.precision() for candidate in combination
+        )
+
+    def get_conjunctions(
+        self,
+    ):
+        combinations = self.get_possible_conjunctions(self.candidates)
+        for combination in combinations:
+            # check min recall
+            if not self.check_minimum_recall(combination):
+                continue
+            conjunction: FandangoConstraintCandidate = combination[0]
+            con_list = [conjunction]
+            valid = True
+            for candidate in combination[1:]:
+                conjunction = conjunction & candidate
+                if not self.is_new_conjunction_valid(conjunction, con_list):
+                    valid = False
+                con_list.append(conjunction)
+            if self.is_new_conjunction_valid(conjunction, combination) and valid:
+                self.candidates.append(conjunction)
+
+    def get_possible_conjunctions(
+        self, candidate_set: List[FandangoConstraintCandidate]
+    ) -> List[Tuple[FandangoConstraintCandidate, ...]]:
+        """
+        Get all possible conjunctions of the candidate set with a maximum size of max_conjunction_size.
+        """
+        combinations = []
+        candidate_set_without_conjunctions = [
+            candidate
+            for candidate in candidate_set
+            if not isinstance(candidate.constraint, ConjunctionConstraint)
+        ]
+        for level in range(2, self.max_conjunction_size + 1):
+            for comb in itertools.combinations(
+                candidate_set_without_conjunctions, level
+            ):
+                combinations.append(comb)
+        return combinations

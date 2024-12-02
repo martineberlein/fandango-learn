@@ -34,12 +34,16 @@ if __name__ == "__main__":
         NonTerminal("<function>"),
     }
 
-    learner = FandangoLearner(grammar, patterns)
     start_time = time.time()
-    candidates = learner.learn_constraints(initial_inputs, non_terminal_values)
+    learner = FandangoLearner(grammar, patterns)
     end_time = time.time()
+    print(f"Time taken to initialize learner: {end_time - start_time:.2f} seconds")
 
-    print(f"Time taken to learn constraints: {end_time - start_time:.2f} seconds")
+    start_time_learning = time.time()
+    candidates = learner.learn_constraints(initial_inputs, non_terminal_values)
+    end_time_learning = time.time()
+
+    print(f"Time taken to learn constraints: {end_time_learning - start_time_learning:.4f} seconds")
     print("Filtered Learned Atomic Constraints:")
     for candidate in candidates:
         candidate.evaluate(initial_inputs)

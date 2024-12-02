@@ -26,7 +26,7 @@ This makes comparing both approaches FandangoLearn and ISLearn extremely easy.
 ## Usage
 
 Work in progress. The following code snippet shows how to use the FandangoStringPatternLearner to learn atomic constraints from a set of inputs.
-See the `playground` folder for the [working prototype](./playground/working-prototype.py).
+See the `playground` folder for the [working prototype](./playground/prototype.py).
 
 ```python
 from fandangoLearner.learner import FandangoStringPatternLearner
