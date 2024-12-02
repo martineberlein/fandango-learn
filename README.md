@@ -3,6 +3,9 @@
 This repository contains the code for the Fandango Learn project.
 The goal is to automatically learn _fandango_ constraints form a set of inputs.
 
+Overall, the learner will be integrated into **Avicenna**, which provides the necessary infrastructure of the hypothesis refinement loop.
+Furthermore, **Avicenna** provides the means to automatically learn the set of relevant non-terminals, reducing the search space for the learner.
+
 ## First Ideas
 
 - Use Pattern Based Approach
