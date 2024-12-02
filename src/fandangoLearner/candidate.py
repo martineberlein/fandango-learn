@@ -12,6 +12,9 @@ from .input import FandangoInput
 
 
 class ConstraintCandidate(ABC):
+    """
+    Represents a learned candidate.
+    """
 
     def __init__(self, constraint):
         self.constraint = constraint
@@ -42,6 +45,10 @@ class ConstraintCandidate(ABC):
 
 
 class FandangoConstraintCandidate(ConstraintCandidate):
+    """
+    Represents a learned candidate constraint of the Fandango learner.
+    This class encapsulates a constraint and provides methods for evaluating the constraint fast and efficiently.
+    """
 
     def __init__(self, constraint: Constraint):
         super().__init__(constraint)
@@ -49,6 +56,11 @@ class FandangoConstraintCandidate(ConstraintCandidate):
         self.passing_inputs_eval_results = []
 
     def evaluate(self, inputs):
+        """
+        Evaluate the fandango constraint on a set of inputs.
+        :param inputs:
+        :return:
+        """
         for inp in inputs:
             eval_result = self.constraint.check(inp.tree)
             self._update_eval_results_and_combination(eval_result, inp)
