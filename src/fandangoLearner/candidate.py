@@ -135,3 +135,7 @@ class FandangoConstraintCandidate(ConstraintCandidate):
             self.failing_inputs_eval_results.append(eval_result)
         else:
             self.passing_inputs_eval_results.append(eval_result)
+
+    def reset(self):
+        self.failing_inputs_eval_results = []
+        self.passing_inputs_eval_results = []
