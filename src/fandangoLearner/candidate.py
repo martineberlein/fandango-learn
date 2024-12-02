@@ -1,4 +1,4 @@
-from typing import Dict, List, Set, Sequence
+from typing import Dict, List, Set, Sequence, Optional
 from abc import ABC, abstractmethod
 
 from debugging_framework.input.oracle import OracleResult
@@ -12,6 +12,9 @@ from .input import FandangoInput
 
 
 class ConstraintCandidate(ABC):
+    """
+    Represents a learned candidate.
+    """
 
     def __init__(self, constraint):
         self.constraint = constraint
@@ -42,13 +45,29 @@ class ConstraintCandidate(ABC):
 
 
 class FandangoConstraintCandidate(ConstraintCandidate):
+    """
+    Represents a learned candidate constraint of the Fandango learner.
+    This class encapsulates a constraint and provides methods for evaluating the constraint fast and efficiently.
+    """
 
-    def __init__(self, constraint: Constraint):
+    def __init__(
+        self,
+        constraint: Constraint,
+        failing_inputs_eval_results: Optional[List[bool]] = None,
+        passing_inputs_eval_results: Optional[List[bool]] = None,
+        cache: Optional[Dict[FandangoInput, bool]] = None,
+    ):
         super().__init__(constraint)
-        self.failing_inputs_eval_results = []
-        self.passing_inputs_eval_results = []
+        self.failing_inputs_eval_results = failing_inputs_eval_results or []
+        self.passing_inputs_eval_results = passing_inputs_eval_results or []
+        self.cache: Dict[FandangoInput, bool] = cache or {}
 
     def evaluate(self, inputs):
+        """
+        Evaluate the fandango constraint on a set of inputs.
+        :param inputs:
+        :return:
+        """
         for inp in inputs:
             eval_result = self.constraint.check(inp.tree)
             self._update_eval_results_and_combination(eval_result, inp)
@@ -81,20 +100,36 @@ class FandangoConstraintCandidate(ConstraintCandidate):
         fp = sum(int(entry) for entry in self.passing_inputs_eval_results)
         return tp / (tp + fp) if tp + fp > 0 else 0.0
 
-    def __and__(self, other):
+    def __and__(self, other: "FandangoConstraintCandidate"):
         """
         Return the conjunction of the candidate with another candidate.
 
         :param other: The other candidate.
         :return: The conjunction of the candidate with the other candidate.
         """
+        assert isinstance(other, FandangoConstraintCandidate)
+
+        new_failing_inputs_eval_results = []
+        new_passing_inputs_eval_results = []
+        new_cache = {}
+        for inp in self.cache:
+            r = self.cache[inp] and other.cache[inp]
+            if inp.oracle == OracleResult.FAILING:
+                new_failing_inputs_eval_results.append(r)
+            else:
+                new_passing_inputs_eval_results.append(r)
+            new_cache[inp] = r
+
         return FandangoConstraintCandidate(
             constraint=ConjunctionConstraint(
                 [self.constraint, other.constraint],
                 local_variables=self.constraint.local_variables,
                 global_variables=self.constraint.global_variables,
                 # lazy=self.constraint.lazy,
-            )
+            ),
+            failing_inputs_eval_results=new_failing_inputs_eval_results,
+            passing_inputs_eval_results=new_passing_inputs_eval_results,
+            cache=new_cache,
         )
 
     def __or__(self, other):
@@ -110,7 +145,9 @@ class FandangoConstraintCandidate(ConstraintCandidate):
                 local_variables=self.constraint.local_variables,
                 global_variables=self.constraint.global_variables,
                 # lazy=self.constraint.lazy,
-            )
+            ),
+            # failing_inputs_eval_results=self.failing_inputs_eval_results + other.failing_inputs_eval_results,
+            # passing_inputs_eval_results=self.passing_inputs_eval_results + other.passing_inputs_eval_results,
         )
 
     def _update_eval_results_and_combination(
@@ -123,3 +160,8 @@ class FandangoConstraintCandidate(ConstraintCandidate):
             self.failing_inputs_eval_results.append(eval_result)
         else:
             self.passing_inputs_eval_results.append(eval_result)
+        self.cache[inp] = eval_result
+
+    def reset(self):
+        self.failing_inputs_eval_results = []
+        self.passing_inputs_eval_results = []
