@@ -1,4 +1,4 @@
-from typing import List, Dict, Iterable, Optional, Set, Tuple, Callable, Any
+from typing import List, Dict, Iterable, Optional, Set, Tuple, Callable, Any, Union
 from abc import ABC, abstractmethod
 from itertools import product
 from copy import deepcopy
@@ -17,7 +17,7 @@ from fandango.language.search import RuleSearch
 
 from .candidate import ConstraintCandidate, FandangoConstraintCandidate
 from .input import Input as TestInput, FandangoInput
-from .metric import FitnessStrategy, RecallPriorityLengthFitness
+from .metric import FitnessStrategy, RecallPriorityFitness
 
 
 class ConstraintCandidateLearner(ABC):
@@ -88,7 +88,7 @@ class BaseFandangoLearner(PatternCandidateLearner, ABC):
         patterns: Optional[Iterable[str] | Iterable[Constraint]] = None,
         min_precision: float = 0.6,
         min_recall: float = 0.9,
-        sorting_strategy: FitnessStrategy = RecallPriorityLengthFitness(),
+        sorting_strategy: FitnessStrategy = RecallPriorityFitness(),
     ):
         super().__init__(patterns)
         self.grammar = grammar
@@ -231,7 +231,7 @@ class FandangoLearner(BaseFandangoLearner):
         self.generate_candidates(instantiated_patterns, test_inputs)
         self.get_conjunctions()
 
-        return self.candidates
+        return self.get_best_candidates()
 
     def generate_candidates(
         self, instantiated_patterns, test_inputs: Set[FandangoInput]
@@ -367,7 +367,9 @@ class FandangoLearner(BaseFandangoLearner):
     def is_new_conjunction_valid(
         self,
         conjunction: FandangoConstraintCandidate,
-        combination: Tuple[FandangoConstraintCandidate, ...],
+        combination: Union[
+            List[FandangoConstraintCandidate], Tuple[FandangoConstraintCandidate, ...]
+        ],
     ) -> bool:
         """
         Check if the new conjunction is valid based on the minimum specificity and the recall of the candidates in
@@ -388,7 +390,9 @@ class FandangoLearner(BaseFandangoLearner):
             if not self.check_minimum_recall(combination):
                 continue
             conjunction: FandangoConstraintCandidate = combination[0]
-            con_list = [conjunction]
+            con_list = [
+                conjunction,
+            ]
             valid = True
             for candidate in combination[1:]:
                 conjunction = conjunction & candidate
