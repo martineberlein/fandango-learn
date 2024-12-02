@@ -1,14 +1,14 @@
-from typing import List, Dict, Iterable, Optional, Set, Tuple, Callable
+from typing import List, Dict, Iterable, Optional, Set, Tuple, Callable, Any
 from abc import ABC, abstractmethod
-import re
 from itertools import product
+from copy import deepcopy
 
 from debugging_framework.input.oracle import OracleResult
 from fandango.language.grammar import Grammar
-from fandango.language.parse import parse, parse_file
-from fandangoLearner.input import FandangoInput, OracleResult
+from fandango.language.parse import parse
 from fandango.language.symbol import NonTerminal
-from fandangoLearner.candidate import FandangoConstraintCandidate
+from fandango.constraints.base import Constraint, ComparisonConstraint
+from fandango.language.search import RuleSearch
 
 from .candidate import ConstraintCandidate, FandangoConstraintCandidate
 from .input import Input as TestInput, FandangoInput
@@ -58,22 +58,29 @@ class PatternCandidateLearner(ConstraintCandidateLearner, ABC):
 
     def __init__(
         self,
-        patterns: Optional[Iterable[str]] = None,
+        patterns: Optional[Iterable[str] | Iterable[Any]] = None,
     ):
         """
         Initialize the pattern candidate learner with a grammar and a pattern file or patterns.
         :param patterns: The patterns to use.
         """
         super().__init__()
-        self.patterns: Set[str] = set(patterns) if patterns else {}
+        self.patterns = self.parse_patterns(patterns)
+
+    @abstractmethod
+    def parse_patterns(self, patterns):
+        """
+        Parse the patterns into constraints.
+        """
+        return set(patterns) if patterns else {}
 
 
-class BaseFandangoLearner(PatternCandidateLearner):
+class BaseFandangoLearner(PatternCandidateLearner, ABC):
 
     def __init__(
         self,
         grammar: Grammar,
-        patterns: Optional[Iterable[str]] = None,
+        patterns: Optional[Iterable[str] | Iterable[Constraint]] = None,
         min_precision: float = 0.6,
         min_recall: float = 0.9,
         sorting_strategy: FitnessStrategy = RecallPriorityLengthFitness(),
@@ -85,6 +92,12 @@ class BaseFandangoLearner(PatternCandidateLearner):
         self.sorting_strategy = sorting_strategy
 
         self.candidates: List[FandangoConstraintCandidate] = []
+
+    def parse_patterns(self, patterns):
+        """
+        Parse the patterns into constraints.
+        """
+        return {parse(pattern)[1][0] for pattern in patterns}
 
     def meets_minimum_criteria(self, precision_value_, recall_value_):
         """
@@ -141,30 +154,17 @@ class BaseFandangoLearner(PatternCandidateLearner):
         """
         self.candidates = []
 
+    @abstractmethod
     def learn_constraints(
         self, test_inputs: Set[FandangoInput], **kwargs
     ) -> Optional[List[FandangoConstraintCandidate]]:
-
-        positive_inputs, negative_inputs = self.categorize_inputs(test_inputs)
-        assert all(inp.oracle == OracleResult.FAILING for inp in positive_inputs)
-        assert all(inp.oracle == OracleResult.PASSING for inp in negative_inputs)
-
-        exclude_nonterminals: set[str] = set()
-        atomic_candidates = self.compute_atomic_candidates(
-            self.patterns, positive_inputs
-        )
-
-        # Todo: Implement learning of atomic and composite candidates
-        # 1. sort test inputs according to usefulness; maybe k-paths? for atomic candidate construction we only need
-        # a hand full
-        # 2. learn atomic candidates from test inputs
-        # 3. evaluate atomic candidates on all test inputs
-        # 4. learn composite candidates from atomic candidates (disjunctions, conjunctions) - for conjunctions,
-        # we need to check if the recall of the combination is greater than the minimum - for disjunctions,
-        # we need to check if the specificity of the new disjunction is greater than the minimum
-        # 5. evaluate composite candidates on all test inputs
-
-        return None
+        """
+        Learn the candidates based on the test inputs.
+        :param test_inputs:
+        :param kwargs:
+        :return:
+        """
+        raise NotImplementedError()
 
     @staticmethod
     def categorize_inputs(
@@ -181,119 +181,6 @@ class BaseFandangoLearner(PatternCandidateLearner):
         }
         return positive_inputs, negative_inputs
 
-    def compute_atomic_candidates(self, patterns, positive_inputs):
-        results = set()
-
-        for pattern in patterns:
-            instantiated_patterns = self.instantiate_pattern(pattern, positive_inputs)
-            for instantiated_pattern in instantiated_patterns:
-                results.add(instantiated_pattern)
-
-    def instantiate_pattern(self, pattern, positive_inputs, exclude_non_terminals):
-        steps: list[Callable] = [
-            self._instantiate_non_terminal_placeholders,
-            self._instantiate_int_placeholders,
-        ]
-
-        instantiated_patterns = set()
-        for step in steps:
-            instantiated_patterns = step(
-                pattern, positive_inputs, exclude_non_terminals
-            )
-
-        assert True  # Check if all placeholders are resolved
-        return set()
-
-    def _instantiate_non_terminal_placeholders(
-        self, pattern, positive_inputs, exclude_nonterminals
-    ):
-        pass
-
-    def _instantiate_int_placeholders(
-        self, pattern, positive_inputs, exclude_nonterminals
-    ):
-        pass
-
-
-class FandangoStringPatternLearner(BaseFandangoLearner):
-
-    def learn_constraints(
-        self, test_inputs: Set[FandangoInput], relevant_non_terminals=None, **kwargs
-    ) -> Optional[List[FandangoConstraintCandidate]]:
-
-        positive_inputs, negative_inputs = self.categorize_inputs(test_inputs)
-        assert all(inp.oracle == OracleResult.FAILING for inp in positive_inputs)
-        assert all(inp.oracle == OracleResult.PASSING for inp in negative_inputs)
-
-        extracted_values = self.extract_non_terminal_values(relevant_non_terminals, positive_inputs)
-
-        patterns_with_non_terminals = self.replace_non_terminals(self.patterns, relevant_non_terminals)
-        patterns_with_strings = self.replace_strings(patterns_with_non_terminals, extracted_values["string_values"])
-        final_patterns = self.replace_integers(patterns_with_strings, extracted_values["int_values"])
-
-        constraints = [parse(pattern)[1][0] for pattern in final_patterns if not re.search(r"<\?([A-Z_]+)>", pattern)]
-
-        candidates = []
-        for constraint in constraints:
-            candidate = FandangoConstraintCandidate(constraint)
-            candidate.evaluate(positive_inputs)
-            if candidate.recall() >= 0.8:
-                candidates.append(candidate)
-
-        return candidates
-
-    @staticmethod
-    def replace_non_terminals(patterns: Set[str], non_terminal_values: Iterable[str]) -> List[Dict[str, List[str]]]:
-        non_terminal_placeholder = re.compile(r"<\?NON_TERMINAL>")
-        replaced_patterns = []
-        for pattern in patterns:
-            matches = non_terminal_placeholder.findall(pattern)
-            if matches:
-                for replacements in product(non_terminal_values, repeat=len(matches)):
-                    updated_pattern = pattern
-                    used_non_terminals = []
-                    for replacement in replacements:
-                        updated_pattern = updated_pattern.replace("<?NON_TERMINAL>", replacement, 1)
-                        used_non_terminals.append(replacement)
-                    replaced_patterns.append({"pattern": updated_pattern, "non_terminals": used_non_terminals})
-            else:
-                replaced_patterns.append({"pattern": pattern, "non_terminals": []})
-        return replaced_patterns
-
-    @staticmethod
-    def replace_strings(patterns_with_non_terminals: List[Dict[str, List[str]]],
-                        string_values: Dict[str, Iterable[str]]) -> List[Dict[str, List[str]]]:
-        string_placeholder = re.compile(r"<\?STRING>")
-        replaced_patterns = []
-        for item in patterns_with_non_terminals:
-            pattern, non_terminals = item["pattern"], item["non_terminals"]
-            if string_placeholder.search(pattern):
-                for non_terminal in non_terminals:
-                    if non_terminal in string_values:
-                        for string_value in string_values[non_terminal]:
-                            updated_pattern = pattern.replace("<?STRING>", f'"{string_value}"', 1)
-                            replaced_patterns.append({"pattern": updated_pattern, "non_terminals": non_terminals})
-            else:
-                replaced_patterns.append(item)
-        return replaced_patterns
-
-    @staticmethod
-    def replace_integers(patterns_with_strings: List[Dict[str, List[str]]], int_values: Dict[str, Iterable[str]]) -> \
-    List[str]:
-        int_placeholder = re.compile(r"<\?INTEGER>")
-        final_patterns = []
-        for item in patterns_with_strings:
-            pattern, non_terminals = item["pattern"], item["non_terminals"]
-            if int_placeholder.search(pattern):
-                for non_terminal in non_terminals:
-                    if non_terminal in int_values:
-                        for int_value in int_values[non_terminal]:
-                            updated_pattern = pattern.replace("<?INTEGER>", int_value, 1)
-                            final_patterns.append(updated_pattern)
-            else:
-                final_patterns.append(pattern)
-        return final_patterns
-
     @staticmethod
     def is_number(value: str) -> bool:
         try:
@@ -302,20 +189,161 @@ class FandangoStringPatternLearner(BaseFandangoLearner):
         except ValueError:
             return False
 
-    def extract_non_terminal_values(self, relevant_non_terminals: List[str], initial_inputs: Set[FandangoInput]) -> Dict[
-        str, Dict[str, List[str]]]:
-        string_values = {}
-        int_values = {}
+
+class FandangoLearner(BaseFandangoLearner):
+
+    def __init__(
+        self, grammar: Grammar, patterns: Optional[Iterable[str]] = None, **kwargs
+    ):
+        super().__init__(grammar, patterns, **kwargs)
+
+    def learn_constraints(
+        self, test_inputs: Set[FandangoInput], relevant_non_terminals=None, **kwargs
+    ) -> Optional[List[FandangoConstraintCandidate]]:
+
+        positive_inputs, negative_inputs = self.categorize_inputs(test_inputs)
+
+        extracted_values = self.extract_non_terminal_values(
+            relevant_non_terminals, positive_inputs
+        )
+
+        instantiated_patterns = self.replace_non_terminals(
+            self.patterns, relevant_non_terminals
+        )
+        instantiated_patterns = self.replace_placeholders(
+            instantiated_patterns,
+            NonTerminal("<STRING>"),
+            extracted_values["string_values"],
+            lambda x: f"'{x}'",
+        )
+        instantiated_patterns = self.replace_placeholders(
+            instantiated_patterns,
+            NonTerminal("<INTEGER>"),
+            extracted_values["int_values"],
+            lambda x: x,
+        )
+        self.generate_candidates(instantiated_patterns, test_inputs)
+        return self.candidates
+
+    def generate_candidates(
+        self, instantiated_patterns, test_inputs: Set[FandangoInput]
+    ):
+        """Generate constraint candidates based on the replaced patterns."""
+        for pattern, _ in instantiated_patterns:
+            candidate = FandangoConstraintCandidate(pattern)
+            try:
+                candidate.evaluate(test_inputs)
+                if candidate.recall() >= self.min_recall:
+                    self.candidates.append(candidate)
+            except Exception:
+                continue
+
+    def extract_non_terminal_values(
+        self,
+        relevant_non_terminals: List[NonTerminal],
+        initial_inputs: Set[FandangoInput],
+    ):
+        """Extract values associated with non-terminals from initial inputs."""
+        string_values: Dict[NonTerminal, Set[str]] = {}
+        int_values: Dict[NonTerminal, Set[str]] = {}
+
         for non_terminal in relevant_non_terminals:
             for inp in initial_inputs:
-                found_trees = inp.tree.find_all_trees(NonTerminal(non_terminal))
+                found_trees = inp.tree.find_all_trees(non_terminal)
                 for tree in found_trees:
                     value = str(tree)
                     if self.is_number(value):
-                        int_values.setdefault(non_terminal, []).append(value)
+                        int_values.setdefault(non_terminal, set()).add(value)
                     else:
-                        string_values.setdefault(non_terminal, []).append(value)
+                        string_values.setdefault(non_terminal, set()).add(value)
+
         return {
-            "string_values": {k: list(set(v)) for k, v in string_values.items()},
-            "int_values": {k: list(set(v)) for k, v in int_values.items()},
+            "string_values": {k: list(v) for k, v in string_values.items()},
+            "int_values": {k: list(v) for k, v in int_values.items()},
         }
+
+    def replace_non_terminals(
+        self,
+        initialized_patterns: Set[Constraint],
+        non_terminal_values: Iterable[NonTerminal],
+    ) -> List[Tuple[Constraint, Set[NonTerminal]]]:
+        """Replace <NON_TERMINAL> placeholders with actual non-terminal values."""
+        replaced_patterns = []
+        for pattern in initialized_patterns:
+            matches = [
+                key
+                for key in pattern.searches.keys()
+                if pattern.searches[key].symbol == NonTerminal("<NON_TERMINAL>")
+            ]
+            if matches:
+                if isinstance(pattern, ComparisonConstraint):
+                    for replacements in product(
+                        non_terminal_values, repeat=len(matches)
+                    ):
+                        new_searches = deepcopy(pattern.searches)
+                        for key, replacement in zip(matches, replacements):
+                            new_searches[key] = RuleSearch(replacement)
+                        new_pattern = ComparisonConstraint(
+                            operator=pattern.operator,
+                            left=pattern.left,
+                            right=pattern.right,
+                            searches=new_searches,
+                            local_variables=pattern.local_variables,
+                            global_variables=pattern.global_variables,
+                        )
+                        replaced_patterns.append((new_pattern, set(replacements)))
+                else:
+                    raise ValueError(
+                        f"Only comparison constraints are supported. "
+                        f"Constraint type {type(pattern)} is not yet supported."
+                    )
+            else:
+                replaced_patterns.append((pattern, set()))
+
+        return replaced_patterns
+
+    def replace_placeholders(
+        self,
+        initialized_patterns: List[Tuple[Constraint, Set[NonTerminal]]],
+        placeholder: NonTerminal,
+        values: Dict[NonTerminal, List[str]],
+        format_value: Callable[[str], str],
+    ) -> List[Tuple[Constraint, Set[NonTerminal]]]:
+        """Replace placeholders like <STRING> or <INTEGER> with actual values."""
+        new_patterns = []
+        for pattern, non_terminals in initialized_patterns:
+            matches = [
+                key
+                for key in pattern.searches.keys()
+                if pattern.searches[key].symbol == placeholder
+            ]
+            if matches:
+                if isinstance(pattern, ComparisonConstraint):
+                    for non_terminal in non_terminals:
+                        for value in values.get(non_terminal, []):
+                            updated_right = pattern.right
+                            for match in matches:
+                                updated_right = updated_right.replace(
+                                    match, format_value(value), 1
+                                )
+                            new_searches = deepcopy(pattern.searches)
+                            for match in matches:
+                                del new_searches[match]
+                            new_pattern = ComparisonConstraint(
+                                operator=pattern.operator,
+                                left=pattern.left,
+                                right=updated_right,
+                                searches=new_searches,
+                                local_variables=pattern.local_variables,
+                                global_variables=pattern.global_variables,
+                            )
+                            new_patterns.append((new_pattern, non_terminals))
+                else:
+                    raise ValueError(
+                        f"Only comparison constraints are supported. "
+                        f"Constraint type {type(pattern)} is not yet supported."
+                    )
+            else:
+                new_patterns.append((pattern, non_terminals))
+
+        return new_patterns
