@@ -26,51 +26,59 @@ This makes comparing both approaches FandangoLearn and ISLearn extremely easy.
 ## Usage
 
 Work in progress. The following code snippet shows how to use the FandangoStringPatternLearner to learn atomic constraints from a set of inputs.
-See the `playground` folder for the [working prototype](./playground/prototype.py).
+See the `playground` folder for the [working prototype](./playground/readme.py).
 
 ```python
 from fandangoLearner.learner import FandangoStringPatternLearner
 from fandango.language.parse import parse, parse_file
 from fandangoLearner.input import FandangoInput, OracleResult
 
-grammar, _ = parse_file('calculator.fan')
+grammar, _ = parse_file("calculator.fan")
 test_inputs = [
     ("sqrt(-900)", OracleResult.FAILING),
-    ("sqrt(-10)", OracleResult.FAILING),
+    ("sqrt(-1)", OracleResult.FAILING),
+    ("sin(-900)", OracleResult.PASSING),
     ("sqrt(2)", OracleResult.PASSING),
-    ("cos(-10)", OracleResult.PASSING),
-    ("sin(60)", OracleResult.PASSING),
+    ("cos(10)", OracleResult.PASSING),
 ]
 
-initial_inputs = {FandangoInput.from_str(grammar, inp, result) for inp, result in test_inputs}
+initial_inputs = {
+    FandangoInput.from_str(grammar, inp, result) for inp, result in test_inputs
+}
 
 patterns = [
-    "int(<?NON_TERMINAL>) <= <?INTEGER>;",
-    "str(<?NON_TERMINAL>) == <?STRING>;",
-    "int(<?NON_TERMINAL>) == len(str(<?NON_TERMINAL>));"
+    "int(<NON_TERMINAL>) <= <INTEGER>;",
+    "int(<NON_TERMINAL>) == <INTEGER>;",
+    "str(<NON_TERMINAL>) == <STRING>;",
+    "int(<NON_TERMINAL>) == len(str(<NON_TERMINAL>));",
+    "int(<NON_TERMINAL>) == int(<NON_TERMINAL>) * <INTEGER> * int(<NON_TERMINAL>) * <INTEGER>;",
 ]
 
-learner = FandangoStringPatternLearner(
-    grammar,
-    patterns=patterns
-)
-filtered_candidates = learner.learn_constraints(
-    initial_inputs,
-    relevant_non_terminals=["<number>", "<maybeminus>", "<function>"]
-)
+non_terminal_values = {
+    NonTerminal("<number>"),
+    NonTerminal("<maybeminus>"),
+    NonTerminal("<function>"),
+}
 
-for candidate in filtered_candidates:
+learner = FandangoLearner(grammar, patterns)
+learned_constraints = learner.learn_constraints(initial_inputs, non_terminal_values)
+
+for candidate in learned_constraints:
     candidate.evaluate(initial_inputs)
-    print("Constraint:", candidate.constraint, "Recall:", candidate.recall(), "Precision:", candidate.precision())
+    print(
+        f"Constraint: {candidate.constraint}, Recall: {candidate.recall()}, Precision: {candidate.precision()}"
+    )
 ```
 
-Produces the following atomic constraints (for now):
+Produces the following constraints:
 
 ```
-Constraint: int(<number>) <= -10 Recall: 1.0 Precision: 0.8
-Constraint: str(<maybeminus>) == '-' Recall: 1.0 Precision: 0.8
-Constraint: str(<function>) == 'sqrt' Recall: 1.0 Precision: 0.8
+Constraint: (str(<function>) == 'sqrt' and str(<maybeminus>) == '-'), Recall: 1.0, Precision: 1.0
+Constraint: (str(<function>) == 'sqrt' and int(<number>) <= -1), Recall: 1.0, Precision: 1.0
 ```
+
+
+## Old Steps (Already Implemented) 
 
 Next steps: Automatically combining constraints to more complex constraints:
 
