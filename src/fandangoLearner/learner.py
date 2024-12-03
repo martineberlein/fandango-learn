@@ -2,7 +2,6 @@ from typing import List, Dict, Iterable, Optional, Set, Tuple, Callable, Any, Un
 from abc import ABC, abstractmethod
 from itertools import product
 from copy import deepcopy
-import itertools
 
 from debugging_framework.input.oracle import OracleResult
 from fandango.language.grammar import Grammar
@@ -11,7 +10,6 @@ from fandango.language.symbol import NonTerminal
 from fandango.constraints.base import (
     Constraint,
     ComparisonConstraint,
-    ConjunctionConstraint,
 )
 from fandango.language.search import RuleSearch
 
@@ -20,6 +18,7 @@ from .input import Input as TestInput, FandangoInput
 from .metric import FitnessStrategy, RecallPriorityFitness
 from .resources.patterns import Pattern
 from .logger import LOGGER
+from .combination import ConjunctionProcessor
 
 
 class ConstraintCandidateLearner(ABC):
@@ -105,7 +104,9 @@ class BaseFandangoLearner(PatternCandidateLearner, ABC):
         Parse the patterns into constraints.
         """
         if not patterns:
-            instantiated_patterns = {pat.instantiated_pattern for pat in Pattern.registry}
+            instantiated_patterns = {
+                pat.instantiated_pattern for pat in Pattern.registry
+            }
         else:
             instantiated_patterns = {parse(pattern)[1][0] for pattern in patterns}
         LOGGER.info("Instantiated patterns: %s", len(instantiated_patterns))
@@ -211,8 +212,15 @@ class FandangoLearner(BaseFandangoLearner):
         self.max_conjunction_size = 2
         self.positive_learning_size = 5
 
+        self.conjunction_processor = ConjunctionProcessor(
+            self.max_conjunction_size, self.min_precision, self.min_recall
+        )
+
     def learn_constraints(
-        self, test_inputs: Set[FandangoInput], relevant_non_terminals: Set[NonTerminal]=None, **kwargs
+        self,
+        test_inputs: Set[FandangoInput],
+        relevant_non_terminals: Set[NonTerminal] = None,
+        **kwargs,
     ) -> Optional[List[FandangoConstraintCandidate]]:
 
         if not relevant_non_terminals:
@@ -246,7 +254,9 @@ class FandangoLearner(BaseFandangoLearner):
             lambda x: x,
         )
         self.generate_candidates(instantiated_patterns, test_inputs)
-        self.get_conjunctions()
+
+        conjunction_candidates = self.conjunction_processor.process(self.candidates)
+        self.candidates = self.candidates + conjunction_candidates
 
         return self.get_best_candidates()
 
@@ -256,10 +266,9 @@ class FandangoLearner(BaseFandangoLearner):
         :param positive_inputs:
         :return: the filtered positive inputs.
         """
-        filtered_inputs = set(list(positive_inputs)[:self.positive_learning_size])
+        filtered_inputs = set(list(positive_inputs)[: self.positive_learning_size])
         LOGGER.info("Filtered positive inputs for learning: %s", len(filtered_inputs))
         return filtered_inputs
-
 
     def generate_candidates(
         self, instantiated_patterns, test_inputs: Set[FandangoInput]
@@ -383,68 +392,3 @@ class FandangoLearner(BaseFandangoLearner):
                 new_patterns.append((pattern, non_terminals))
 
         return new_patterns
-
-    def check_minimum_recall(
-        self, candidates: Tuple[FandangoConstraintCandidate, ...]
-    ) -> bool:
-        """
-        Check if the recall of the candidates in the combination is greater than the minimum
-        """
-        return all(candidate.recall() >= self.min_recall for candidate in candidates)
-
-    def is_new_conjunction_valid(
-        self,
-        conjunction: FandangoConstraintCandidate,
-        combination: Union[
-            List[FandangoConstraintCandidate], Tuple[FandangoConstraintCandidate, ...]
-        ],
-    ) -> bool:
-        """
-        Check if the new conjunction is valid based on the minimum specificity and the recall of the candidates in
-        the combination. The specificity of the new conjunction should be greater than the minimum specificity and
-        the specificity of the conjunction should be greater than the specificity of the individual formula.
-        """
-        new_precision = conjunction.precision()
-        return new_precision > self.min_precision and all(
-            new_precision > candidate.precision() for candidate in combination
-        )
-
-    def get_conjunctions(
-        self,
-    ):
-        combinations = self.get_possible_conjunctions(self.candidates)
-        for combination in combinations:
-            # check min recall
-            if not self.check_minimum_recall(combination):
-                continue
-            conjunction: FandangoConstraintCandidate = combination[0]
-            con_list = [
-                conjunction,
-            ]
-            valid = True
-            for candidate in combination[1:]:
-                conjunction = conjunction & candidate
-                if not self.is_new_conjunction_valid(conjunction, con_list):
-                    valid = False
-                con_list.append(conjunction)
-            if self.is_new_conjunction_valid(conjunction, combination) and valid:
-                self.candidates.append(conjunction)
-
-    def get_possible_conjunctions(
-        self, candidate_set: List[FandangoConstraintCandidate]
-    ) -> List[Tuple[FandangoConstraintCandidate, ...]]:
-        """
-        Get all possible conjunctions of the candidate set with a maximum size of max_conjunction_size.
-        """
-        combinations = []
-        candidate_set_without_conjunctions = [
-            candidate
-            for candidate in candidate_set
-            if not isinstance(candidate.constraint, ConjunctionConstraint)
-        ]
-        for level in range(2, self.max_conjunction_size + 1):
-            for comb in itertools.combinations(
-                candidate_set_without_conjunctions, level
-            ):
-                combinations.append(comb)
-        return combinations
