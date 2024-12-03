@@ -3,7 +3,7 @@
 <x> ::= <number>;
 <y> ::= <number>;
 <z> ::= <number>;
-<number> ::= <onenine><maybedigits> | "0";
+<number> ::= <onenine><maybedigits> ;
 <maybedigits> ::= <digit>*;
 <digit>::=  "0" | <onenine>;
 <onenine> ::= "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
