@@ -1,0 +1,9 @@
+<start> ::= <middle>;
+<middle> ::= <x> " " <y> " " <z>;
+<x> ::= <number>;
+<y> ::= <number>;
+<z> ::= <number>;
+<number> ::= <onenine><maybedigits> | "0";
+<maybedigits> ::= <digit>*;
+<digit>::=  "0" | <onenine>;
+<onenine> ::= "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
