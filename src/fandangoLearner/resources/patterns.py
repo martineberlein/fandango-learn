@@ -50,6 +50,22 @@ Pattern(
     ),
 )
 
+for operator in Comparison:
+    Pattern(
+        string_pattern=f"int(<NON_TERMINAL>) {operator} len(str(<NON_TERMINAL>));",
+        instantiated_pattern=ComparisonConstraint(
+            operator=operator,
+            left=f"int({Pattern.get_id(1)})",
+            right=f"len(str({Pattern.get_id(2)}))",
+            searches={
+                Pattern.get_id(1): RuleSearch(NonTerminal("<NON_TERMINAL>")),
+                Pattern.get_id(2): RuleSearch(NonTerminal("<NON_TERMINAL>")),
+            },
+            local_variables=predicates.__dict__,
+            global_variables=globals(),
+        ),
+    )
+
 # All Patterns with the form int(<NON_TERMINAL>) <operator> <INTEGER>;
 for operator in Comparison:
     Pattern(
