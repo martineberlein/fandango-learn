@@ -18,6 +18,8 @@ from fandango.language.search import RuleSearch
 from .candidate import ConstraintCandidate, FandangoConstraintCandidate
 from .input import Input as TestInput, FandangoInput
 from .metric import FitnessStrategy, RecallPriorityFitness
+from .resources.patterns import Pattern
+from .logger import LOGGER
 
 
 class ConstraintCandidateLearner(ABC):
@@ -102,7 +104,12 @@ class BaseFandangoLearner(PatternCandidateLearner, ABC):
         """
         Parse the patterns into constraints.
         """
-        return {parse(pattern)[1][0] for pattern in patterns}
+        if not patterns:
+            instantiated_patterns = {pat.instantiated_pattern for pat in Pattern.registry}
+        else:
+            instantiated_patterns = {parse(pattern)[1][0] for pattern in patterns}
+        LOGGER.info("Instantiated patterns: %s", len(instantiated_patterns))
+        return instantiated_patterns
 
     def meets_minimum_criteria(self, precision_value_, recall_value_):
         """
@@ -201,13 +208,22 @@ class FandangoLearner(BaseFandangoLearner):
         self, grammar: Grammar, patterns: Optional[Iterable[str]] = None, **kwargs
     ):
         super().__init__(grammar, patterns, **kwargs)
-        self.max_conjunction_size = 4
+        self.max_conjunction_size = 2
+        self.positive_learning_size = 5
 
     def learn_constraints(
-        self, test_inputs: Set[FandangoInput], relevant_non_terminals=None, **kwargs
+        self, test_inputs: Set[FandangoInput], relevant_non_terminals: Set[NonTerminal]=None, **kwargs
     ) -> Optional[List[FandangoConstraintCandidate]]:
 
+        if not relevant_non_terminals:
+            relevant_non_terminals = set()
+            for non_terminal in self.grammar:
+                relevant_non_terminals.add(non_terminal)
+
         positive_inputs, negative_inputs = self.categorize_inputs(test_inputs)
+
+        # Sort and Filter:
+        positive_inputs = self.sort_and_filter_positive_inputs(positive_inputs)
 
         extracted_values = self.extract_non_terminal_values(
             relevant_non_terminals, positive_inputs
@@ -216,6 +232,7 @@ class FandangoLearner(BaseFandangoLearner):
         instantiated_patterns = self.replace_non_terminals(
             self.patterns, relevant_non_terminals
         )
+
         instantiated_patterns = self.replace_placeholders(
             instantiated_patterns,
             NonTerminal("<STRING>"),
@@ -233,6 +250,17 @@ class FandangoLearner(BaseFandangoLearner):
 
         return self.get_best_candidates()
 
+    def sort_and_filter_positive_inputs(self, positive_inputs: Set[FandangoInput]):
+        """
+        This method is used to filter the positive inputs that are used for learning.
+        :param positive_inputs:
+        :return: the filtered positive inputs.
+        """
+        filtered_inputs = set(list(positive_inputs)[:self.positive_learning_size])
+        LOGGER.info("Filtered positive inputs for learning: %s", len(filtered_inputs))
+        return filtered_inputs
+
+
     def generate_candidates(
         self, instantiated_patterns, test_inputs: Set[FandangoInput]
     ):
@@ -248,7 +276,7 @@ class FandangoLearner(BaseFandangoLearner):
 
     def extract_non_terminal_values(
         self,
-        relevant_non_terminals: List[NonTerminal],
+        relevant_non_terminals: Set[NonTerminal],
         initial_inputs: Set[FandangoInput],
     ):
         """Extract values associated with non-terminals from initial inputs."""

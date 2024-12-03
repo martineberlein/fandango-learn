@@ -47,6 +47,7 @@ Pattern(
     )
 )
 
+# All Patterns with the form int(<NON_TERMINAL>) <operator> <INTEGER>;
 for operator in Comparison:
     Pattern(
         string_pattern=f"int(<NON_TERMINAL>) {str(operator.value)} <INTEGER>;",
@@ -57,6 +58,24 @@ for operator in Comparison:
             searches={
                 Pattern.get_id(1): RuleSearch(NonTerminal("<NON_TERMINAL>")),
                 Pattern.get_id(2): RuleSearch(NonTerminal("<INTEGER>")),
+            },
+            local_variables=predicates.__dict__,
+            global_variables=globals(),
+        )
+    )
+
+# All Patterns with the form int(<NON_TERMINAL>) <operator> int(<NON_TERMINAL>);
+# We exclude GreaterThan and Greater since they can be expressed as LessThan and Less.
+for operator in [Comparison.EQUAL, Comparison.LESS_EQUAL, Comparison.LESS, Comparison.NOT_EQUAL]:
+    Pattern(
+        string_pattern=f"int(<NON_TERMINAL>) {str(operator.value)} int(<NON_TERMINAL>);",
+        instantiated_pattern=ComparisonConstraint(
+            operator=operator,
+            left=f"int({Pattern.get_id(1)})",
+            right=f"int({Pattern.get_id(2)})",
+            searches={
+                Pattern.get_id(1): RuleSearch(NonTerminal("<NON_TERMINAL>")),
+                Pattern.get_id(2): RuleSearch(NonTerminal("<NON_TERMINAL>")),
             },
             local_variables=predicates.__dict__,
             global_variables=globals(),
