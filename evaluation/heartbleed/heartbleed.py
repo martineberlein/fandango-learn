@@ -9,6 +9,7 @@ from fandangoLearner.data.input import FandangoInput
 from evaluation.evaluation_helper import evaluate_candidates, print_constraints
 from heartbeat import initial_inputs, oracle_simple as oracle
 
+
 if __name__ == "__main__":
     grammar, _ = parse_file(pathlib.Path.cwd() / "heartbleed" / "heartbleed.fan")
 

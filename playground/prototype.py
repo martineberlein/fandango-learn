@@ -1,12 +1,11 @@
 import time
 
-from fandango.language.parse import parse_file
+from fandango.language.parse import parse_file, parse
 from fandangoLearner.data.input import FandangoInput, OracleResult
 from fandango.language.symbol import NonTerminal
 from fandangoLearner.learner import FandangoLearner
 
 from calculator import calculator_oracle
-
 
 
 if __name__ == "__main__":
@@ -26,7 +25,7 @@ if __name__ == "__main__":
         inp = grammar.fuzz()
         test_inputs.append((str(inp), calculator_oracle(inp)))
 
-    initial_inputs = {FandangoInput.from_str(grammar, inp, result) for inp, result in test_inputs}
+    #initial_inputs = {FandangoInput.from_str(grammar, inp, result) for inp, result in test_inputs}
 
     # patterns = [
     #     "int(<NON_TERMINAL>) <= <INTEGER>;",
@@ -63,8 +62,23 @@ if __name__ == "__main__":
     start_time = time.time()
     print("Evaluate Constraints with: ", len(evaluation_inputs), "inputs")
     for candidate in candidates:
+        candidate.reset()
         candidate.evaluate(evaluation_inputs)
         print("Constraint:", candidate.constraint, "Recall:", candidate.recall(), "Precision:", candidate.precision())
     print("\n")
 
     print("Time taken to evaluate constraints:", time.time() - start_time)
+
+
+    # patt = "str(<function>) == 'sqrt' and str(<maybeminus>) == '-'; int(<number>) <= -1 and str(<function>) == 'sqrt';"
+    # constraint = parse(patt)[1][0]
+    #
+    # for inp in evaluation_inputs:
+    #     result = constraint.check(inp.tree)
+    #     if result != inp.oracle.is_failing():
+    #         print(inp, result)
+    #     #print(inp, constraint.check(inp.tree))
+    #
+    # print("Checking constraint: ", constraint)
+    # print("Check:", constraint.check(grammar.parse("sqrt(12)")))
+    # print("Check:", constraint.check(grammar.parse("sqrt(0)")))
