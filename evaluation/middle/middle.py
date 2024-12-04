@@ -1,15 +1,16 @@
 import time
+import pathlib
 
 from fandango.language.parse import parse_file
 from fandango.language.symbol import NonTerminal
 from fandangoLearner.learner import FandangoLearner
 
 from debugging_benchmark.middle.middle import MiddleBenchmarkRepository
-from evaluation_helper import evaluate_candidates, get_inputs, print_constraints
+from evaluation.evaluation_helper import evaluate_candidates, get_inputs, print_constraints
 
 
 if __name__ == "__main__":
-    grammar, _ = parse_file("middle.fan")
+    grammar, _ = parse_file(pathlib.Path.cwd() / "middle" / "middle.fan")
 
     programs = MiddleBenchmarkRepository().build()
     program = programs[0]  # Middle.1
