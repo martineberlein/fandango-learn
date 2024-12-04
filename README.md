@@ -29,9 +29,9 @@ Work in progress. The following code snippet shows how to use the FandangoString
 See the `playground` folder for the [working prototype](./playground/readme.py).
 
 ```python
-from fandangoLearner.learner import FandangoStringPatternLearner
-from fandango.language.parse import parse, parse_file
-from fandangoLearner.input import FandangoInput, OracleResult
+from fandangoLearner.learner import FandangoLearner
+from fandango.language.parse import parse_file
+from fandangoLearner.data.input import FandangoInput, OracleResult
 
 grammar, _ = parse_file("calculator.fan")
 test_inputs = [

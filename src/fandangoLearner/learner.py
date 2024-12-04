@@ -1,257 +1,148 @@
-from typing import List, Dict, Iterable, Optional, Set, Tuple, Callable, Any, Union
-from abc import ABC, abstractmethod
+from typing import List, Dict, Iterable, Optional, Set, Tuple, Callable, Any
 from itertools import product
 from copy import deepcopy
-import itertools
 
-from debugging_framework.input.oracle import OracleResult
 from fandango.language.grammar import Grammar
-from fandango.language.parse import parse
 from fandango.language.symbol import NonTerminal
 from fandango.constraints.base import (
     Constraint,
     ComparisonConstraint,
-    ConjunctionConstraint,
 )
 from fandango.language.search import RuleSearch
 
-from .candidate import ConstraintCandidate, FandangoConstraintCandidate
-from .input import Input as TestInput, FandangoInput
-from .metric import FitnessStrategy, RecallPriorityFitness
-
-
-class ConstraintCandidateLearner(ABC):
-    """
-    A candidate learner is responsible for learning candidate formulas from a set
-    """
-
-    def __init__(self):
-        self.candidates: List[ConstraintCandidate] = []
-
-    @abstractmethod
-    def learn_constraints(
-        self, test_inputs: Iterable[TestInput], **kwargs
-    ) -> Optional[List[ConstraintCandidate]]:
-        """
-        Learn the candidates based on the test inputs.
-        :param test_inputs: The test inputs to learn the candidates from.
-        :return Optional[List[Candidate]]: The learned candidates.
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def get_candidates(self) -> Optional[List[ConstraintCandidate]]:
-        """
-        Get all constraints that have been learned.
-        :return Optional[List[Candidate]]: The learned candidates.
-        """
-        return self.candidates
-
-    @abstractmethod
-    def get_best_candidates(self) -> Optional[List[ConstraintCandidate]]:
-        """
-        Get the best constraints that have been learned.
-        :return Optional[List[Candidate]]: The best learned candidates.
-        """
-        raise NotImplementedError()
-
-
-class PatternCandidateLearner(ConstraintCandidateLearner, ABC):
-    """
-    A candidate learner that learns formulas based on patterns from a pattern repository
-    """
-
-    def __init__(
-        self,
-        patterns: Optional[Iterable[str] | Iterable[Any]] = None,
-    ):
-        """
-        Initialize the pattern candidate learner with a grammar and a pattern file or patterns.
-        :param patterns: The patterns to use.
-        """
-        super().__init__()
-        self.patterns = self.parse_patterns(patterns)
-
-    @abstractmethod
-    def parse_patterns(self, patterns):
-        """
-        Parse the patterns into constraints.
-        """
-        return set(patterns) if patterns else {}
-
-
-class BaseFandangoLearner(PatternCandidateLearner, ABC):
-
-    def __init__(
-        self,
-        grammar: Grammar,
-        patterns: Optional[Iterable[str] | Iterable[Constraint]] = None,
-        min_precision: float = 0.6,
-        min_recall: float = 0.9,
-        sorting_strategy: FitnessStrategy = RecallPriorityFitness(),
-    ):
-        super().__init__(patterns)
-        self.grammar = grammar
-        self.min_precision = min_precision
-        self.min_recall = min_recall
-        self.sorting_strategy = sorting_strategy
-
-        self.candidates: List[FandangoConstraintCandidate] = []
-
-    def parse_patterns(self, patterns):
-        """
-        Parse the patterns into constraints.
-        """
-        return {parse(pattern)[1][0] for pattern in patterns}
-
-    def meets_minimum_criteria(self, precision_value_, recall_value_):
-        """
-        Checks if the precision and recall values meet the minimum criteria.
-        :param precision_value_: The precision value.
-        :param recall_value_: The recall value.
-        """
-        return (
-            precision_value_ >= self.min_precision and recall_value_ >= self.min_recall
-        )
-
-    def get_candidates(self) -> Optional[List[FandangoConstraintCandidate]]:
-        """
-        Returns the all the best formulas (ordered) based on the minimum precision and recall values.
-        :return Optional[List[Candidate]]: The learned candidates.
-        """
-
-        return sorted(
-            self.candidates,
-            key=lambda c: self.sorting_strategy.evaluate(c),
-            reverse=True,
-        )
-
-    def get_best_candidates(
-        self,
-    ) -> Optional[List[FandangoConstraintCandidate]]:
-        """
-        Returns the best formulas (ordered) based on the precision and recall values.
-        Thus returns the best of the best formulas.
-        :return Optional[List[Candidate]]: The best learned candidates.
-        """
-        candidates = self.get_candidates()
-        if candidates:
-            return self._get_best_candidates(candidates)
-
-    def _get_best_candidates(
-        self, candidates: List[FandangoConstraintCandidate]
-    ) -> List[FandangoConstraintCandidate]:
-        """
-        Selects the best formulas based on the precision and recall values.
-        :param candidates: The candidates to select the best from.
-        :return List[Candidate]: The best learned candidates.
-        """
-        return [
-            candidate
-            for candidate in candidates
-            if self.sorting_strategy.is_equal(candidate, candidates[0])
-        ]
-
-    def reset(self):
-        """
-        Resets the precision and recall truth tables. This is useful when the learner is used for multiple runs.
-        Minimum precision and recall values are not reset.
-        """
-        self.candidates = []
-
-    @abstractmethod
-    def learn_constraints(
-        self, test_inputs: Set[FandangoInput], **kwargs
-    ) -> Optional[List[FandangoConstraintCandidate]]:
-        """
-        Learn the candidates based on the test inputs.
-        :param test_inputs:
-        :param kwargs:
-        :return:
-        """
-        raise NotImplementedError()
-
-    @staticmethod
-    def categorize_inputs(
-        test_inputs: Set[FandangoInput],
-    ) -> Tuple[Set[FandangoInput], Set[FandangoInput]]:
-        """
-        Categorize the inputs into positive and negative inputs based on their oracle results.
-        """
-        positive_inputs = {
-            inp for inp in test_inputs if inp.oracle == OracleResult.FAILING
-        }
-        negative_inputs = {
-            inp for inp in test_inputs if inp.oracle == OracleResult.PASSING
-        }
-        return positive_inputs, negative_inputs
-
-    @staticmethod
-    def is_number(value: str) -> bool:
-        try:
-            int(value)
-            return True
-        except ValueError:
-            return False
+from .learning.candidate import FandangoConstraintCandidate
+from .data.input import FandangoInput
+from .logger import LOGGER
+from .learning.combination import ConjunctionProcessor, DisjunctionProcessor
+from .learning.instantiation import PatternProcessor
+from .core import BaseFandangoLearner
 
 
 class FandangoLearner(BaseFandangoLearner):
+    """
+    A candidate learner that learns fandango constraints based on patterns from a pattern repository.
+    """
 
     def __init__(
         self, grammar: Grammar, patterns: Optional[Iterable[str]] = None, **kwargs
     ):
+        """
+        Initializes the FandangoLearner with a grammar and optional patterns.
+
+        Args:
+            grammar (Grammar): The grammar used for parsing and learning constraints.
+            patterns (Optional[Iterable[str]]): A collection of patterns to be used in the learning process.
+            **kwargs: Additional arguments for customization.
+        """
         super().__init__(grammar, patterns, **kwargs)
-        self.max_conjunction_size = 4
+        self.max_conjunction_size = 2
+        self.max_disjunction_size = 2
+        self.positive_learning_size = 5
+
+        self.pattern_processor = PatternProcessor(self.patterns)
+
+        self.conjunction_processor = ConjunctionProcessor(
+            self.max_conjunction_size, self.min_precision, self.min_recall
+        )
+        self.disjunction_processor = DisjunctionProcessor(
+            self.max_disjunction_size, self.min_precision, self.min_recall
+        )
 
     def learn_constraints(
-        self, test_inputs: Set[FandangoInput], relevant_non_terminals=None, **kwargs
+        self,
+        test_inputs: Set[FandangoInput],
+        relevant_non_terminals: Set[NonTerminal] = None,
+        **kwargs,
     ) -> Optional[List[FandangoConstraintCandidate]]:
+        """
+        Learns constraints based on the provided test inputs and grammar patterns.
+
+        Args:
+            test_inputs (Set[FandangoInput]): A set of test inputs used for learning constraints.
+            relevant_non_terminals (Set[NonTerminal], optional): A set of non-terminals relevant for learning.
+            **kwargs: Additional arguments for learning customization.
+
+        Returns:
+            Optional[List[FandangoConstraintCandidate]]: A list of learned constraint candidates or None.
+        """
+        if not relevant_non_terminals:
+            relevant_non_terminals = set(self.grammar)
 
         positive_inputs, negative_inputs = self.categorize_inputs(test_inputs)
 
-        extracted_values = self.extract_non_terminal_values(
+        positive_inputs = self.sort_and_filter_positive_inputs(positive_inputs)
+
+        value_maps = self.extract_non_terminal_values(
             relevant_non_terminals, positive_inputs
         )
 
-        instantiated_patterns = self.replace_non_terminals(
-            self.patterns, relevant_non_terminals
-        )
-        instantiated_patterns = self.replace_placeholders(
-            instantiated_patterns,
-            NonTerminal("<STRING>"),
-            extracted_values["string_values"],
-            lambda x: f"'{x}'",
-        )
-        instantiated_patterns = self.replace_placeholders(
-            instantiated_patterns,
-            NonTerminal("<INTEGER>"),
-            extracted_values["int_values"],
-            lambda x: x,
-        )
-        self.generate_candidates(instantiated_patterns, test_inputs)
-        self.get_conjunctions()
+        instantiated_patterns = self.pattern_processor.instantiate_patterns(relevant_non_terminals, value_maps)
+
+        self.parse_candidates(instantiated_patterns, test_inputs)
+
+        conjunction_candidates = self.conjunction_processor.process(self.candidates)
+        self.candidates += conjunction_candidates
+
+        disjunction_candidates = self.disjunction_processor.process(self.candidates)
+        self.candidates += disjunction_candidates
 
         return self.get_best_candidates()
 
-    def generate_candidates(
-        self, instantiated_patterns, test_inputs: Set[FandangoInput]
-    ):
-        """Generate constraint candidates based on the replaced patterns."""
-        for pattern, _ in instantiated_patterns:
+    def sort_and_filter_positive_inputs(
+        self, positive_inputs: Set[FandangoInput]
+    ) -> Set[FandangoInput]:
+        """
+        Filters and sorts positive inputs for learning.
+
+        Args:
+            positive_inputs (Set[FandangoInput]): A set of positive inputs.
+
+        Returns:
+            Set[FandangoInput]: A filtered subset of positive inputs.
+        """
+        filtered_inputs = set(list(positive_inputs)[: self.positive_learning_size])
+        LOGGER.info("Filtered positive inputs for learning: %s", len(filtered_inputs))
+        return filtered_inputs
+
+    def parse_candidates(
+        self, instantiated_patterns: List[Constraint], test_inputs: Set[FandangoInput],
+            pre_filter: bool = False,
+    ) -> None:
+        """
+        Generates constraint candidates based on instantiated patterns and evaluates them.
+
+        Args:
+            instantiated_patterns (List[Constraint]): A list of instantiated patterns and their corresponding non-terminals.
+            test_inputs (Set[FandangoInput]): A set of test inputs to evaluate candidates.
+            pre_filter (bool):
+        """
+        for pattern in instantiated_patterns:
             candidate = FandangoConstraintCandidate(pattern)
             try:
                 candidate.evaluate(test_inputs)
-                if candidate.recall() >= self.min_recall:
+                if pre_filter:
+                    if candidate.recall() >= self.min_recall:
+                        self.candidates.append(candidate)
+                else:
                     self.candidates.append(candidate)
             except Exception:
                 continue
 
     def extract_non_terminal_values(
         self,
-        relevant_non_terminals: List[NonTerminal],
+        relevant_non_terminals: Set[NonTerminal],
         initial_inputs: Set[FandangoInput],
-    ):
-        """Extract values associated with non-terminals from initial inputs."""
+    ) -> Dict[str, Dict[NonTerminal, List[str]]]:
+        """
+        Extracts values associated with non-terminals from initial inputs.
+
+        Args:
+            relevant_non_terminals (Set[NonTerminal]): A set of relevant non-terminals.
+            initial_inputs (Set[FandangoInput]): A set of initial inputs to extract values from.
+
+        Returns:
+            Dict[str, Dict[NonTerminal, List[str]]]: Extracted string and integer values.
+        """
         string_values: Dict[NonTerminal, Set[str]] = {}
         int_values: Dict[NonTerminal, Set[str]] = {}
 
@@ -269,154 +160,3 @@ class FandangoLearner(BaseFandangoLearner):
             "string_values": {k: list(v) for k, v in string_values.items()},
             "int_values": {k: list(v) for k, v in int_values.items()},
         }
-
-    def replace_non_terminals(
-        self,
-        initialized_patterns: Set[Constraint],
-        non_terminal_values: Iterable[NonTerminal],
-    ) -> List[Tuple[Constraint, Set[NonTerminal]]]:
-        """Replace <NON_TERMINAL> placeholders with actual non-terminal values."""
-        replaced_patterns = []
-        for pattern in initialized_patterns:
-            matches = [
-                key
-                for key in pattern.searches.keys()
-                if pattern.searches[key].symbol == NonTerminal("<NON_TERMINAL>")
-            ]
-            if matches:
-                if isinstance(pattern, ComparisonConstraint):
-                    for replacements in product(
-                        non_terminal_values, repeat=len(matches)
-                    ):
-                        new_searches = deepcopy(pattern.searches)
-                        for key, replacement in zip(matches, replacements):
-                            new_searches[key] = RuleSearch(replacement)
-                        new_pattern = ComparisonConstraint(
-                            operator=pattern.operator,
-                            left=pattern.left,
-                            right=pattern.right,
-                            searches=new_searches,
-                            local_variables=pattern.local_variables,
-                            global_variables=pattern.global_variables,
-                        )
-                        replaced_patterns.append((new_pattern, set(replacements)))
-                else:
-                    raise ValueError(
-                        f"Only comparison constraints are supported. "
-                        f"Constraint type {type(pattern)} is not yet supported."
-                    )
-            else:
-                replaced_patterns.append((pattern, set()))
-
-        return replaced_patterns
-
-    def replace_placeholders(
-        self,
-        initialized_patterns: List[Tuple[Constraint, Set[NonTerminal]]],
-        placeholder: NonTerminal,
-        values: Dict[NonTerminal, List[str]],
-        format_value: Callable[[str], str],
-    ) -> List[Tuple[Constraint, Set[NonTerminal]]]:
-        """Replace placeholders like <STRING> or <INTEGER> with actual values."""
-        new_patterns = []
-        for pattern, non_terminals in initialized_patterns:
-            matches = [
-                key
-                for key in pattern.searches.keys()
-                if pattern.searches[key].symbol == placeholder
-            ]
-            if matches:
-                if isinstance(pattern, ComparisonConstraint):
-                    for non_terminal in non_terminals:
-                        for value in values.get(non_terminal, []):
-                            updated_right = pattern.right
-                            for match in matches:
-                                updated_right = updated_right.replace(
-                                    match, format_value(value), 1
-                                )
-                            new_searches = deepcopy(pattern.searches)
-                            for match in matches:
-                                del new_searches[match]
-                            new_pattern = ComparisonConstraint(
-                                operator=pattern.operator,
-                                left=pattern.left,
-                                right=updated_right,
-                                searches=new_searches,
-                                local_variables=pattern.local_variables,
-                                global_variables=pattern.global_variables,
-                            )
-                            new_patterns.append((new_pattern, non_terminals))
-                else:
-                    raise ValueError(
-                        f"Only comparison constraints are supported. "
-                        f"Constraint type {type(pattern)} is not yet supported."
-                    )
-            else:
-                new_patterns.append((pattern, non_terminals))
-
-        return new_patterns
-
-    def check_minimum_recall(
-        self, candidates: Tuple[FandangoConstraintCandidate, ...]
-    ) -> bool:
-        """
-        Check if the recall of the candidates in the combination is greater than the minimum
-        """
-        return all(candidate.recall() >= self.min_recall for candidate in candidates)
-
-    def is_new_conjunction_valid(
-        self,
-        conjunction: FandangoConstraintCandidate,
-        combination: Union[
-            List[FandangoConstraintCandidate], Tuple[FandangoConstraintCandidate, ...]
-        ],
-    ) -> bool:
-        """
-        Check if the new conjunction is valid based on the minimum specificity and the recall of the candidates in
-        the combination. The specificity of the new conjunction should be greater than the minimum specificity and
-        the specificity of the conjunction should be greater than the specificity of the individual formula.
-        """
-        new_precision = conjunction.precision()
-        return new_precision > self.min_precision and all(
-            new_precision > candidate.precision() for candidate in combination
-        )
-
-    def get_conjunctions(
-        self,
-    ):
-        combinations = self.get_possible_conjunctions(self.candidates)
-        for combination in combinations:
-            # check min recall
-            if not self.check_minimum_recall(combination):
-                continue
-            conjunction: FandangoConstraintCandidate = combination[0]
-            con_list = [
-                conjunction,
-            ]
-            valid = True
-            for candidate in combination[1:]:
-                conjunction = conjunction & candidate
-                if not self.is_new_conjunction_valid(conjunction, con_list):
-                    valid = False
-                con_list.append(conjunction)
-            if self.is_new_conjunction_valid(conjunction, combination) and valid:
-                self.candidates.append(conjunction)
-
-    def get_possible_conjunctions(
-        self, candidate_set: List[FandangoConstraintCandidate]
-    ) -> List[Tuple[FandangoConstraintCandidate, ...]]:
-        """
-        Get all possible conjunctions of the candidate set with a maximum size of max_conjunction_size.
-        """
-        combinations = []
-        candidate_set_without_conjunctions = [
-            candidate
-            for candidate in candidate_set
-            if not isinstance(candidate.constraint, ConjunctionConstraint)
-        ]
-        for level in range(2, self.max_conjunction_size + 1):
-            for comb in itertools.combinations(
-                candidate_set_without_conjunctions, level
-            ):
-                combinations.append(comb)
-        return combinations

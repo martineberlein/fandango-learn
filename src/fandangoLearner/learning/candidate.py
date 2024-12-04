@@ -1,4 +1,4 @@
-from typing import Dict, List, Set, Sequence, Optional
+from typing import Dict, List, Optional
 from abc import ABC, abstractmethod
 
 from debugging_framework.input.oracle import OracleResult
@@ -8,7 +8,7 @@ from fandango.constraints.base import (
     ConjunctionConstraint,
     DisjunctionConstraint,
 )
-from .input import FandangoInput
+from fandangoLearner.data.input import FandangoInput
 
 
 class ConstraintCandidate(ABC):
@@ -132,22 +132,35 @@ class FandangoConstraintCandidate(ConstraintCandidate):
             cache=new_cache,
         )
 
-    def __or__(self, other):
+    def __or__(self, other: "FandangoConstraintCandidate"):
         """
         Return the disjunction of the candidate with another candidate.
 
         :param other: The other candidate.
         :return: The disjunction of the candidate with the other candidate.
         """
+        assert isinstance(other, FandangoConstraintCandidate)
+
+        new_failing_inputs_eval_results = []
+        new_passing_inputs_eval_results = []
+        new_cache = {}
+        for inp in self.cache:
+            r = self.cache[inp] or other.cache[inp]
+            if inp.oracle == OracleResult.FAILING:
+                new_failing_inputs_eval_results.append(r)
+            else:
+                new_passing_inputs_eval_results.append(r)
+            new_cache[inp] = r
+
         return FandangoConstraintCandidate(
             constraint=DisjunctionConstraint(
                 [self.constraint, other.constraint],
                 local_variables=self.constraint.local_variables,
                 global_variables=self.constraint.global_variables,
-                # lazy=self.constraint.lazy,
             ),
-            # failing_inputs_eval_results=self.failing_inputs_eval_results + other.failing_inputs_eval_results,
-            # passing_inputs_eval_results=self.passing_inputs_eval_results + other.passing_inputs_eval_results,
+            failing_inputs_eval_results=new_failing_inputs_eval_results,
+            passing_inputs_eval_results=new_passing_inputs_eval_results,
+            cache=new_cache,
         )
 
     def _update_eval_results_and_combination(
@@ -165,3 +178,4 @@ class FandangoConstraintCandidate(ConstraintCandidate):
     def reset(self):
         self.failing_inputs_eval_results = []
         self.passing_inputs_eval_results = []
+        self.cache = {}

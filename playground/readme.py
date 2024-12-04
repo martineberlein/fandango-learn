@@ -1,7 +1,5 @@
-import time
-
 from fandango.language.parse import parse_file
-from fandangoLearner.input import FandangoInput, OracleResult
+from fandangoLearner.data.input import FandangoInput, OracleResult
 from fandango.language.symbol import NonTerminal
 from fandangoLearner.learner import FandangoLearner
 

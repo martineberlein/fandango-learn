@@ -4,7 +4,7 @@ This is a copy of the ranking metrics from the Avicenna Tool.
 
 from abc import ABC, abstractmethod
 
-from .candidate import ConstraintCandidate
+from fandangoLearner.learning.candidate import ConstraintCandidate
 
 
 class FitnessStrategy(ABC):
