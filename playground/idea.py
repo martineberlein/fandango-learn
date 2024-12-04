@@ -5,9 +5,9 @@ from enum import Enum
 import math
 
 from fandango.language.parse import parse, parse_file
-from fandangoLearner.input import FandangoInput, OracleResult
+from fandangoLearner.data.input import FandangoInput, OracleResult
 from fandango.language.symbol import NonTerminal
-from fandangoLearner.candidate import FandangoConstraintCandidate
+from fandangoLearner.learning.candidate import FandangoConstraintCandidate
 
 
 def calculator_oracle(inp):
