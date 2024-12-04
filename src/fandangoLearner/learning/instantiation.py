@@ -7,6 +7,8 @@ from fandango.constraints.base import Constraint, ComparisonConstraint
 from fandango.language.search import RuleSearch
 from fandango.language.symbol import NonTerminal
 
+from fandangoLearner.logger import LOGGER
+
 
 class PatternProcessor:
     """
@@ -19,18 +21,24 @@ class PatternProcessor:
             ComparisonPatternInstantiation(),
         ]
 
-    def instantiate_patterns(self, relevant_non_terminals: Iterable[NonTerminal], value_map: Dict[str, Dict[NonTerminal, List[str]]]) -> List[Constraint]:
+    def instantiate_patterns(
+        self,
+        relevant_non_terminals: Iterable[NonTerminal],
+        value_map: Dict[str, Dict[NonTerminal, List[str]]],
+    ) -> List[Constraint]:
         instantiated_patterns = []
 
         for pattern in self.patterns:
             for instantiation_class in self.instantiation_classes:
                 if isinstance(pattern, instantiation_class.supported_pattern_type()):
                     instantiated_patterns.extend(
-                        instantiation_class.instantiation([pattern], relevant_non_terminals, value_map)
+                        instantiation_class.instantiation(
+                            [pattern], relevant_non_terminals, value_map
+                        )
                     )
                 else:
-                    raise ValueError(
-                        f"Pattern type {type(pattern)} is not supported for instantiation."
+                    LOGGER.error(
+                        f"Pattern type {type(pattern)} is not yet supported for instantiation."
                     )
 
         return instantiated_patterns
@@ -54,7 +62,7 @@ class PatternInstantiation(ABC):
         patterns: Iterable[Constraint],
         relevant_non_terminals: Iterable[NonTerminal],
         value_maps: Dict[str, Dict[NonTerminal, List[str]]],
-        **kwargs
+        **kwargs,
     ) -> List[Constraint]:
         """
         Perform instantiation of the given patterns using the provided values.
@@ -108,7 +116,7 @@ class ComparisonPatternInstantiation(PatternInstantiation):
         patterns: Iterable[Constraint],
         relevant_non_terminals: Iterable[NonTerminal],
         value_maps: Dict[str, Dict[NonTerminal, List[str]]],
-        **kwargs
+        **kwargs,
     ) -> List[Constraint]:
         """
         Instantiates the given patterns with the provided non-terminal values.
@@ -168,7 +176,9 @@ class ComparisonPatternInstantiation(PatternInstantiation):
             ]
             if matches:
                 if isinstance(pattern, ComparisonConstraint):
-                    for replacements in product(non_terminal_values, repeat=len(matches)):
+                    for replacements in product(
+                        non_terminal_values, repeat=len(matches)
+                    ):
                         new_searches = deepcopy(pattern.searches)
                         for key, replacement in zip(matches, replacements):
                             new_searches[key] = RuleSearch(replacement)
@@ -245,4 +255,3 @@ class ComparisonPatternInstantiation(PatternInstantiation):
             else:
                 new_patterns.append((pattern, non_terminals))
         return new_patterns
-
