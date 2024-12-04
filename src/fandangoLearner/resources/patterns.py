@@ -106,6 +106,9 @@ for operator in [
         ),
     )
 
+Pattern(
+    string_pattern="forall <tree> in <NON_TERMINAL>: <tree>/<xml_open_tag>/<id> == <tree>/<xml_close_tag>/<id>;",
+)
 
 if __name__ == "__main__":
     grammar, _ = parse_file("./../../../playground/calculator.fan")

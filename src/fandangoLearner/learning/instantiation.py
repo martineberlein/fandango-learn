@@ -3,7 +3,7 @@ from itertools import product
 from copy import deepcopy
 from typing import List, Dict, Set, Iterable, Tuple, Callable, Type
 
-from fandango.constraints.base import Constraint, ComparisonConstraint
+from fandango.constraints.base import Constraint, ComparisonConstraint, ForallConstraint
 from fandango.language.search import RuleSearch
 from fandango.language.symbol import NonTerminal
 
@@ -75,30 +75,6 @@ class PatternInstantiation(ABC):
 
         Returns:
             List[Tuple[Constraint, NonTerminal]]: Instantiated patterns.
-        """
-        pass
-
-    @abstractmethod
-    def replace_non_terminals(
-        self,
-        initialized_patterns: Iterable[Constraint],
-        non_terminal_values: Iterable[NonTerminal],
-    ) -> List[Tuple[Constraint, Set[NonTerminal]]]:
-        """
-        Replace non-terminal placeholders with actual values.
-        """
-        pass
-
-    @abstractmethod
-    def replace_placeholders(
-        self,
-        initialized_patterns: List[Tuple[Constraint, Set[NonTerminal]]],
-        placeholder: NonTerminal,
-        values: Dict[NonTerminal, List[str]],
-        format_value: Callable[[str], str],
-    ) -> List[Tuple[Constraint, Set[NonTerminal]]]:
-        """
-        Replace placeholders with actual values.
         """
         pass
 
@@ -255,3 +231,10 @@ class ComparisonPatternInstantiation(PatternInstantiation):
             else:
                 new_patterns.append((pattern, non_terminals))
         return new_patterns
+
+
+class ForallPatternInstantiation(PatternInstantiation):
+
+    def supported_pattern_type(self) -> Type[Constraint]:
+        return ForallConstraint
+
