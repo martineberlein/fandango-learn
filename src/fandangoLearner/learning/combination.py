@@ -5,6 +5,8 @@ import itertools
 from fandango.constraints.base import ConjunctionConstraint, DisjunctionConstraint
 from fandangoLearner.learning.candidate import FandangoConstraintCandidate
 
+from fandangoLearner.logger import LOGGER
+
 
 class CombinationProcessor(ABC):
 
@@ -64,6 +66,7 @@ class ConjunctionProcessor(CombinationProcessor):
             if self.is_new_conjunction_valid(conjunction, combination) and valid:
                 conjunction_candidates.append(conjunction)
 
+        LOGGER.info("Found %s valid conjunctions", len(conjunction_candidates))
         return conjunction_candidates
 
     def is_new_conjunction_valid(
@@ -152,6 +155,7 @@ class DisjunctionProcessor(CombinationProcessor):
             if self.is_new_disjunction_valid(disjunction, combination) and valid:
                 disjunction_candidates.append(disjunction)
 
+        LOGGER.info("Found %s valid disjunctions", len(disjunction_candidates))
         return disjunction_candidates
 
     def is_new_disjunction_valid(
