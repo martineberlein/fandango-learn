@@ -1,8 +1,8 @@
 from typing import List, Callable, Set
 import time
 
-from fandangoLearner.candidate import FandangoConstraintCandidate
-from fandangoLearner.input import FandangoInput
+from fandangoLearner.learning.candidate import FandangoConstraintCandidate
+from fandangoLearner.data.input import FandangoInput
 
 
 def print_constraints(

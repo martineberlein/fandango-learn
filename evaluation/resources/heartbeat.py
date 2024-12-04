@@ -6,7 +6,7 @@ from typing import Union, Tuple
 
 from debugging_framework.input.oracle import OracleResult
 
-from fandangoLearner.input import FandangoInput as Input
+from fandangoLearner.data.input import FandangoInput as Input
 
 
 def vulnerable_heartbeat(payload, fake_length):

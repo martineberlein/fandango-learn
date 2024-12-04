@@ -3,9 +3,9 @@ import time
 from fandango.language.parse import parse_file
 from fandango.language.symbol import NonTerminal
 from fandangoLearner.learner import FandangoLearner
-from fandangoLearner.input import FandangoInput
+from fandangoLearner.data.input import FandangoInput
 
-from evaluation_helper import evaluate_candidates, get_inputs, print_constraints
+from evaluation_helper import evaluate_candidates, print_constraints
 from resources.heartbeat import initial_inputs, oracle_simple as oracle
 
 if __name__ == "__main__":
