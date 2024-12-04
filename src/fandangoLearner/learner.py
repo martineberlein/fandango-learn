@@ -18,10 +18,21 @@ from .core import BaseFandangoLearner
 
 
 class FandangoLearner(BaseFandangoLearner):
+    """
+    A candidate learner that learns fandango constraints based on patterns from a pattern repository.
+    """
 
     def __init__(
         self, grammar: Grammar, patterns: Optional[Iterable[str]] = None, **kwargs
     ):
+        """
+        Initializes the FandangoLearner with a grammar and optional patterns.
+
+        Args:
+            grammar (Grammar): The grammar used for parsing and learning constraints.
+            patterns (Optional[Iterable[str]]): A collection of patterns to be used in the learning process.
+            **kwargs: Additional arguments for customization.
+        """
         super().__init__(grammar, patterns, **kwargs)
         self.max_conjunction_size = 2
         self.positive_learning_size = 5
@@ -36,15 +47,22 @@ class FandangoLearner(BaseFandangoLearner):
         relevant_non_terminals: Set[NonTerminal] = None,
         **kwargs,
     ) -> Optional[List[FandangoConstraintCandidate]]:
+        """
+        Learns constraints based on the provided test inputs and grammar patterns.
 
+        Args:
+            test_inputs (Set[FandangoInput]): A set of test inputs used for learning constraints.
+            relevant_non_terminals (Set[NonTerminal], optional): A set of non-terminals relevant for learning.
+            **kwargs: Additional arguments for learning customization.
+
+        Returns:
+            Optional[List[FandangoConstraintCandidate]]: A list of learned constraint candidates or None.
+        """
         if not relevant_non_terminals:
-            relevant_non_terminals = set()
-            for non_terminal in self.grammar:
-                relevant_non_terminals.add(non_terminal)
+            relevant_non_terminals = set(self.grammar)
 
         positive_inputs, negative_inputs = self.categorize_inputs(test_inputs)
 
-        # Sort and Filter:
         positive_inputs = self.sort_and_filter_positive_inputs(positive_inputs)
 
         extracted_values = self.extract_non_terminal_values(
@@ -67,27 +85,39 @@ class FandangoLearner(BaseFandangoLearner):
             extracted_values["int_values"],
             lambda x: x,
         )
-        self.generate_candidates(instantiated_patterns, test_inputs)
+        self.parse_candidates(instantiated_patterns, test_inputs)
 
         conjunction_candidates = self.conjunction_processor.process(self.candidates)
-        self.candidates = self.candidates + conjunction_candidates
+        self.candidates += conjunction_candidates
 
         return self.get_best_candidates()
 
-    def sort_and_filter_positive_inputs(self, positive_inputs: Set[FandangoInput]):
+    def sort_and_filter_positive_inputs(
+        self, positive_inputs: Set[FandangoInput]
+    ) -> Set[FandangoInput]:
         """
-        This method is used to filter the positive inputs that are used for learning.
-        :param positive_inputs:
-        :return: the filtered positive inputs.
+        Filters and sorts positive inputs for learning.
+
+        Args:
+            positive_inputs (Set[FandangoInput]): A set of positive inputs.
+
+        Returns:
+            Set[FandangoInput]: A filtered subset of positive inputs.
         """
         filtered_inputs = set(list(positive_inputs)[: self.positive_learning_size])
         LOGGER.info("Filtered positive inputs for learning: %s", len(filtered_inputs))
         return filtered_inputs
 
-    def generate_candidates(
-        self, instantiated_patterns, test_inputs: Set[FandangoInput]
-    ):
-        """Generate constraint candidates based on the replaced patterns."""
+    def parse_candidates(
+        self, instantiated_patterns: List[Tuple[Constraint, Set[NonTerminal]]], test_inputs: Set[FandangoInput]
+    ) -> None:
+        """
+        Generates constraint candidates based on instantiated patterns and evaluates them.
+
+        Args:
+            instantiated_patterns (List[Tuple[Constraint, Set[NonTerminal]]]): A list of instantiated patterns and their corresponding non-terminals.
+            test_inputs (Set[FandangoInput]): A set of test inputs to evaluate candidates.
+        """
         for pattern, _ in instantiated_patterns:
             candidate = FandangoConstraintCandidate(pattern)
             try:
@@ -101,8 +131,17 @@ class FandangoLearner(BaseFandangoLearner):
         self,
         relevant_non_terminals: Set[NonTerminal],
         initial_inputs: Set[FandangoInput],
-    ):
-        """Extract values associated with non-terminals from initial inputs."""
+    ) -> Dict[str, Dict[NonTerminal, List[str]]]:
+        """
+        Extracts values associated with non-terminals from initial inputs.
+
+        Args:
+            relevant_non_terminals (Set[NonTerminal]): A set of relevant non-terminals.
+            initial_inputs (Set[FandangoInput]): A set of initial inputs to extract values from.
+
+        Returns:
+            Dict[str, Dict[NonTerminal, List[str]]]: Extracted string and integer values.
+        """
         string_values: Dict[NonTerminal, Set[str]] = {}
         int_values: Dict[NonTerminal, Set[str]] = {}
 
@@ -126,7 +165,16 @@ class FandangoLearner(BaseFandangoLearner):
         initialized_patterns: Set[Constraint],
         non_terminal_values: Iterable[NonTerminal],
     ) -> List[Tuple[Constraint, Set[NonTerminal]]]:
-        """Replace <NON_TERMINAL> placeholders with actual non-terminal values."""
+        """
+        Replaces <NON_TERMINAL> placeholders with actual non-terminal values.
+
+        Args:
+            initialized_patterns (Set[Constraint]): Patterns with placeholders to replace.
+            non_terminal_values (Iterable[NonTerminal]): Actual values for non-terminals.
+
+        Returns:
+            List[Tuple[Constraint, Set[NonTerminal]]]: Updated patterns with replaced values.
+        """
         replaced_patterns = []
         for pattern in initialized_patterns:
             matches = [
@@ -168,7 +216,18 @@ class FandangoLearner(BaseFandangoLearner):
         values: Dict[NonTerminal, List[str]],
         format_value: Callable[[str], str],
     ) -> List[Tuple[Constraint, Set[NonTerminal]]]:
-        """Replace placeholders like <STRING> or <INTEGER> with actual values."""
+        """
+        Replaces placeholders like <STRING> or <INTEGER> with actual values.
+
+        Args:
+            initialized_patterns (List[Tuple[Constraint, Set[NonTerminal]]]): Patterns with placeholders.
+            placeholder (NonTerminal): The placeholder symbol to replace.
+            values (Dict[NonTerminal, List[str]]): Values to replace the placeholder with.
+            format_value (Callable[[str], str]): A function to format the replacement value.
+
+        Returns:
+            List[Tuple[Constraint, Set[NonTerminal]]]: Updated patterns with replaced placeholders.
+        """
         new_patterns = []
         for pattern, non_terminals in initialized_patterns:
             matches = [
