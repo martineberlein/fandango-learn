@@ -178,3 +178,4 @@ class FandangoConstraintCandidate(ConstraintCandidate):
     def reset(self):
         self.failing_inputs_eval_results = []
         self.passing_inputs_eval_results = []
+        self.cache = {}
