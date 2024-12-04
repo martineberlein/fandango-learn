@@ -1,4 +1,4 @@
-from typing import Dict, List, Set, Sequence, Optional
+from typing import Dict, List, Optional
 from abc import ABC, abstractmethod
 
 from debugging_framework.input.oracle import OracleResult
@@ -8,7 +8,7 @@ from fandango.constraints.base import (
     ConjunctionConstraint,
     DisjunctionConstraint,
 )
-from .input import FandangoInput
+from fandangoLearner.data.input import FandangoInput
 
 
 class ConstraintCandidate(ABC):

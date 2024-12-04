@@ -12,9 +12,6 @@ from fandango.language.tree import DerivationTree
 from fandango.language.grammar import Grammar
 from debugging_framework.input.oracle import OracleResult
 
-# This is not great but works for now
-from isla.parser import EarleyParser
-
 
 class Input(ABC):
     """

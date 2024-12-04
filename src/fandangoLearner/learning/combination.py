@@ -4,7 +4,7 @@ import itertools
 
 from fandango.constraints.base import ConjunctionConstraint
 
-from .candidate import FandangoConstraintCandidate
+from fandangoLearner.learning.candidate import FandangoConstraintCandidate
 
 
 class CombinationProcessor(ABC):

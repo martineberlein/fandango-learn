@@ -6,7 +6,7 @@ from fandango.language.search import RuleSearch
 from fandango.language.symbol import NonTerminal
 from fandango.language.parse import parse_file, parse
 
-from fandangoLearner.input import FandangoInput
+from fandangoLearner.data.input import FandangoInput
 
 
 class Pattern:
