@@ -235,6 +235,27 @@ class ComparisonPatternInstantiation(PatternInstantiation):
 
 class ForallPatternInstantiation(PatternInstantiation):
 
+    """
+    Here we need recursive instantiation of patterns.
+    Structure:
+
+        forall container in search: statement;
+
+    container: NonTerminal
+    search: RuleSearch
+    statement: Constraint, can also be a ForallConstraint or ExistsConstraint
+
+    The container is evaluated with the scope and a list of trees as containers.
+
+
+    Ideas:
+        1. Never set the container, as this will just be the name of the container.
+        2. The search will be the search for the container, that is, NonTerminal("<NON_TERMINAL>")
+            2.1 This will be replaced with the actual NonTerminals.
+            2.2 The search is only used to find the containers.
+        3.
+    """
+
     def supported_pattern_type(self) -> Type[Constraint]:
         return ForallConstraint
 
