@@ -106,8 +106,16 @@ for operator in [
         ),
     )
 
+# Pattern(
+#     string_pattern="forall <variable> in <NON_TERMINAL>: <tree>/<xml_open_tag>/<id> == <tree>/<xml_close_tag>/<id>;",
+# )
+
+# Pattern(
+#     string_pattern="int(<NON_TERMINAL>) == int(<NON_TERMINAL>) * <INTEGER> * int(<NON_TERMINAL>) * <INTEGER>;",
+# )
+
 Pattern(
-    string_pattern="forall <variable> in <NON_TERMINAL>: <tree>/<xml_open_tag>/<id> == <tree>/<xml_close_tag>/<id>;",
+    string_pattern="forall <variable> in <number>: int(<variable>) <= <INTEGER>;",
 )
 
 if __name__ == "__main__":
