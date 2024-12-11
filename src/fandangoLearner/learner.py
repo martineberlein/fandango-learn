@@ -9,6 +9,7 @@ from fandango.constraints.base import (
     ComparisonConstraint,
 )
 from fandango.language.search import RuleSearch
+from debugging_framework.input.oracle import OracleResult
 
 from .learning.candidate import FandangoConstraintCandidate
 from .data.input import FandangoInput
@@ -50,8 +51,9 @@ class FandangoLearner(BaseFandangoLearner):
 
     def learn_constraints(
         self,
-        test_inputs: Set[FandangoInput],
+        test_inputs: set[FandangoInput] | set[str],
         relevant_non_terminals: Set[NonTerminal] = None,
+        oracle: Callable[[str], OracleResult] = None,
         **kwargs,
     ) -> Optional[List[FandangoConstraintCandidate]]:
         """
@@ -65,6 +67,9 @@ class FandangoLearner(BaseFandangoLearner):
         Returns:
             Optional[List[FandangoConstraintCandidate]]: A list of learned constraint candidates or None.
         """
+        if any(isinstance(inp, str) for inp in test_inputs):
+            test_inputs = self.parse_string_initial_inputs(test_inputs, oracle)
+
         if not relevant_non_terminals:
             relevant_non_terminals = set(self.grammar)
 
@@ -76,7 +81,9 @@ class FandangoLearner(BaseFandangoLearner):
             relevant_non_terminals, positive_inputs
         )
 
-        instantiated_patterns = self.pattern_processor.instantiate_patterns(relevant_non_terminals, value_maps)
+        instantiated_patterns = self.pattern_processor.instantiate_patterns(
+            relevant_non_terminals, value_maps
+        )
 
         self.parse_candidates(instantiated_patterns, test_inputs)
 
@@ -87,6 +94,24 @@ class FandangoLearner(BaseFandangoLearner):
         self.candidates += disjunction_candidates
 
         return self.get_best_candidates()
+
+    def parse_string_initial_inputs(
+        self, initial_inputs: Set[str], oracle: Callable[[str], OracleResult]
+    ) -> Set[FandangoInput]:
+        """
+        Parses string inputs and generates FandangoInput objects.
+
+        Args:
+            initial_inputs (Set[str]): A set of string inputs.
+            oracle (Callable[[str], OracleResult]): An oracle function to evaluate inputs.
+
+        Returns:
+            Set[FandangoInput]: A set of FandangoInput objects.
+        """
+        return {
+            FandangoInput.from_str(self.grammar, inp, oracle=oracle(inp))
+            for inp in initial_inputs
+        }
 
     def sort_and_filter_positive_inputs(
         self, positive_inputs: Set[FandangoInput]
@@ -105,8 +130,10 @@ class FandangoLearner(BaseFandangoLearner):
         return filtered_inputs
 
     def parse_candidates(
-        self, instantiated_patterns: List[Constraint], test_inputs: Set[FandangoInput],
-            pre_filter: bool = False,
+        self,
+        instantiated_patterns: List[Constraint],
+        test_inputs: Set[FandangoInput],
+        pre_filter: bool = False,
     ) -> None:
         """
         Generates constraint candidates based on instantiated patterns and evaluates them.
