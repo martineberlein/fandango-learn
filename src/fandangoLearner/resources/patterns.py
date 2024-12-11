@@ -24,7 +24,7 @@ class Pattern:
         self, string_pattern: str, instantiated_pattern: Optional[Constraint] = None
     ):
         self.string_pattern = string_pattern
-        self.instantiated_pattern = instantiated_pattern or parse(string_pattern)[1][0]
+        self.instantiated_pattern = instantiated_pattern or parse(string_pattern, check_existence=True)[1][0]
         self.__class__.registry.append(self)
 
     @classmethod
@@ -106,8 +106,16 @@ for operator in [
         ),
     )
 
+# Pattern(
+#     string_pattern="forall <variable> in <NON_TERMINAL>: <tree>/<xml_open_tag>/<id> == <tree>/<xml_close_tag>/<id>;",
+# )
+
+# Pattern(
+#     string_pattern="int(<NON_TERMINAL>) == int(<NON_TERMINAL>) * <INTEGER> * int(<NON_TERMINAL>) * <INTEGER>;",
+# )
+
 Pattern(
-    string_pattern="forall <tree> in <NON_TERMINAL>: <tree>/<xml_open_tag>/<id> == <tree>/<xml_close_tag>/<id>;",
+    string_pattern="forall <variable> in <number>: int(<variable>) <= <INTEGER>;",
 )
 
 if __name__ == "__main__":

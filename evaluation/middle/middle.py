@@ -10,7 +10,7 @@ from evaluation.evaluation_helper import evaluate_candidates, get_inputs, print_
 
 
 if __name__ == "__main__":
-    grammar, _ = parse_file(pathlib.Path.cwd() / "middle" / "middle.fan")
+    grammar, _ = parse_file(pathlib.Path.cwd() / "middle.fan")
 
     programs = MiddleBenchmarkRepository().build()
     program = programs[0]  # Middle.1

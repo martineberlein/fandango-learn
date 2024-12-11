@@ -1,8 +1,13 @@
 from fandango.language.parse import parse_file
-
+from fandango.evolution.algorithm import Fandango
 
 if __name__ == "__main__":
     grammar, constraints = parse_file("calculator.fan")
+
+    fandango = Fandango(grammar, constraints)
+    solutions = fandango.evolve()
+
+    print(solutions)
 
     # str(<maybeminus>) == '-';
     constraint = constraints[0]

@@ -139,9 +139,14 @@ class FandangoInput(Input):
 
     @classmethod
     def from_str(
-        cls, grammar: Grammar, input_string, oracle: Optional[OracleResult] = None
+        cls,
+        grammar: Grammar,
+        input_string,
+        oracle: Optional[OracleResult | bool] = None,
     ):
         tree = grammar.parse(input_string)
+        if isinstance(oracle, bool):
+            oracle = OracleResult.FAILING if oracle else OracleResult.PASSING
         if tree:
             return cls(
                 grammar.parse(input_string),

@@ -102,7 +102,7 @@ class BaseFandangoLearner(PatternCandidateLearner, ABC):
                 pat.instantiated_pattern for pat in Pattern.registry
             }
         else:
-            instantiated_patterns = {parse(pattern)[1][0] for pattern in patterns}
+            instantiated_patterns = {parse(pattern, check_existence=False)[1][0] for pattern in patterns}
         LOGGER.info("Instantiated patterns: %s", len(instantiated_patterns))
         return instantiated_patterns
 
