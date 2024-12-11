@@ -179,3 +179,12 @@ class FandangoConstraintCandidate(ConstraintCandidate):
         self.failing_inputs_eval_results = []
         self.passing_inputs_eval_results = []
         self.cache = {}
+
+    def __str__(self):
+        return (
+            f"{self.constraint}, "
+            f"Precision: {self.precision()}, "
+            f"Recall: {self.recall()} "
+            f"(based on {len(self.failing_inputs_eval_results)} failing "
+            f"and {len(self.passing_inputs_eval_results)} passing inputs)"
+        )
