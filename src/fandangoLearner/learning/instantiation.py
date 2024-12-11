@@ -418,17 +418,6 @@ class ValuePlaceholderTransformer(ConstraintVisitor):
         """
         Recursively visit the statement inside a ForallConstraint.
         """
-        scope = dict()
-
-        transformed_constraints = []
-        for container in constraint.search.find(None, scope=scope):  # Assuming a `None` tree for search
-            updated_scope = deepcopy(scope) if scope else {}
-            updated_scope[constraint.bound] = container.evaluate()
-
-            # Visit the statement with the updated scope
-            constraint.statement.accept(self, scope=updated_scope)
-            transformed_constraints.extend(self.results)
-            self.results = []  # Reset after processing each container
         constraint.statement.accept(self)
         transformed_constraints = self.results
         self.results = []  # Reset for independent processing
