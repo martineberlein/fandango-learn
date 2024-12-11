@@ -69,6 +69,7 @@ if __name__ == "__main__":
         transformed = transformer.results
         final.extend(transformed)
 
+
     cands = []
     for pattern in final:
         candidate = FandangoConstraintCandidate(pattern)
@@ -86,4 +87,3 @@ if __name__ == "__main__":
         print("Constraint: ", cand.constraint)
         print("Recall: ", cand.recall())
         print("Precision: ", cand.precision())
-        print("\n")

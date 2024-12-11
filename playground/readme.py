@@ -23,7 +23,7 @@ if __name__ == "__main__":
         "int(<NON_TERMINAL>) == <INTEGER>;",
         "str(<NON_TERMINAL>) == <STRING>;",
         "int(<NON_TERMINAL>) == len(str(<NON_TERMINAL>));",
-        "int(<NON_TERMINAL>) == int(<NON_TERMINAL>) * <INTEGER> * int(<NON_TERMINAL>) * <INTEGER>;",
+        # "int(<NON_TERMINAL>) == int(<NON_TERMINAL>) * <INTEGER> * int(<NON_TERMINAL>) * <INTEGER>;",
     ]
 
     non_terminal_values = {
