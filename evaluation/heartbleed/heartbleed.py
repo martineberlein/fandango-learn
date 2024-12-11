@@ -11,7 +11,7 @@ from heartbeat import initial_inputs, oracle_simple as oracle
 
 
 if __name__ == "__main__":
-    grammar, _ = parse_file(pathlib.Path.cwd() / "heartbleed" / "heartbleed.fan")
+    grammar, _ = parse_file(pathlib.Path.cwd()  / "heartbleed.fan")
 
     initial_inputs = {
         FandangoInput.from_str(grammar, inp, oracle(inp))
