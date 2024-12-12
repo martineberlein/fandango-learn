@@ -11,11 +11,10 @@ from heartbeat import initial_inputs, oracle_simple as oracle
 
 
 if __name__ == "__main__":
-    grammar, _ = parse_file(pathlib.Path.cwd()  / "heartbleed.fan")
+    grammar, _ = parse_file(pathlib.Path.cwd() / "heartbleed.fan")
 
     initial_inputs = {
-        FandangoInput.from_str(grammar, inp, oracle(inp))
-        for inp in initial_inputs
+        FandangoInput.from_str(grammar, inp, oracle(inp)) for inp in initial_inputs
     }
 
     relevant_non_terminals = {
@@ -37,5 +36,4 @@ if __name__ == "__main__":
 
     print_constraints(candidates, initial_inputs)
 
-    print()
     evaluate_candidates(candidates, grammar, oracle)

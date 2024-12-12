@@ -6,7 +6,11 @@ from fandango.language.symbol import NonTerminal
 from fandangoLearner.learner import FandangoLearner
 
 from debugging_benchmark.middle.middle import MiddleBenchmarkRepository
-from evaluation.evaluation_helper import evaluate_candidates, get_inputs, print_constraints
+from evaluation.evaluation_helper import (
+    evaluate_candidates,
+    get_inputs,
+    print_constraints,
+)
 
 
 if __name__ == "__main__":
@@ -15,13 +19,9 @@ if __name__ == "__main__":
     programs = MiddleBenchmarkRepository().build()
     program = programs[0]  # Middle.1
 
-    # initial_inputs = {
-    #     FandangoInput.from_str(grammar, inp, program.oracle(inp)[0])
-    #     for inp in program.get_initial_inputs()
-    # }
-
     initial_inputs_failing, initial_inputs_passing = get_inputs(
-        grammar, lambda x: program.oracle(x)[0]
+        grammar,
+        lambda x: program.oracle(x)[0],
     )
     initial_inputs = initial_inputs_failing.union(initial_inputs_passing)
 
