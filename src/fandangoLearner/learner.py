@@ -75,17 +75,17 @@ class FandangoLearner(BaseFandangoLearner):
 
         positive_inputs, negative_inputs = self.categorize_inputs(test_inputs)
 
-        positive_inputs = self.sort_and_filter_positive_inputs(positive_inputs)
+        sorted_positive_inputs = self.sort_and_filter_positive_inputs(positive_inputs)
 
         value_maps = self.extract_non_terminal_values(
-            relevant_non_terminals, positive_inputs
+            relevant_non_terminals, sorted_positive_inputs
         )
 
         instantiated_patterns = self.pattern_processor.instantiate_patterns(
             relevant_non_terminals, value_maps
         )
 
-        self.parse_candidates(instantiated_patterns, test_inputs)
+        self.parse_candidates(instantiated_patterns, positive_inputs, negative_inputs)
 
         conjunction_candidates = self.conjunction_processor.process(self.candidates)
         self.candidates += conjunction_candidates
@@ -132,8 +132,9 @@ class FandangoLearner(BaseFandangoLearner):
     def parse_candidates(
         self,
         instantiated_patterns: List[Constraint],
-        test_inputs: Set[FandangoInput],
-        pre_filter: bool = False,
+        positive_inputs: Set[FandangoInput],
+        negative_inputs: Set[FandangoInput],
+        pre_filter: bool = True,
     ) -> None:
         """
         Generates constraint candidates based on instantiated patterns and evaluates them.
@@ -146,11 +147,13 @@ class FandangoLearner(BaseFandangoLearner):
         for pattern in instantiated_patterns:
             candidate = FandangoConstraintCandidate(pattern)
             try:
-                candidate.evaluate(test_inputs)
+                candidate.evaluate(positive_inputs)
                 if pre_filter:
                     if candidate.recall() >= self.min_recall:
+                        candidate.evaluate(negative_inputs)
                         self.candidates.append(candidate)
                 else:
+                    candidate.evaluate(negative_inputs)
                     self.candidates.append(candidate)
             except Exception:
                 continue
