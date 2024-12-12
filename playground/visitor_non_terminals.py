@@ -12,11 +12,12 @@ from calculator import calculator_oracle
 
 
 if __name__ == "__main__":
+    start_time = time.time()
     grammar, _ = parse_file("calculator.fan")
     test_inputs = [
         ("sqrt(-900)", OracleResult.FAILING),
         ("sqrt(-1)", OracleResult.FAILING),
-        ("sin(-900)", OracleResult.PASSING),
+        ("sin(900)", OracleResult.PASSING),
         ("sqrt(2)", OracleResult.PASSING),
         ("cos(10)", OracleResult.PASSING),
     ]
@@ -24,9 +25,9 @@ if __name__ == "__main__":
     initial_inputs = {
         FandangoInput.from_str(grammar, inp, result) for inp, result in test_inputs
     }
-    for _ in range(100):
-        inp = grammar.fuzz()
-        test_inputs.append((str(inp), calculator_oracle(inp)))
+    # for _ in range(100):
+    #     inp = grammar.fuzz()
+    #     test_inputs.append((str(inp), calculator_oracle(inp)))
 
     non_terminal_values = {
         NonTerminal("<number>"),
@@ -34,8 +35,13 @@ if __name__ == "__main__":
         NonTerminal("<function>"),
     }
 
-    start_time = time.time()
-    learner = FandangoLearner(grammar)
+    patterns = [
+        "forall <container> in <NON_TERMINAL>: int(<container>) <= <INTEGER>;",
+        "exists <container> in <NON_TERMINAL>: int(<container>) <= <INTEGER>;",
+    ]
+
+    # start_time = time.time()
+    learner = FandangoLearner(grammar, patterns=patterns)
     end_time = time.time()
     print(f"Time taken to initialize learner: {end_time - start_time:.4f} seconds")
 
@@ -45,7 +51,6 @@ if __name__ == "__main__":
     inst_pattern = []
     for pattern in patterns:
         transformer = NonTerminalPlaceholderTransformer(non_terminal_values)
-        #print("Pattern: ", pattern)
         pattern.accept(transformer)
         transformed = transformer.results
         inst_pattern.extend(transformed)
@@ -55,7 +60,7 @@ if __name__ == "__main__":
             pass
 
     for f in inst_pattern:
-        print(f)
+        print("Worked: ", f)
 
     value_map = learner.extract_non_terminal_values(
         relevant_non_terminals=non_terminal_values,
@@ -87,3 +92,19 @@ if __name__ == "__main__":
         print("Constraint: ", cand.constraint)
         print("Recall: ", cand.recall())
         print("Precision: ", cand.precision())
+
+    for _ in range(2000):
+        inp = grammar.fuzz()
+        test_inputs.append((str(inp), calculator_oracle(inp)))
+
+    evaluation_inputs = {FandangoInput.from_str(grammar, inp, result) for inp, result in test_inputs}
+
+    start_time = time.time()
+    print("Evaluate Constraints with: ", len(evaluation_inputs), "inputs")
+    for candidate in cands:
+        candidate.reset()
+        candidate.evaluate(evaluation_inputs)
+        print("Constraint:", candidate.constraint, "Recall:", candidate.recall(), "Precision:", candidate.precision())
+    print("\n")
+
+    print("Time taken to evaluate constraints:", time.time() - start_time)

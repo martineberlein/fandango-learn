@@ -44,7 +44,9 @@ grammar = {
     "<char>": list(string.ascii_letters),
 }
 
-failing_inputs = ["\x01 100 HELLO RANDOM",]
+failing_inputs = [
+    "\x01 100 HELLO RANDOM",
+]
 passing_inputs = [
     "\x01 5 HELLO PADDING",
     "\x01 7 ILOVESE PADDING",
@@ -173,7 +175,9 @@ def _test_heartbleed_vulnerability(request_str, response_hex):
     return False
 
 
-def oracle(test_input: Union[Input, str]) -> Tuple[OracleResult, Union[Exception, None]]:
+def oracle(
+    test_input: Union[Input, str]
+) -> Tuple[OracleResult, Union[Exception, None]]:
     try:
         heartbeat_request_str = str(test_input)
         hex_request = heartbeat_string_to_hex(heartbeat_request_str)
@@ -181,7 +185,11 @@ def oracle(test_input: Union[Input, str]) -> Tuple[OracleResult, Union[Exception
         is_vulnerable = _test_heartbleed_vulnerability(heartbeat_request_str, response)
     except OverflowError:
         return OracleResult.UNDEFINED, None
-    return (OracleResult.FAILING, BaseException()) if is_vulnerable else (OracleResult.PASSING, None)
+    return (
+        (OracleResult.FAILING, BaseException())
+        if is_vulnerable
+        else (OracleResult.PASSING, None)
+    )
 
 
 if __name__ == "__main__":
@@ -201,6 +209,7 @@ if __name__ == "__main__":
         print("Received: ", hex_to_heartbeat_string(request))
 
     from fandango.language.parse import parse_file
+
     grammar, _ = parse_file("../heartbleed.fan")
     for inp in initial_inputs:
         inp_ = Input.from_str(grammar, inp, oracle(inp)[0])

@@ -128,6 +128,11 @@ We will use **Avicenna** to provide this feedback loop.
 - Implement different filter mechanisms 
    - Allow to rank constraints based on different criteria like precision, recall, etc.
 
+new idea:
+- exists and forall constraints can be quite similar to each other, when that use bounded nonterminals that are applied only once.
+   - we might want to use forall constraints only when they are really needed, i.e. when the nonterminal is used multiple times.
+
+
 ## Reusability
 
 The code should be reusable for other projects, such as Avicenna.
@@ -208,3 +213,4 @@ Produces the following combined constraint:
 Combined Constraints:
 Constraint: (str(<function>) == 'sqrt' and str(<maybeminus>) == '-') Recall: 1.0 Precision: 1.0
 ```
+

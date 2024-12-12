@@ -16,14 +16,7 @@ def print_constraints(
         f"Learned Fandango Constraints (based on {len(initial_inputs)} initial inputs ({len(failing_inputs)} failing)):"
     )
     for candidate in candidates:
-        print(
-            "Constraint:",
-            candidate.constraint,
-            "Recall:",
-            candidate.recall(),
-            "Precision:",
-            candidate.precision(),
-        )
+        print(candidate)
 
 
 def evaluate_candidates(
@@ -46,14 +39,7 @@ def evaluate_candidates(
         f"(Time taken: {eval_time:.4f} seconds)",
     )
     for candidate in candidates:
-        print(
-            "Constraint:",
-            candidate.constraint,
-            "Recall:",
-            candidate.recall(),
-            "Precision:",
-            candidate.precision(),
-        )
+        print(candidate)
 
 
 def generate_evaluation_inputs(grammar, oracle: Callable, num_inputs=2000):

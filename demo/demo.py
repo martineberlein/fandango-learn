@@ -21,6 +21,7 @@ if __name__ == "__main__":
         ("sqrt(-900)", True),
         ("sqrt(-10)", True),
         ("sqrt(0)", False),
+        # ("sqrt(-1)", True),
         ("sin(-900)", False),
         ("sqrt(2)", False),
         ("cos(10)", False),

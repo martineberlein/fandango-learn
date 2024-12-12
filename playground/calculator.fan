@@ -27,6 +27,6 @@
 
 #str(<function>) == 'sqrt' and int(<number>) <= -1;
 
-(forall <container_key_1> in <function>: str(<container_key_1>) == 'sqrt') and (forall <container_key_2> in <number>: int(<container_key_2>) <= -1);
+#(forall <container_key_1> in <function>: str(<container_key_1>) == 'sqrt') and (forall <container_key_2> in <number>: int(<container_key_2>) <= -1);
 
 # forall <variable> in <number>: int(<variable>.<digit>) <= 5;

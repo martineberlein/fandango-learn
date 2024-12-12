@@ -9,6 +9,7 @@ from fandango.language.symbol import NonTerminal
 
 from fandangoLearner.logger import LOGGER
 
+
 class PatternProcessor:
     """
     Manages the instantiation of patterns by applying the appropriate PatternInstantiation class.
@@ -16,9 +17,6 @@ class PatternProcessor:
 
     def __init__(self, patterns: Iterable[Constraint]):
         self.patterns = patterns
-        self.instantiation_classes: List[PatternInstantiation] = [
-            ComparisonPatternInstantiation(),
-        ]
 
     def instantiate_patterns(
         self,
@@ -27,242 +25,28 @@ class PatternProcessor:
     ) -> List[Constraint]:
         instantiated_patterns = []
 
+        # Replace non-terminal placeholders with actual non-terminals
         for pattern in self.patterns:
-            for instantiation_class in self.instantiation_classes:
-                if isinstance(pattern, instantiation_class.supported_pattern_type()):
-                    instantiated_patterns.extend(
-                        instantiation_class.instantiation(
-                            [pattern], relevant_non_terminals, value_map
-                        )
-                    )
-                else:
-                    LOGGER.error(
-                        f"Pattern type {type(pattern)} is not yet supported for instantiation."
-                    )
+            transformer = NonTerminalPlaceholderTransformer(relevant_non_terminals)
+            pattern.accept(transformer)
+            transformed = transformer.results
+            instantiated_patterns.extend(transformed)
 
-        return instantiated_patterns
+        final_patterns = []
+        # Replace value placeholders with actual values
+        for pattern in instantiated_patterns:
+            transformer = ValuePlaceholderTransformer(value_map)
+            pattern.accept(transformer)
+            transformed = transformer.results
+            final_patterns.extend(transformed)
 
-
-class PatternInstantiation(ABC):
-    """
-    Abstract base class for pattern instantiation.
-    """
-
-    @abstractmethod
-    def supported_pattern_type(self) -> Type[Constraint]:
-        """
-        Returns the type of pattern this class supports for instantiation.
-        """
-        pass
-
-    @abstractmethod
-    def instantiation(
-        self,
-        patterns: Iterable[Constraint],
-        relevant_non_terminals: Iterable[NonTerminal],
-        value_maps: Dict[str, Dict[NonTerminal, List[str]]],
-        **kwargs,
-    ) -> List[Constraint]:
-        """
-        Perform instantiation of the given patterns using the provided values.
-
-        Args:
-            patterns (Iterable[Constraint]): Patterns to instantiate.
-            relevant_non_terminals (Iterable[NonTerminal]): Non-terminals to instantiate.
-            value_maps (Dict[NonTerminal, List[str]]): Values to instantiate non-terminals.
-            **kwargs: Additional arguments for customization.
-
-        Returns:
-            List[Tuple[Constraint, NonTerminal]]: Instantiated patterns.
-        """
-        pass
-
-
-class ComparisonPatternInstantiation(PatternInstantiation):
-    """
-    Handles instantiation of patterns with placeholders and non-terminals.
-    """
-
-    def supported_pattern_type(self) -> Type[Constraint]:
-        return ComparisonConstraint
-
-    def instantiation(
-        self,
-        patterns: Iterable[Constraint],
-        relevant_non_terminals: Iterable[NonTerminal],
-        value_maps: Dict[str, Dict[NonTerminal, List[str]]],
-        **kwargs,
-    ) -> List[Constraint]:
-        """
-        Instantiates the given patterns with the provided non-terminal values.
-
-        Args:
-            patterns (Iterable[Constraint]): Patterns to instantiate.
-            relevant_non_terminals (Iterable[NonTerminal]): Non-terminals to instantiate.
-            value_maps (Dict[str, Dict[NonTerminal, List[str]]]): Values to instantiate non-terminals.
-            **kwargs: Additional arguments for customization.
-
-        Returns:
-            List[Tuple[Constraint, NonTerminal]]: Instantiated patterns.
-        """
-
-        assert all(isinstance(pattern, ComparisonConstraint) for pattern in patterns)
-
-        instantiated_patterns = self.replace_non_terminals(
-            patterns, relevant_non_terminals
-        )
-
-        instantiated_patterns = self.replace_placeholders(
-            instantiated_patterns,
-            NonTerminal("<STRING>"),
-            value_maps["string_values"],
-            lambda x: f"'{x}'",
-        )
-        instantiated_patterns = self.replace_placeholders(
-            instantiated_patterns,
-            NonTerminal("<INTEGER>"),
-            value_maps["int_values"],
-            lambda x: x,
-        )
-
-        return [pattern for pattern, _ in instantiated_patterns]
-
-    def replace_non_terminals(
-        self,
-        initialized_patterns: Iterable[Constraint],
-        non_terminal_values: Iterable[NonTerminal],
-    ) -> List[Tuple[Constraint, Set[NonTerminal]]]:
-        """
-        Replaces <NON_TERMINAL> placeholders with actual non-terminal values.
-
-        Args:
-            initialized_patterns (Iterable[Constraint]): Patterns with placeholders to replace.
-            non_terminal_values (Iterable[NonTerminal]): Actual values for non-terminals.
-
-        Returns:
-            List[Tuple[Constraint, Set[NonTerminal]]]: Updated patterns with replaced values.
-        """
-        replaced_patterns = []
-        for pattern in initialized_patterns:
-            matches = [
-                key
-                for key in pattern.searches.keys()
-                if pattern.searches[key].symbol == NonTerminal("<NON_TERMINAL>")
-            ]
-            if matches:
-                if isinstance(pattern, ComparisonConstraint):
-                    for replacements in product(
-                        non_terminal_values, repeat=len(matches)
-                    ):
-                        new_searches = deepcopy(pattern.searches)
-                        for key, replacement in zip(matches, replacements):
-                            new_searches[key] = RuleSearch(replacement)
-                        new_pattern = ComparisonConstraint(
-                            operator=pattern.operator,
-                            left=pattern.left,
-                            right=pattern.right,
-                            searches=new_searches,
-                            local_variables=pattern.local_variables,
-                            global_variables=pattern.global_variables,
-                        )
-                        replaced_patterns.append((new_pattern, set(replacements)))
-                else:
-                    raise ValueError(
-                        f"Only comparison constraints are supported. "
-                        f"Constraint type {type(pattern)} is not yet supported."
-                    )
-            else:
-                replaced_patterns.append((pattern, set()))
-        return replaced_patterns
-
-    def replace_placeholders(
-        self,
-        initialized_patterns: List[Tuple[Constraint, Set[NonTerminal]]],
-        placeholder: NonTerminal,
-        values: Dict[NonTerminal, List[str]],
-        format_value: Callable[[str], str],
-    ) -> List[Tuple[Constraint, Set[NonTerminal]]]:
-        """
-        Replaces placeholders like <STRING> or <INTEGER> with actual values.
-
-        Args:
-            initialized_patterns (List[Tuple[Constraint, Set[NonTerminal]]]): Patterns with placeholders.
-            placeholder (NonTerminal): The placeholder symbol to replace.
-            values (Dict[NonTerminal, List[str]]): Values to replace the placeholder with.
-            format_value (Callable[[str], str]): A function to format the replacement value.
-
-        Returns:
-            List[Tuple[Constraint, Set[NonTerminal]]]: Updated patterns with replaced placeholders.
-        """
-        new_patterns = []
-        for pattern, non_terminals in initialized_patterns:
-            matches = [
-                key
-                for key in pattern.searches.keys()
-                if pattern.searches[key].symbol == placeholder
-            ]
-            if matches:
-                if isinstance(pattern, ComparisonConstraint):
-                    for non_terminal in non_terminals:
-                        for value in values.get(non_terminal, []):
-                            updated_right = pattern.right
-                            for match in matches:
-                                updated_right = updated_right.replace(
-                                    match, format_value(value), 1
-                                )
-                            new_searches = deepcopy(pattern.searches)
-                            for match in matches:
-                                del new_searches[match]
-                            new_pattern = ComparisonConstraint(
-                                operator=pattern.operator,
-                                left=pattern.left,
-                                right=updated_right,
-                                searches=new_searches,
-                                local_variables=pattern.local_variables,
-                                global_variables=pattern.global_variables,
-                            )
-                            new_patterns.append((new_pattern, non_terminals))
-                else:
-                    raise ValueError(
-                        f"Only comparison constraints are supported. "
-                        f"Constraint type {type(pattern)} is not yet supported."
-                    )
-            else:
-                new_patterns.append((pattern, non_terminals))
-        return new_patterns
-
-
-class ForallPatternInstantiation(PatternInstantiation):
-
-    """
-    Here we need recursive instantiation of patterns.
-    Structure:
-
-        forall container in search: statement;
-
-    container: NonTerminal
-    search: RuleSearch
-    statement: Constraint, can also be a ForallConstraint or ExistsConstraint
-
-    The container is evaluated with the scope and a list of trees as containers.
-
-
-    Ideas:
-        1. Never set the container, as this will just be the name of the container.
-        2. The search will be the search for the container, that is, NonTerminal("<NON_TERMINAL>")
-            2.1 This will be replaced with the actual NonTerminals.
-            2.2 The search is only used to find the containers.
-        3.
-    """
-
-    def supported_pattern_type(self) -> Type[Constraint]:
-        return ForallConstraint
+        return final_patterns
 
 
 class NonTerminalPlaceholderTransformer(ConstraintVisitor):
     """
-        A visitor for replacing non-terminal placeholders in constraints with relevant non-terminals.
-        """
+    A visitor for replacing non-terminal placeholders in constraints with relevant non-terminals.
+    """
 
     def __init__(self, relevant_non_terminals: Set[NonTerminal]):
         """
@@ -288,7 +72,9 @@ class NonTerminalPlaceholderTransformer(ConstraintVisitor):
             if constraint.searches[key].symbol == NonTerminal("<NON_TERMINAL>")
         ]
         if matches:
-            for replacements in itertools.product(self.relevant_non_terminals, repeat=len(matches)):
+            for replacements in itertools.product(
+                self.relevant_non_terminals, repeat=len(matches)
+            ):
                 new_searches = deepcopy(constraint.searches)
                 for key, replacement in zip(matches, replacements):
                     new_searches[key] = RuleSearch(replacement)
@@ -312,14 +98,16 @@ class NonTerminalPlaceholderTransformer(ConstraintVisitor):
         transformed_constraints = self.results
         self.results = []  # Reset for independent processing
 
-        for transformed_statement in transformed_constraints:
-            self.results.append(
-                ForallConstraint(
-                    statement=transformed_statement,
-                    bound=constraint.bound,
-                    search=constraint.search,
+        for bound_container_nonterm in self.relevant_non_terminals:
+            new_search = RuleSearch(bound_container_nonterm)
+            for transformed_statement in transformed_constraints:
+                self.results.append(
+                    ForallConstraint(
+                        statement=transformed_statement,
+                        bound=constraint.bound,
+                        search=new_search,
+                    )
                 )
-            )
 
     def visit_exists_constraint(self, constraint: "ExistsConstraint"):
         """
@@ -329,14 +117,16 @@ class NonTerminalPlaceholderTransformer(ConstraintVisitor):
         transformed_constraints = self.results
         self.results = []  # Reset for independent processing
 
-        for transformed_statement in transformed_constraints:
-            self.results.append(
-                ExistsConstraint(
-                    statement=transformed_statement,
-                    bound=constraint.bound,
-                    search=constraint.search,
+        for bound_container_nonterm in self.relevant_non_terminals:
+            new_search = RuleSearch(bound_container_nonterm)
+            for transformed_statement in transformed_constraints:
+                self.results.append(
+                    ExistsConstraint(
+                        statement=transformed_statement,
+                        bound=constraint.bound,
+                        search=new_search,
+                    )
                 )
-            )
 
     def visit_disjunction_constraint(self, constraint: "DisjunctionConstraint"):
         """
@@ -364,7 +154,9 @@ class NonTerminalPlaceholderTransformer(ConstraintVisitor):
 
         for antecedent in transformed_antecedents:
             for consequent in transformed_consequents:
-                self.results.append(ImplicationConstraint(antecedent=antecedent, consequent=consequent))
+                self.results.append(
+                    ImplicationConstraint(antecedent=antecedent, consequent=consequent)
+                )
 
     def visit_expression_constraint(self, constraint: "ExpressionConstraint"):
         """
@@ -392,6 +184,18 @@ class ValuePlaceholderTransformer(ConstraintVisitor):
     def do_continue(self, constraint: "Constraint") -> bool:
         return False
 
+    def update_value_map(self, bound: NonTerminal, search: RuleSearch):
+        """ """
+        for type in self.value_maps.keys():
+            # string, int
+            if search.symbol in self.value_maps[type].keys():
+                self.value_maps[type][bound] = self.value_maps[type][search.symbol]
+
+    def remove_value_map(self, bound: NonTerminal):
+        for type in self.value_maps.keys():
+            if bound in self.value_maps[type].keys():
+                del self.value_maps[type][bound]
+
     def visit_comparison_constraint(self, constraint: "ComparisonConstraint"):
         """
         Replace placeholders in a ComparisonConstraint with corresponding values.
@@ -418,7 +222,10 @@ class ValuePlaceholderTransformer(ConstraintVisitor):
         """
         Recursively visit the statement inside a ForallConstraint.
         """
+
+        self.update_value_map(constraint.bound, constraint.search)
         constraint.statement.accept(self)
+        self.remove_value_map(constraint.bound)
         transformed_constraints = self.results
         self.results = []  # Reset for independent processing
 
@@ -435,7 +242,10 @@ class ValuePlaceholderTransformer(ConstraintVisitor):
         """
         Recursively visit the statement inside an ExistsConstraint.
         """
+        self.update_value_map(constraint.bound, constraint.search)
         constraint.statement.accept(self)
+        self.remove_value_map(constraint.bound)
+
         transformed_constraints = self.results
         self.results = []  # Reset for independent processing
 
@@ -458,7 +268,9 @@ class ValuePlaceholderTransformer(ConstraintVisitor):
             all_transformed_constraints.extend(self.results)
             self.results = []  # Reset after each sub-constraint
 
-        self.results.append(DisjunctionConstraint(constraints=all_transformed_constraints))
+        self.results.append(
+            DisjunctionConstraint(constraints=all_transformed_constraints)
+        )
 
     def visit_conjunction_constraint(self, constraint: "ConjunctionConstraint"):
         """
@@ -470,7 +282,9 @@ class ValuePlaceholderTransformer(ConstraintVisitor):
             all_transformed_constraints.extend(self.results)
             self.results = []  # Reset after each sub-constraint
 
-        self.results.append(ConjunctionConstraint(constraints=all_transformed_constraints))
+        self.results.append(
+            ConjunctionConstraint(constraints=all_transformed_constraints)
+        )
 
     def visit_implication_constraint(self, constraint: "ImplicationConstraint"):
         """
@@ -486,7 +300,9 @@ class ValuePlaceholderTransformer(ConstraintVisitor):
 
         for antecedent in transformed_antecedents:
             for consequent in transformed_consequents:
-                self.results.append(ImplicationConstraint(antecedent=antecedent, consequent=consequent))
+                self.results.append(
+                    ImplicationConstraint(antecedent=antecedent, consequent=consequent)
+                )
 
     def visit_expression_constraint(self, constraint: "ExpressionConstraint"):
         """
@@ -515,23 +331,20 @@ class ValuePlaceholderTransformer(ConstraintVisitor):
         """
         new_patterns = []
         for pattern, non_terminals in initialized_patterns:
-            print("Pattern: ", pattern)
             matches = [
                 key
                 for key in pattern.searches.keys()
                 if pattern.searches[key].symbol == placeholder
             ]
 
-            non_terminals = {pattern.searches[key].symbol for key in pattern.searches.keys() if key not in matches}
-            # print("Matches: ", matches)
-            print("Non-terminals: ", non_terminals)
+            non_terminals = {
+                pattern.searches[key].symbol
+                for key in pattern.searches.keys()
+                if key not in matches
+            }
             if matches:
                 if isinstance(pattern, ComparisonConstraint):
                     for non_terminal in non_terminals:
-                        for key, item in pattern.searches.items():
-                            print("Key: ", key)
-                            print("Item: ", item)
-                            print("Type: ", type(item))
                         for value in values.get(non_terminal, []):
                             updated_right = pattern.right
                             for match in matches:
