@@ -114,8 +114,21 @@ for operator in [
 #     string_pattern="int(<NON_TERMINAL>) == int(<NON_TERMINAL>) * <INTEGER> * int(<NON_TERMINAL>) * <INTEGER>;",
 # )
 
+
 Pattern(
-    string_pattern="forall <variable> in <number>: int(<variable>) <= <INTEGER>;",
+    string_pattern="exists <container> in <NON_TERMINAL>: int(<container>) <= <INTEGER>;",
+)
+
+Pattern(
+    string_pattern="exists <container> in <NON_TERMINAL>: str(<container>) != <INTEGER>;",
+)
+
+Pattern(
+    string_pattern="exists <container> in <NON_TERMINAL>: int(<container>) == <STRING>;",
+)
+
+Pattern(
+    string_pattern="exists <container_1> in <NON_TERMINAL>: exists <container_2> in <NON_TERMINAL>: int(<container_1>) > len(str(<container_2>));",
 )
 
 if __name__ == "__main__":
