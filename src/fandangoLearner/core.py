@@ -191,7 +191,7 @@ class BaseFandangoLearner(PatternCandidateLearner, ABC):
     @staticmethod
     def is_number(value: str) -> bool:
         try:
-            int(value)
+            float(value)
             return True
         except ValueError:
             return False
