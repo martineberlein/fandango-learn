@@ -21,10 +21,16 @@ class Pattern:
     registry = []
 
     def __init__(
-        self, string_pattern: str, instantiated_pattern: Optional[Constraint] = None
+        self,
+        string_pattern: str,
+        instantiated_pattern: Optional[Constraint] = None,
+        use_cache: bool = True,
     ):
         self.string_pattern = string_pattern
-        self.instantiated_pattern = instantiated_pattern or parse(string_pattern, check_constraints=True)[1][0]
+        self.instantiated_pattern = (
+            instantiated_pattern
+            or parse(string_pattern, check_constraints=True, use_cache=use_cache)[1][0]
+        )
         self.__class__.registry.append(self)
 
     @classmethod
@@ -130,6 +136,7 @@ Pattern(
 Pattern(
     string_pattern="exists <container_1> in <NON_TERMINAL>: exists <container_2> in <NON_TERMINAL>: int(<container_1>) > len(str(<container_2>));",
 )
+
 
 if __name__ == "__main__":
     grammar, _ = parse_file("./../../../playground/calculator.fan")
