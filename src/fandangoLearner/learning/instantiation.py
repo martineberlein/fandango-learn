@@ -7,6 +7,7 @@ from fandango.constraints.base import *
 from fandango.language.search import RuleSearch
 from fandango.language.symbol import NonTerminal
 
+from fandangoLearner.data.input import FandangoInput
 from fandangoLearner.logger import LOGGER
 
 
@@ -22,6 +23,7 @@ class PatternProcessor:
         self,
         relevant_non_terminals: Iterable[NonTerminal],
         value_map: Dict[str, Dict[NonTerminal, List[str]]],
+        test_inputs: Set[FandangoInput],
     ) -> List[Constraint]:
         instantiated_patterns = []
 
@@ -35,7 +37,7 @@ class PatternProcessor:
         final_patterns = []
         # Replace value placeholders with actual values
         for pattern in instantiated_patterns:
-            transformer = ValuePlaceholderTransformer(value_map)
+            transformer = ValuePlaceholderTransformer(value_map, test_inputs)
             pattern.accept(transformer)
             transformed = transformer.results
             final_patterns.extend(transformed)
@@ -118,7 +120,12 @@ class NonTerminalPlaceholderTransformer(ConstraintVisitor):
         self.results = []  # Reset for independent processing
 
         for bound_container_nonterm in self.relevant_non_terminals:
-            new_search = RuleSearch(bound_container_nonterm)
+            if isinstance(
+                constraint.search, RuleSearch
+            ) and constraint.search.symbol == NonTerminal("<NON_TERMINAL>"):
+                new_search = RuleSearch(bound_container_nonterm)
+            else:
+                new_search = constraint.search
             for transformed_statement in transformed_constraints:
                 self.results.append(
                     ExistsConstraint(
@@ -170,7 +177,11 @@ class ValuePlaceholderTransformer(ConstraintVisitor):
     A visitor for replacing placeholders like <STRING> or <INTEGER> in constraints with actual values.
     """
 
-    def __init__(self, value_maps: Dict[str, Dict[NonTerminal, List[str]]]):
+    def __init__(
+        self,
+        value_maps: Dict[str, Dict[NonTerminal, List[str]]],
+        test_inputs: Set[FandangoInput],
+    ):
         """
         Initialize the transformer with value maps for placeholders.
 
@@ -180,6 +191,7 @@ class ValuePlaceholderTransformer(ConstraintVisitor):
         super().__init__()
         self.value_maps = value_maps
         self.results: List[Constraint] = []
+        self.test_inputs: Set[FandangoInput] = test_inputs
 
     def do_continue(self, constraint: "Constraint") -> bool:
         return False
@@ -188,8 +200,9 @@ class ValuePlaceholderTransformer(ConstraintVisitor):
         """ """
         for type in self.value_maps.keys():
             # string, int
-            if search.symbol in self.value_maps[type].keys():
-                self.value_maps[type][bound] = self.value_maps[type][search.symbol]
+            if search in self.value_maps[type].keys():
+                if isinstance(search, RuleSearch):
+                    self.value_maps[type][bound] = self.value_maps[type][search.symbol]
 
     def remove_value_map(self, bound: NonTerminal):
         for type in self.value_maps.keys():
@@ -310,6 +323,27 @@ class ValuePlaceholderTransformer(ConstraintVisitor):
         """
         self.results.append(constraint)
 
+    def evaluate_partial(self, constraint: "ComparisonConstraint"):
+        """This function is used to evaluate the partial constraints"""
+        results = set()
+        for inp in self.test_inputs:
+            scope = None
+            for combination in constraint.combinations(inp.tree, scope):
+                local_variables = constraint.local_variables.copy()
+                local_variables.update(
+                    {name: container.evaluate() for name, container in combination}
+                )
+                try:
+                    left_result = eval(
+                        constraint.left, constraint.global_variables, local_variables
+                    )
+                    results.add(str(left_result))
+                except Exception as e:
+                    e.add_note("Evaluation failed: " + constraint.left)
+                    print_exception(e)
+                    continue
+        return results
+
     def replace_placeholders(
         self,
         initialized_patterns: List[Tuple[Constraint, Set[NonTerminal]]],
@@ -345,7 +379,11 @@ class ValuePlaceholderTransformer(ConstraintVisitor):
             if matches:
                 if isinstance(pattern, ComparisonConstraint):
                     for non_terminal in non_terminals:
-                        for value in values.get(non_terminal, []):
+                        print(pattern)
+                        print(self.evaluate_partial(pattern))
+                        for value in values.get(non_terminal, []) + list(
+                            self.evaluate_partial(pattern)
+                        ):
                             updated_right = pattern.right
                             for match in matches:
                                 updated_right = updated_right.replace(

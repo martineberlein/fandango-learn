@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 
 from debugging_framework.input.oracle import OracleResult
 from fandango.language.grammar import Grammar
-from fandango.language.parse import parse
 from fandango.constraints.base import (
     Constraint,
 )
@@ -102,7 +101,8 @@ class BaseFandangoLearner(PatternCandidateLearner, ABC):
                 pat.instantiated_pattern for pat in Pattern.registry
             }
         else:
-            instantiated_patterns = {parse(pattern, check_constraints=False)[1][0] for pattern in patterns}
+            assert all(isinstance(pat, Pattern) for pat in patterns)
+            instantiated_patterns = {pat.instantiated_pattern for pat in patterns}
         LOGGER.info("Instantiated patterns: %s", len(instantiated_patterns))
         return instantiated_patterns
 

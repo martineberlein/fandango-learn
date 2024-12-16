@@ -78,7 +78,7 @@ class FandangoLearner(BaseFandangoLearner):
         )
 
         instantiated_patterns = self.pattern_processor.instantiate_patterns(
-            relevant_non_terminals, value_maps
+            relevant_non_terminals, value_maps, sorted_positive_inputs
         )
 
         self.parse_candidates(instantiated_patterns, positive_inputs, negative_inputs)
