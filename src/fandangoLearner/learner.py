@@ -1,14 +1,10 @@
-from typing import List, Dict, Iterable, Optional, Set, Tuple, Callable, Any
-from itertools import product
-from copy import deepcopy
+from typing import List, Dict, Iterable, Optional, Set, Callable
 
 from fandango.language.grammar import Grammar
 from fandango.language.symbol import NonTerminal
 from fandango.constraints.base import (
     Constraint,
-    ComparisonConstraint,
 )
-from fandango.language.search import RuleSearch
 from debugging_framework.input.oracle import OracleResult
 
 from .learning.candidate import FandangoConstraintCandidate

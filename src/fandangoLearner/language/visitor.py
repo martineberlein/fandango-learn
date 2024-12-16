@@ -5,6 +5,7 @@ from fandango.logger import LOGGER
 
 from .constraints import NegationConstraint
 
+
 class LoggingVisitor(ConstraintVisitor):
 
     def __init__(self):
