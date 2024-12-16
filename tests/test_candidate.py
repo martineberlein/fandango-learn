@@ -1,0 +1,179 @@
+import unittest
+from unittest.mock import MagicMock
+from debugging_framework.input.oracle import OracleResult
+from fandango.language.tree import DerivationTree
+from fandango.language.parse import parse
+from fandango.constraints.base import Constraint
+from fandangoLearner.data.input import FandangoInput
+from fandango.constraints.base import ConjunctionConstraint, DisjunctionConstraint
+from fandangoLearner.learner import NonTerminal
+from fandangoLearner.learning.candidate import FandangoConstraintCandidate
+
+
+class TestFandangoConstraintCandidate(unittest.TestCase):
+
+    GRAMMAR = """
+        <start> ::= <arithexp>;
+        <arithexp> ::= <function>"("<number>")";
+        <function> ::= "sqrt" | "cos" | "sin" | "tan";
+        <number> ::= <maybeminus><onenine><maybedigits> | "0";
+        <maybeminus> ::= "-" | "";
+        <onenine> ::= "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
+        <maybedigits> ::= <digit>*;
+        <digit>::=  "0" | <onenine>;
+    """
+
+    def get_constraint(self, constraint):
+        _, constraints = parse(constraint)
+        self.assertEqual(1, len(constraints))
+        return constraints[0]
+
+    def setUp(self):
+        grammar, constraints = parse(
+            self.GRAMMAR + "(int(<number>) <= -10 and str(<function>) == 'sqrt');",
+            check_constraints=False,
+        )
+        self.constraint = constraints[0]
+        self.grammar = grammar
+
+        # Create mock derivation trees
+        self.failing_input = FandangoInput.from_str(
+            self.grammar, "sqrt(-900)", OracleResult.FAILING
+        )
+        self.passing_input = FandangoInput.from_str(
+            self.grammar, "sqrt(1)", OracleResult.PASSING
+        )
+
+        # Instantiate the candidate with the mock constraint
+        self.candidate = FandangoConstraintCandidate(self.constraint)
+
+    def test_evaluate(self):
+        inputs = [self.failing_input, self.passing_input]
+        self.candidate.evaluate(inputs)
+
+        # Check if evaluation results are recorded correctly
+        self.assertEqual(self.candidate.failing_inputs_eval_results, [True])
+        self.assertEqual(self.candidate.passing_inputs_eval_results, [False])
+
+        for key, value in self.candidate.cache.items():
+            self.assertEqual(key.oracle.is_failing(), value)
+
+    def test_precision(self):
+        inputs = [self.failing_input, self.passing_input]
+        self.candidate.evaluate(inputs)
+
+        # Precision = TP / (TP + FP)
+        precision = self.candidate.precision()
+        self.assertEqual(precision, 1.0)
+
+    def test_recall(self):
+        inputs = [self.failing_input, self.passing_input]
+        self.candidate.evaluate(inputs)
+
+        # Recall = TP / (TP + FN)
+        recall = self.candidate.recall()
+        self.assertEqual(recall, 1.0)
+
+    def test_specificity(self):
+        inputs = [self.failing_input, self.passing_input]
+        self.candidate.evaluate(inputs)
+
+        # Specificity = TN / (TN + FP)
+        specificity = self.candidate.specificity()
+        self.assertEqual(specificity, 1.0)
+
+    def test_and_operator(self):
+        # Create another candidate with a similar constraint
+        candidate = FandangoConstraintCandidate(
+            self.get_constraint("int(<number>) <= 0;")
+        )
+        other_candidate = FandangoConstraintCandidate(
+            self.get_constraint("str(<function>) == 'sqrt';")
+        )
+
+        # Evaluate both candidates
+        candidate.evaluate([self.failing_input, self.passing_input])
+        other_candidate.evaluate([self.failing_input, self.passing_input])
+
+        self.assertLess(other_candidate.precision(), 1.0)
+
+        # Combine them with AND
+        combined_candidate = candidate & other_candidate
+
+        # Verify the combined constraint evaluates correctly
+        self.assertEqual(combined_candidate.failing_inputs_eval_results, [True])
+        self.assertEqual(combined_candidate.passing_inputs_eval_results, [False])
+
+        for key, value in self.candidate.cache.items():
+            self.assertEqual(key.oracle.is_failing(), value)
+
+        self.assertEqual(combined_candidate.precision(), 1.0)
+        self.assertEqual(combined_candidate.recall(), 1.0)
+
+    def test_or_operator(self):
+        # Create another candidate with a different constraint
+        candidate = FandangoConstraintCandidate(
+            self.get_constraint("int(<number>) <= 0;")
+        )
+        other_candidate = FandangoConstraintCandidate(
+            self.get_constraint("str(<function>) == 'sqrt';")
+        )
+
+        # Evaluate both candidates
+        candidate.evaluate([self.failing_input, self.passing_input])
+        other_candidate.evaluate([self.failing_input, self.passing_input])
+
+        # Combine them with OR
+        combined_candidate = candidate | other_candidate
+
+        # Verify the combined constraint evaluates correctly
+        self.assertEqual(combined_candidate.failing_inputs_eval_results, [True])
+        self.assertEqual(combined_candidate.passing_inputs_eval_results, [True])
+
+        # Not a perfect constraint
+        self.assertEqual(combined_candidate.cache[self.failing_input], True)
+        self.assertEqual(combined_candidate.cache[self.passing_input], True)
+
+    def test_reset(self):
+        inputs = [self.failing_input, self.passing_input]
+        self.candidate.evaluate(inputs)
+
+        # Reset the candidate
+        self.candidate.reset()
+
+        # Check if results are cleared
+        self.assertEqual(self.candidate.failing_inputs_eval_results, [])
+        self.assertEqual(self.candidate.passing_inputs_eval_results, [])
+        self.assertEqual(self.candidate.cache, {})
+
+    def test_str_representation(self):
+        inputs = [self.failing_input, self.passing_input]
+        self.candidate.evaluate(inputs)
+
+        # Check if string representation includes precision and recall
+        representation = str(self.candidate)
+        self.assertIn("Precision: 1.0", representation)
+        self.assertIn("Recall: 1.0", representation)
+
+    def test_constraint_with_missing_non_terminals(self):
+        candidate = FandangoConstraintCandidate(
+            self.get_constraint("str(<maybeminus>) == '-';")
+        )
+        null_input = FandangoInput.from_str(
+            self.grammar, "sqrt(0)", OracleResult.PASSING
+        )
+
+        # Evaluate both candidates
+        candidate.evaluate([null_input, self.failing_input])
+
+        # sqrt(0) does not contain a '-', but it does also not contain a <maybeminus> non-terminal.
+        # Thus, the constraint should evaluate to True
+        self.assertEqual(candidate.precision(), 0.5)
+        self.assertEqual(candidate.recall(), 1.0)
+
+        self.assertEqual(candidate.cache[null_input], True)
+        self.assertEqual(candidate.cache[self.failing_input], True)
+
+
+if __name__ == "__main__":
+    unittest.main()
