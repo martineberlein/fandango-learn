@@ -6,6 +6,15 @@ The goal is to automatically learn _fandango_ constraints form a set of inputs.
 Overall, the learner will be integrated into **Avicenna**, which provides the necessary infrastructure of the hypothesis refinement loop.
 Furthermore, **Avicenna** provides the means to automatically learn the set of relevant non-terminals, reducing the search space for the learner.
 
+### Table of Contents
+
+- [Quick Start (Prototype)](#quick-start-prototype)
+- [Reusability](#reusability)
+- [Installation](#installation)
+- [Usage](#usage)
+
+---
+
 ## Quick Start (Prototype)
 
 ### Introduction to FandangoLearner
@@ -117,27 +126,23 @@ However, this constraint is too specific and does not generalize well to other i
 Thus, we need a feedback loop that automatically refines these constraints to generate general constraints that captures the essence of the failure.
 We will use **Avicenna** to provide this feedback loop.
 
-## First Ideas
+---
 
-- Use Pattern Based Approach
-   - Will likely lead to combinatorial explosion
-   - Requires similar ideas as scatched in the Avicenna paper, i.e. reduce the number of relevant non-terminals
-- Build atomic constraints
-   - Use the atomic constraints to build more complex constraints
-   - Atomic constraints will be combined to more complex constraints with conjunctions and disjunctions.
-- Implement different filter mechanisms 
-   - Allow to rank constraints based on different criteria like precision, recall, etc.
+## Install, Development, Testing
 
-new idea:
-- exists and forall constraints can be quite similar to each other, when that use bounded nonterminals that are applied only once.
-   - we might want to use forall constraints only when they are really needed, i.e. when the nonterminal is used multiple times.
+### Install
 
+We recommend installing **FandangoLeaner** inside a virtual environment (virtualenv):
 
-## Reusability
+```shell
+python3.12 -m venv venv
+source venv/bin/activate
+```
 
-The code should be reusable for other projects, such as Avicenna.
-Therefore, the code uses many abstract classes that are already implemented in Avicenna and AvicennaISLearn.
-This makes comparing both approaches FandangoLearn and ISLearn extremely easy.
+```shell
+pip install --upgrade pip
+pip install -e .
+```
 
 ## Usage
 
@@ -193,24 +198,28 @@ Constraint: (str(<function>) == 'sqrt' and str(<maybeminus>) == '-'), Recall: 1.
 Constraint: (str(<function>) == 'sqrt' and int(<number>) <= -1), Recall: 1.0, Precision: 1.0
 ```
 
+---
 
-## Old Steps (Already Implemented) 
+# Development Notes
 
-Next steps: Automatically combining constraints to more complex constraints:
+## Reusability
 
-```python
-cand1 = filtered_candidates[-1]
-cand2 = filtered_candidates[-2]
-cand3 = cand1 & cand2
-cand3.evaluate(initial_inputs)
-print("Combined Constraints:")
-print("Constraint:", cand3.constraint, "Recall:", cand3.recall(), "Precision:", cand3.precision())
-```
+The code should be reusable for other projects, such as Avicenna.
+Therefore, the code uses many abstract classes that are already implemented in Avicenna and AvicennaISLearn.
+This makes comparing both approaches FandangoLearn and ISLearn extremely easy.
 
-Produces the following combined constraint:
+## First Ideas
 
-```
-Combined Constraints:
-Constraint: (str(<function>) == 'sqrt' and str(<maybeminus>) == '-') Recall: 1.0 Precision: 1.0
-```
+- Use Pattern Based Approach
+   - Will likely lead to combinatorial explosion
+   - Requires similar ideas as scatched in the Avicenna paper, i.e. reduce the number of relevant non-terminals
+- Build atomic constraints
+   - Use the atomic constraints to build more complex constraints
+   - Atomic constraints will be combined to more complex constraints with conjunctions and disjunctions.
+- Implement different filter mechanisms 
+   - Allow to rank constraints based on different criteria like precision, recall, etc.
+
+new idea:
+- exists and forall constraints can be quite similar to each other, when that use bounded nonterminals that are applied only once.
+   - we might want to use forall constraints only when they are really needed, i.e. when the nonterminal is used multiple times.
 
