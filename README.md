@@ -9,9 +9,9 @@ Furthermore, **Avicenna** provides the means to automatically learn the set of r
 ### Table of Contents
 
 - [Quick Start (Prototype)](#quick-start-prototype)
-- [Reusability](#reusability)
 - [Installation](#installation)
-- [Usage](#usage)
+- [Guide](#usage)
+- [Reusability](#reusability)
 
 ---
 
@@ -144,59 +144,20 @@ pip install --upgrade pip
 pip install -e .
 ```
 
-## Usage
+## Notebooks
 
-Work in progress. The following code snippet shows how to use the FandangoStringPatternLearner to learn atomic constraints from a set of inputs.
-See the `playground` folder for the [working prototype](./playground/readme.py).
+**Work in progress.**
 
-```python
-from fandangoLearner.learner import FandangoLearner
-from fandango.language.parse import parse_file
-from fandangoLearner.data.input import FandangoInput, OracleResult
+This repository contains jupyter notebooks that demonstrate how to use the FandangoLearner to learn constraints from a set of inputs.
+Furthermore, the notebooks show how FandangoLearner works and how it can be, for instance, integrated into Avicenna.
 
-grammar, _ = parse_file("calculator.fan")
-test_inputs = [
-    ("sqrt(-900)", OracleResult.FAILING),
-    ("sqrt(-1)", OracleResult.FAILING),
-    ("sin(-900)", OracleResult.PASSING),
-    ("sqrt(2)", OracleResult.PASSING),
-    ("cos(10)", OracleResult.PASSING),
-]
+Current notebooks:
 
-initial_inputs = {
-    FandangoInput.from_str(grammar, inp, result) for inp, result in test_inputs
-}
+- [Introduction to FandangoLearner](./doc/01_fandango-learner.ipynb): Demonstrates how to use the FandangoLearner to learn constraints from a set of inputs.
+- [Automated Refinement](./doc/02_refinement.ipynb): Shows how we can automatically refine constraints learned by FandangoLearner.
+- [Adding Patterns](./doc/03_patterns.ipynb): Demonstrates how to add new patterns to the FandangoLearner to improve the learning process.
 
-patterns = [
-    "int(<NON_TERMINAL>) <= <INTEGER>;",
-    "int(<NON_TERMINAL>) == <INTEGER>;",
-    "str(<NON_TERMINAL>) == <STRING>;",
-    "int(<NON_TERMINAL>) == len(str(<NON_TERMINAL>));",
-    "int(<NON_TERMINAL>) == int(<NON_TERMINAL>) * <INTEGER> * int(<NON_TERMINAL>) * <INTEGER>;",
-]
-
-non_terminal_values = {
-    NonTerminal("<number>"),
-    NonTerminal("<maybeminus>"),
-    NonTerminal("<function>"),
-}
-
-learner = FandangoLearner(grammar, patterns)
-learned_constraints = learner.learn_constraints(initial_inputs, non_terminal_values)
-
-for candidate in learned_constraints:
-    candidate.evaluate(initial_inputs)
-    print(
-        f"Constraint: {candidate.constraint}, Recall: {candidate.recall()}, Precision: {candidate.precision()}"
-    )
-```
-
-Produces the following constraints:
-
-```
-Constraint: (str(<function>) == 'sqrt' and str(<maybeminus>) == '-'), Recall: 1.0, Precision: 1.0
-Constraint: (str(<function>) == 'sqrt' and int(<number>) <= -1), Recall: 1.0, Precision: 1.0
-```
+More notebooks will be added soon.
 
 ---
 
