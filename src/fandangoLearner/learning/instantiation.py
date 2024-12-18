@@ -7,6 +7,7 @@ from fandango.constraints.base import *
 from fandango.language.search import RuleSearch
 from fandango.language.symbol import NonTerminal
 
+from fandangoLearner.data.input import FandangoInput
 from fandangoLearner.logger import LOGGER
 
 
@@ -18,12 +19,77 @@ class PatternProcessor:
     def __init__(self, patterns: Iterable[Constraint]):
         self.patterns = patterns
 
+    @staticmethod
+    def is_number(value: str) -> bool:
+        try:
+            float(value)
+            return True
+        except ValueError:
+            return False
+
+    def extract_non_terminal_values(
+        self,
+        relevant_non_terminals: Set[NonTerminal],
+        initial_inputs: Set[FandangoInput],
+    ) -> Dict[str, Dict[NonTerminal, List[str]]]:
+        """
+        Extracts values associated with non-terminals from initial inputs.
+
+        Args:
+            relevant_non_terminals (Set[NonTerminal]): A set of relevant non-terminals.
+            initial_inputs (Set[FandangoInput]): A set of initial inputs to extract values from.
+
+        Returns:
+            Dict[str, Dict[NonTerminal, List[str]]]: Extracted string and integer values.
+        """
+        string_values: Dict[NonTerminal, Set[str]] = {}
+        int_values: Dict[NonTerminal, Set[str]] = {}
+
+        for non_terminal in relevant_non_terminals:
+            for inp in initial_inputs:
+                found_trees = inp.tree.find_all_trees(non_terminal)
+                for tree in found_trees:
+                    value = str(tree)
+                    if self.is_number(value):
+                        int_values.setdefault(non_terminal, set())#.add(value)
+                    else:
+                        string_values.setdefault(non_terminal, set()).add(value)
+
+        return {
+            "string_values": {k: list(v) for k, v in string_values.items()},
+            "int_values": {k: list(v) for k, v in int_values.items()},
+        }
+
+    def filter_value_map(self, value_map: Dict[str, Dict[NonTerminal, List[str]]]):
+        """
+        Filters the value map to remove non-terminals with no values.
+
+        Args:
+            value_map (Dict[str, Dict[NonTerminal, List[str]]]): A value map to filter.
+
+        Returns:
+            Dict[str, Dict[NonTerminal, List[str]]]: A filtered value map.
+        """
+
+        integer_value_map = value_map["int_values"]
+        for non_terminal in integer_value_map.keys():
+            if not integer_value_map[non_terminal]:
+                continue
+            int_v = list(float(v) for v in integer_value_map[non_terminal])
+            min_, max_ = min(int_v), max(int_v)
+            integer_value_map[non_terminal] = [str(min_), str(max_)]
+
     def instantiate_patterns(
         self,
         relevant_non_terminals: Iterable[NonTerminal],
-        value_map: Dict[str, Dict[NonTerminal, List[str]]],
+        positive_inputs: Set[FandangoInput],
     ) -> List[Constraint]:
         instantiated_patterns = []
+
+        value_map = self.extract_non_terminal_values(
+            relevant_non_terminals, positive_inputs
+        )
+        self.filter_value_map(value_map)
 
         # Replace non-terminal placeholders with actual non-terminals
         for pattern in self.patterns:
@@ -35,7 +101,7 @@ class PatternProcessor:
         final_patterns = []
         # Replace value placeholders with actual values
         for pattern in instantiated_patterns:
-            transformer = ValuePlaceholderTransformer(value_map)
+            transformer = ValuePlaceholderTransformer(value_map, positive_inputs)
             pattern.accept(transformer)
             transformed = transformer.results
             final_patterns.extend(transformed)
@@ -118,7 +184,12 @@ class NonTerminalPlaceholderTransformer(ConstraintVisitor):
         self.results = []  # Reset for independent processing
 
         for bound_container_nonterm in self.relevant_non_terminals:
-            new_search = RuleSearch(bound_container_nonterm)
+            if isinstance(
+                constraint.search, RuleSearch
+            ) and constraint.search.symbol == NonTerminal("<NON_TERMINAL>"):
+                new_search = RuleSearch(bound_container_nonterm)
+            else:
+                new_search = constraint.search
             for transformed_statement in transformed_constraints:
                 self.results.append(
                     ExistsConstraint(
@@ -170,7 +241,11 @@ class ValuePlaceholderTransformer(ConstraintVisitor):
     A visitor for replacing placeholders like <STRING> or <INTEGER> in constraints with actual values.
     """
 
-    def __init__(self, value_maps: Dict[str, Dict[NonTerminal, List[str]]]):
+    def __init__(
+        self,
+        value_maps: Dict[str, Dict[NonTerminal, List[str]]],
+        test_inputs: Set[FandangoInput],
+    ):
         """
         Initialize the transformer with value maps for placeholders.
 
@@ -180,6 +255,7 @@ class ValuePlaceholderTransformer(ConstraintVisitor):
         super().__init__()
         self.value_maps = value_maps
         self.results: List[Constraint] = []
+        self.test_inputs: Set[FandangoInput] = test_inputs
 
     def do_continue(self, constraint: "Constraint") -> bool:
         return False
@@ -188,8 +264,9 @@ class ValuePlaceholderTransformer(ConstraintVisitor):
         """ """
         for type in self.value_maps.keys():
             # string, int
-            if search.symbol in self.value_maps[type].keys():
-                self.value_maps[type][bound] = self.value_maps[type][search.symbol]
+            if search in self.value_maps[type].keys():
+                if isinstance(search, RuleSearch):
+                    self.value_maps[type][bound] = self.value_maps[type][search.symbol]
 
     def remove_value_map(self, bound: NonTerminal):
         for type in self.value_maps.keys():
@@ -310,6 +387,38 @@ class ValuePlaceholderTransformer(ConstraintVisitor):
         """
         self.results.append(constraint)
 
+    def get_combinations(self,  constraint: Constraint, tree: DerivationTree,
+        scope: Optional[Dict[NonTerminal, DerivationTree]] = None):
+        nodes: List[List[Tuple[str, DerivationTree]]] = []
+        for name, search in constraint.searches.items():
+            if search.symbol == NonTerminal("<INTEGER>"):
+                continue
+            nodes.append(
+                [(name, container) for container in search.find(tree, scope=scope)]
+            )
+        return itertools.product(*nodes)
+
+    def evaluate_partial(self, constraint: "ComparisonConstraint"):
+        """This function is used to evaluate the partial constraints"""
+        results = set()
+        for inp in self.test_inputs:
+            scope = None
+            for combination in self.get_combinations(constraint, inp.tree, scope):
+                local_variables = constraint.local_variables.copy()
+                local_variables.update(
+                    {name: container.evaluate() for name, container in combination}
+                )
+                try:
+                    left_result = eval(
+                        constraint.left, constraint.global_variables, local_variables
+                    )
+                    results.add(str(left_result))
+                except Exception as e:
+                    e.add_note("Evaluation failed: " + constraint.left)
+                    LOGGER.error(e)
+                    continue
+        return results
+
     def replace_placeholders(
         self,
         initialized_patterns: List[Tuple[Constraint, Set[NonTerminal]]],
@@ -345,7 +454,11 @@ class ValuePlaceholderTransformer(ConstraintVisitor):
             if matches:
                 if isinstance(pattern, ComparisonConstraint):
                     for non_terminal in non_terminals:
-                        for value in values.get(non_terminal, []):
+
+                        vals = set(values.get(non_terminal, []))
+                        vals.update(self.evaluate_partial(pattern))
+
+                        for value in vals:
                             updated_right = pattern.right
                             for match in matches:
                                 updated_right = updated_right.replace(

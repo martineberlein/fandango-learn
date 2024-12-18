@@ -23,17 +23,7 @@ classifiers = [
     "Topic :: Software Development :: Testing"
 ]
 dependencies = [
-    "antlr4-python3-runtime>=4.13",
-    "matplotlib>=3.9.2",
-    "numpy>=2.1.0",
-    "deap>=1.4.1",
-    "scipy>=1.14.1",
-    "ordered-set>=4.0.2",
-    "pytest>=8.3.3",
-    "Faker>=30.4.0",
-    "docutils>=0.21.2",
-    "tccbox==2024.7.1",
-    "deprecation",
+    "fandango @ git+https://github.com/fandango-fuzzer/fandango.git",
     "debugging-benchmark @ git+https://github.com/martineberlein/debugging-benchmark.git"
 ]
 
@@ -49,6 +39,3 @@ test = [
 [tool.black]
 line-length = 88
 target-version = ['py311']
-
-[tool.setuptools.package-data]
-"avicenna" = ["resources/*"]

@@ -100,7 +100,9 @@ class FandangoConstraintCandidate(ConstraintCandidate):
         fp = sum(int(entry) for entry in self.passing_inputs_eval_results)
         return tp / (tp + fp) if tp + fp > 0 else 0.0
 
-    def __and__(self, other: "FandangoConstraintCandidate"):
+    def __and__(
+        self, other: "FandangoConstraintCandidate"
+    ) -> "FandangoConstraintCandidate":
         """
         Return the conjunction of the candidate with another candidate.
 
@@ -108,6 +110,7 @@ class FandangoConstraintCandidate(ConstraintCandidate):
         :return: The conjunction of the candidate with the other candidate.
         """
         assert isinstance(other, FandangoConstraintCandidate)
+        assert self.cache.keys() == other.cache.keys()
 
         new_failing_inputs_eval_results = []
         new_passing_inputs_eval_results = []
@@ -132,7 +135,9 @@ class FandangoConstraintCandidate(ConstraintCandidate):
             cache=new_cache,
         )
 
-    def __or__(self, other: "FandangoConstraintCandidate"):
+    def __or__(
+        self, other: "FandangoConstraintCandidate"
+    ) -> "FandangoConstraintCandidate":
         """
         Return the disjunction of the candidate with another candidate.
 

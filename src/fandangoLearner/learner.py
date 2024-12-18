@@ -1,14 +1,10 @@
-from typing import List, Dict, Iterable, Optional, Set, Tuple, Callable, Any
-from itertools import product
-from copy import deepcopy
+from typing import List, Dict, Iterable, Optional, Set, Callable
 
 from fandango.language.grammar import Grammar
 from fandango.language.symbol import NonTerminal
 from fandango.constraints.base import (
     Constraint,
-    ComparisonConstraint,
 )
-from fandango.language.search import RuleSearch
 from debugging_framework.input.oracle import OracleResult
 
 from .learning.candidate import FandangoConstraintCandidate
@@ -77,12 +73,8 @@ class FandangoLearner(BaseFandangoLearner):
 
         sorted_positive_inputs = self.sort_and_filter_positive_inputs(positive_inputs)
 
-        value_maps = self.extract_non_terminal_values(
-            relevant_non_terminals, sorted_positive_inputs
-        )
-
         instantiated_patterns = self.pattern_processor.instantiate_patterns(
-            relevant_non_terminals, value_maps
+            relevant_non_terminals, sorted_positive_inputs
         )
 
         self.parse_candidates(instantiated_patterns, positive_inputs, negative_inputs)
@@ -157,36 +149,3 @@ class FandangoLearner(BaseFandangoLearner):
                     self.candidates.append(candidate)
             except Exception:
                 continue
-
-    def extract_non_terminal_values(
-        self,
-        relevant_non_terminals: Set[NonTerminal],
-        initial_inputs: Set[FandangoInput],
-    ) -> Dict[str, Dict[NonTerminal, List[str]]]:
-        """
-        Extracts values associated with non-terminals from initial inputs.
-
-        Args:
-            relevant_non_terminals (Set[NonTerminal]): A set of relevant non-terminals.
-            initial_inputs (Set[FandangoInput]): A set of initial inputs to extract values from.
-
-        Returns:
-            Dict[str, Dict[NonTerminal, List[str]]]: Extracted string and integer values.
-        """
-        string_values: Dict[NonTerminal, Set[str]] = {}
-        int_values: Dict[NonTerminal, Set[str]] = {}
-
-        for non_terminal in relevant_non_terminals:
-            for inp in initial_inputs:
-                found_trees = inp.tree.find_all_trees(non_terminal)
-                for tree in found_trees:
-                    value = str(tree)
-                    if self.is_number(value):
-                        int_values.setdefault(non_terminal, set()).add(value)
-                    else:
-                        string_values.setdefault(non_terminal, set()).add(value)
-
-        return {
-            "string_values": {k: list(v) for k, v in string_values.items()},
-            "int_values": {k: list(v) for k, v in int_values.items()},
-        }
