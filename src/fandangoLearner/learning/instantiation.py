@@ -51,7 +51,7 @@ class PatternProcessor:
                 for tree in found_trees:
                     value = str(tree)
                     if self.is_number(value):
-                        int_values.setdefault(non_terminal, set()).add(value)
+                        int_values.setdefault(non_terminal, set())#.add(value)
                     else:
                         string_values.setdefault(non_terminal, set()).add(value)
 
@@ -73,6 +73,8 @@ class PatternProcessor:
 
         integer_value_map = value_map["int_values"]
         for non_terminal in integer_value_map.keys():
+            if not integer_value_map[non_terminal]:
+                continue
             int_v = list(float(v) for v in integer_value_map[non_terminal])
             min_, max_ = min(int_v), max(int_v)
             integer_value_map[non_terminal] = [str(min_), str(max_)]
