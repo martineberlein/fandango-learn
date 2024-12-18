@@ -4,8 +4,8 @@ from fandango.constraints.base import ComparisonConstraint, Constraint, Comparis
 from fandango.constraints import predicates
 from fandango.language.search import RuleSearch
 from fandango.language.symbol import NonTerminal
-from fandango.language.parse import parse_file, parse
 
+from fandangoLearner.interface.fandango import parse, parse_file
 from fandangoLearner.data.input import FandangoInput
 
 
