@@ -11,9 +11,8 @@ if __name__ == "__main__":
 
     initial_inputs = [
         ("sqrt(4)", True),
-        ("sqrt(4)", True),
         ("sqrt(0)", False),
-        ("cos(4)", False),
+        #("cos(4)", False),
     ]
 
     initial_inputs = {FandangoInput.from_str(grammar, inp, oracle) for inp, oracle in initial_inputs}

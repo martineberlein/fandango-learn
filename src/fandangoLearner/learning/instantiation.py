@@ -452,9 +452,11 @@ class ValuePlaceholderTransformer(ConstraintVisitor):
             if matches:
                 if isinstance(pattern, ComparisonConstraint):
                     for non_terminal in non_terminals:
-                        for value in values.get(non_terminal, []) + list(
-                            self.evaluate_partial(pattern)
-                        ):
+
+                        vals = set(values.get(non_terminal, []))
+                        vals.update(self.evaluate_partial(pattern))
+
+                        for value in vals:
                             updated_right = pattern.right
                             for match in matches:
                                 updated_right = updated_right.replace(
