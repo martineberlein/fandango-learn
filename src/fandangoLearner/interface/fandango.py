@@ -1,23 +1,29 @@
+import logging
+
 from fandango.language.parse import parse as fandango_parse, parse_file as fandango_parse_file
 from fandango.constraints.base import Constraint
 
-def parse(*args, **kwargs):
+def parse(*args, disable_logging=True, **kwargs):
     """
     Wrapper for the parse function from fandango.language.parse
     :param args:
     :param kwargs:
     :return:
     """
+    if logging:
+        logging.getLogger("fandango").disabled = True
     return fandango_parse(*args, **kwargs)
 
 
-def parse_file(*args, **kwargs):
+def parse_file(*args, disable_logging=True, **kwargs):
     """
     Wrapper for the parse_file function from fandango.language.parse
     :param args:
     :param kwargs:
     :return:
     """
+    if logging:
+        logging.getLogger("fandango").disabled = True
     return fandango_parse_file(*args, **kwargs)
 
 
