@@ -11,7 +11,9 @@ if __name__ == "__main__":
 
     initial_inputs = [
         ("sqrt(4)", True),
+        ("sqrt(4)", True),
         ("sqrt(0)", False),
+        ("cos(4)", False),
     ]
 
     initial_inputs = {FandangoInput.from_str(grammar, inp, oracle) for inp, oracle in initial_inputs}
@@ -19,7 +21,7 @@ if __name__ == "__main__":
     patterns = [
         Pattern(
             string_pattern="import math\n"
-                           "eval(str(<NON_TERMINAL>),  {'sqrt': math.sqrt}) == <INTEGER>;",
+                           "eval(str(<NON_TERMINAL>),  {'sqrt': math.sqrt, 'cos': math.cos}) == <INTEGER>;",
             use_cache=False
         )
     ]
