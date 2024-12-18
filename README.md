@@ -10,7 +10,7 @@ Furthermore, **Avicenna** provides the means to automatically learn the set of r
 
 - [Quick Start (Prototype)](#quick-start-prototype)
 - [Installation](#installation)
-- [Guide](#usage)
+- [Notebooks](#notebooks)
 - [Reusability](#reusability)
 
 ---
