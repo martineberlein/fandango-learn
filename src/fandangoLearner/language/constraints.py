@@ -22,19 +22,21 @@ class NegationConstraint(Constraint):
         inner_fitness = self.inner_constraint.fitness(tree, scope)
 
         # Negate the fitness results
-        solved = inner_fitness.total - inner_fitness.solved
+        solved = 0
         total = inner_fitness.total
         success = not inner_fitness.success
+        if success:
+             solved = 1
 
-        failing_trees = [
-            FailingTree(tree=t.node, cause=self) for t in inner_fitness.failing_trees
-        ]
+        #failing_trees = [
+        #    FailingTree(tree=t.node, cause=self) for t in inner_fitness.failing_trees
+        #]
 
         return ConstraintFitness(
             solved=solved,
             total=total,
             success=success,
-            failing_trees=failing_trees,
+            # failing_trees=failing_trees,
         )
 
     def __repr__(self):
