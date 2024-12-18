@@ -187,12 +187,3 @@ class BaseFandangoLearner(PatternCandidateLearner, ABC):
             inp for inp in test_inputs if inp.oracle == OracleResult.PASSING
         }
         return positive_inputs, negative_inputs
-
-    @staticmethod
-    def is_number(value: str) -> bool:
-        try:
-            float(value)
-            return True
-        except ValueError:
-            return False
-
