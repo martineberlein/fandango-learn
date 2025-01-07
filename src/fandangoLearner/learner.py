@@ -132,9 +132,10 @@ class FandangoLearner(BaseFandangoLearner):
         Generates constraint candidates based on instantiated patterns and evaluates them.
 
         Args:
-            instantiated_patterns (List[Constraint]): A list of instantiated patterns and their corresponding non-terminals.
-            test_inputs (Set[FandangoInput]): A set of test inputs to evaluate candidates.
-            pre_filter (bool):
+            instantiated_patterns (List[Constraint]): A set of instantiated patterns.
+            positive_inputs (Set[FandangoInput]): A set of positive inputs.
+            negative_inputs (Set[FandangoInput]): A set of negative inputs.
+            pre_filter (bool, optional): A boolean that specifies whether to filter
         """
         for pattern in instantiated_patterns:
             candidate = FandangoConstraintCandidate(pattern)
