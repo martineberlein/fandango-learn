@@ -21,6 +21,9 @@ class Placeholder(NonTerminal):
     def __repr__(self):
         return f"Placeholder({self.ph_type.value})"
 
+    def __str__(self):
+        return super().__repr__()
+
     def __eq__(self, other):
         return isinstance(other, Placeholder) and self.ph_type == other.ph_type
 
