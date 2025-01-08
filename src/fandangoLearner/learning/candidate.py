@@ -168,6 +168,14 @@ class FandangoConstraintCandidate(ConstraintCandidate):
             cache=new_cache,
         )
 
+    def __neg__(self):
+        """
+        Return the negation of the candidate.
+
+        :return: The negation of the candidate.
+        """
+        raise NotImplementedError()
+
     def _update_eval_results_and_combination(
         self, eval_result: bool, inp: FandangoInput
     ):
