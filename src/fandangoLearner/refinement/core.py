@@ -7,11 +7,11 @@ from debugging_framework.types import OracleType
 from fandango.language.grammar import Grammar
 
 from fandangoLearner.data.input import Input
-from fandangoLearner.learner import FandangoLearner, FandangoConstraintCandidate
+from fandangoLearner.core import ConstraintCandidateLearner
+from fandangoLearner.learner import FandangoLearner
+from fandangoLearner.learning.candidate import FandangoConstraintCandidate
 from fandangoLearner.learning.metric import FitnessStrategy, RecallPriorityStringLengthFitness
 from .generator import Generator, FandangoGenerator
-# from .runner.execution_handler import ExecutionHandler, SingleExecutionHandler
-# rom .logger import configure_logging
 
 
 class InputFeatureDebugger(ABC):
@@ -52,9 +52,9 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         grammar: Grammar,
         oracle: OracleType,
         initial_inputs: Union[Iterable[str], Iterable[Input]],
-        learner: Optional[CandidateLearner] = None,
+        learner: Optional[ConstraintCandidateLearner] = None,
         generator: Optional[Generator] = None,
-        runner: Optional[ExecutionHandler] = None,
+        runner: Optional = None,
         timeout_seconds: Optional[int] = None,
         max_iterations: Optional[int] = 10,
         **kwargs,
@@ -67,29 +67,27 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         self.timeout_seconds = timeout_seconds
         self.max_iterations = max_iterations
         self.strategy = RecallPriorityStringLengthFitness()
-        self.learner: CandidateLearner = (
-            learner if learner else ExhaustivePatternCandidateLearner(self.grammar)
+        self.learner: ConstraintCandidateLearner = (
+            learner if learner else FandangoLearner(self.grammar)
         )
         self.generator: Generator = (
-            generator if generator else ISLaGrammarBasedGenerator(self.grammar)
+            generator if generator else FandangoGenerator(self.grammar)
         )
-        self.runner: ExecutionHandler = (
-            runner if runner else SingleExecutionHandler(self.oracle)
+        self.runner = (
+            runner if runner else None
         )
 
-    def set_runner(self, runner: ExecutionHandler):
+    def set_runner(self, runner):
         """
         Set the runner for the hypothesis-based input feature debugger.
         """
         self.runner = runner
 
-    def set_learner(self, learner: Optional[CandidateLearner]):
+    def set_learner(self, learner: ConstraintCandidateLearner):
         """
         Set the learner for the hypothesis-based input feature debugger.
         """
-        self.learner = (
-            learner if learner else ExhaustivePatternCandidateLearner(self.grammar)
-        )
+        self.learner = learner
 
     def set_generator(self, generator: Generator):
         """
@@ -132,7 +130,7 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
             return False
         return True
 
-    def explain(self) -> Optional[List[Candidate]]:
+    def explain(self) -> Optional[List[FandangoConstraintCandidate]]:
         """
         Explain the input features that result in the failure of a program.
         """
@@ -170,14 +168,14 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         labeled_test_inputs = self.run_test_inputs(inputs)
         return labeled_test_inputs
 
-    def learn_candidates(self, test_inputs: Set[Input]) -> Optional[List[Candidate]]:
+    def learn_candidates(self, test_inputs: Set[Input]) -> Optional[List[FandangoConstraintCandidate]]:
         """
         Learn the candidates (failure diagnoses) from the test inputs.
         """
-        return self.learner.learn_candidates(test_inputs)
+        return self.learner.learn_constraints(test_inputs)
 
     @staticmethod
-    def negate_candidates(candidates: List[Candidate]):
+    def negate_candidates(candidates: List[FandangoConstraintCandidate]):
         """
         Negate the learned candidates.
         """
@@ -186,7 +184,7 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
             negated_candidates.append(-candidate)
         return negated_candidates
 
-    def generate_test_inputs(self, candidates: List[Candidate]) -> Set[Input]:
+    def generate_test_inputs(self, candidates: List[FandangoConstraintCandidate]) -> Set[Input]:
         """
         Generate the test inputs based on the learned candidates.
         """
@@ -200,7 +198,7 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
 
     def get_best_candidates(
         self, strategy: Optional[FitnessStrategy] = None
-    ) -> Optional[List[Candidate]]:
+    ) -> Optional[List[FandangoConstraintCandidate]]:
         """
         Return the best candidate.
         """
