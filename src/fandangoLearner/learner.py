@@ -13,6 +13,7 @@ from .logger import LOGGER
 from .learning.combination import ConjunctionProcessor, DisjunctionProcessor
 from .learning.instantiation import PatternProcessor
 from .core import BaseFandangoLearner
+from .types import OracleType
 
 
 class FandangoLearner(BaseFandangoLearner):
@@ -49,7 +50,7 @@ class FandangoLearner(BaseFandangoLearner):
         self,
         test_inputs: set[FandangoInput] | set[str],
         relevant_non_terminals: Set[NonTerminal] = None,
-        oracle: Callable[[str], OracleResult] = None,
+        oracle: OracleType = None,
         **kwargs,
     ) -> Optional[List[FandangoConstraintCandidate]]:
         """
@@ -58,6 +59,7 @@ class FandangoLearner(BaseFandangoLearner):
         Args:
             test_inputs (Set[FandangoInput]): A set of test inputs used for learning constraints.
             relevant_non_terminals (Set[NonTerminal], optional): A set of non-terminals relevant for learning.
+            oracle (OracleType, optional): An oracle function to evaluate inputs.
             **kwargs: Additional arguments for learning customization.
 
         Returns:
@@ -148,5 +150,6 @@ class FandangoLearner(BaseFandangoLearner):
                 else:
                     candidate.evaluate(negative_inputs)
                     self.candidates.append(candidate)
-            except Exception:
+            except Exception as e:
+                LOGGER.error("Error during candidate evaluation: %s", e)
                 continue
