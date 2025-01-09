@@ -1,17 +1,19 @@
-import logging
 from abc import ABC, abstractmethod
 from typing import Iterable, Optional, Set, List, Union
 import time
+import logging
 
-from debugging_framework.types import OracleType
 from fandango.language.grammar import Grammar
 
-from fandangoLearner.data.input import Input
+from fandangoLearner.types import OracleType
+from fandangoLearner.data.input import FandangoInput
 from fandangoLearner.core import ConstraintCandidateLearner
 from fandangoLearner.learner import FandangoLearner
 from fandangoLearner.learning.candidate import FandangoConstraintCandidate
 from fandangoLearner.learning.metric import FitnessStrategy, RecallPriorityStringLengthFitness
 from .generator import Generator, FandangoGenerator
+from .runner import SingleExecutionHandler, ExecutionHandler
+from .engine import Engine, SingleEngine, ParallelEngine
 
 
 class InputFeatureDebugger(ABC):
@@ -23,7 +25,7 @@ class InputFeatureDebugger(ABC):
         self,
         grammar: Grammar,
         oracle: OracleType,
-        initial_inputs: Union[Iterable[str], Iterable[Input]],
+        initial_inputs: Union[Iterable[str], Iterable[FandangoInput]],
         enable_logging: bool = False,
     ):
         """
@@ -51,11 +53,10 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         self,
         grammar: Grammar,
         oracle: OracleType,
-        initial_inputs: Union[Iterable[str], Iterable[Input]],
+        initial_inputs: Union[Iterable[str], Iterable[FandangoInput]],
         learner: Optional[ConstraintCandidateLearner] = None,
         generator: Optional[Generator] = None,
-        runner: Optional = None,
-        timeout_seconds: Optional[int] = None,
+        timeout_seconds: int = 3600,
         max_iterations: Optional[int] = 10,
         **kwargs,
     ):
@@ -73,11 +74,10 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         self.generator: Generator = (
             generator if generator else FandangoGenerator(self.grammar)
         )
-        self.runner = (
-            runner if runner else None
-        )
+        self.runner: ExecutionHandler = SingleExecutionHandler(self.oracle)
+        self.engine: Engine = SingleEngine(generator)
 
-    def set_runner(self, runner):
+    def set_runner(self, runner: ExecutionHandler):
         """
         Set the runner for the hypothesis-based input feature debugger.
         """
@@ -136,39 +136,43 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         """
         iteration = 0
         start_time = self.set_timeout()
+        logging.info("Starting the hypothesis-based input feature debugger.")
         try:
-            test_inputs: Set[Input] = self.prepare_test_inputs()
+            test_inputs: Set[FandangoInput] = self.prepare_test_inputs()
 
             while self.check_iteration_limits(iteration, start_time):
+                logging.info(f"Starting iteration {iteration}.")
                 new_test_inputs = self.hypothesis_loop(test_inputs)
                 test_inputs.update(new_test_inputs)
 
                 iteration += 1
         except TimeoutError as e:
             logging.error(e)
+        except Exception as e:
+            logging.error(e)
         finally:
             return self.get_best_candidates()
 
-    def prepare_test_inputs(self) -> Set[Input]:
+    def prepare_test_inputs(self) -> Set[FandangoInput]:
         """
         Prepare the input feature debugger.
         """
-        test_inputs: Set[Input] = self.get_test_inputs_from_strings(self.initial_inputs)
+        test_inputs: Set[FandangoInput] = self.get_test_inputs_from_strings(self.initial_inputs)
         test_inputs = self.run_test_inputs(test_inputs)
         self.check_initial_conditions(test_inputs)
         return test_inputs
 
-    def hypothesis_loop(self, test_inputs: Set[Input]) -> Set[Input]:
+    def hypothesis_loop(self, test_inputs: Set[FandangoInput]) -> Set[FandangoInput]:
         """
         The main loop of the hypothesis-based input feature debugger.
         """
         candidates = self.learn_candidates(test_inputs)
-        negated_candidates = self.negate_candidates(candidates)
-        inputs = self.generate_test_inputs(candidates+negated_candidates)
+        # negated_candidates = self.negate_candidates(candidates)
+        inputs = self.generate_test_inputs(candidates) # +negated_candidates)
         labeled_test_inputs = self.run_test_inputs(inputs)
         return labeled_test_inputs
 
-    def learn_candidates(self, test_inputs: Set[Input]) -> Optional[List[FandangoConstraintCandidate]]:
+    def learn_candidates(self, test_inputs: Set[FandangoInput]) -> Optional[List[FandangoConstraintCandidate]]:
         """
         Learn the candidates (failure diagnoses) from the test inputs.
         """
@@ -184,16 +188,21 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
             negated_candidates.append(-candidate)
         return negated_candidates
 
-    def generate_test_inputs(self, candidates: List[FandangoConstraintCandidate]) -> Set[Input]:
+    def generate_test_inputs(self, candidates: List[FandangoConstraintCandidate]) -> Set[FandangoInput]:
         """
         Generate the test inputs based on the learned candidates.
+        :param candidates: The learned candidates.
+        :return Set[Input]: The generated test inputs.
         """
-        return self.generator.generate_test_inputs(candidates=candidates)
+        test_inputs = self.engine.generate(candidates=candidates)
+        logging.info(f"Generated {len(test_inputs)} new test inputs.")
+        return test_inputs
 
-    def run_test_inputs(self, test_inputs: Set[Input]) -> Set[Input]:
+    def run_test_inputs(self, test_inputs: Set[FandangoInput]) -> Set[FandangoInput]:
         """
         Run the test inputs.
         """
+        logging.info("Running the test inputs.")
         return self.runner.label(test_inputs=test_inputs)
 
     def get_best_candidates(
@@ -207,14 +216,14 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         sorted_candidates = sorted(candidates, key=lambda c: strategy.evaluate(c), reverse=True) if candidates else []
         return sorted_candidates
 
-    def get_test_inputs_from_strings(self, inputs: Iterable[str]) -> Set[Input]:
+    def get_test_inputs_from_strings(self, inputs: Iterable[str]) -> Set[FandangoInput]:
         """
         Convert a list of input strings to a set of Input objects.
         """
-        return set([Input.from_str(self.grammar, inp, None) for inp in inputs])
+        return set([FandangoInput.from_str(self.grammar, inp, None) for inp in inputs])
 
     @staticmethod
-    def check_initial_conditions(test_inputs: Set[Input]):
+    def check_initial_conditions(test_inputs: Set[FandangoInput]):
         """
         Check the initial conditions for the input feature debugger.
         Raises a ValueError if the conditions are not met.
