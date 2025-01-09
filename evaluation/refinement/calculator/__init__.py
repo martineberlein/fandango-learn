@@ -1,11 +1,12 @@
-from avicenna.core import HypothesisInputFeatureDebugger, CandidateLearner, Generator
-from avicenna.data import Input
+import math
+from debugging_framework.input.oracle import OracleResult
 
 from fandangoLearner.core import ConstraintCandidateLearner
 from fandangoLearner.learner import FandangoLearner, FandangoInput
 from fandangoLearner.interface.fandango import parse
-import math
-from debugging_framework.input.oracle import OracleResult
+
+from fandangoLearner.refinement.generator import Generator
+from fandangoLearner.refinement.core import HypothesisInputFeatureDebugger
 
 def calculator_oracle(inp):
     try:
@@ -13,8 +14,8 @@ def calculator_oracle(inp):
             str(inp), {"sqrt": math.sqrt, "sin": math.sin, "cos": math.cos, "tan": math.tan}
         )
     except ValueError:
-        return OracleResult.FAILING, ValueError()
-    return OracleResult.PASSING, None
+        return OracleResult.FAILING
+    return OracleResult.PASSING
 
 
 
@@ -53,3 +54,5 @@ if __name__ == "__main__":
     )
 
     const = avicenna.explain()
+    for candidate in const:
+        print(candidate)
