@@ -68,6 +68,17 @@ class FandangoGenerator(Generator):
     def __init__(self, grammar, **kwargs):
         super().__init__(grammar, **kwargs)
 
+    def generate_test_inputs(self, candidates: FandangoConstraintCandidate= None, num_inputs: int = 2, **kwargs) -> Set[FandangoInput]:
+        """
+        Generate multiple inputs to be used in the debugging process.
+        """
+        test_inputs = set()
+        for _ in range(num_inputs):
+            inp = self.generate(**kwargs)
+            if inp:
+                test_inputs.add(inp)
+        return test_inputs
+
     def generate(self, *args, **kwargs) -> FandangoInput:
         tree = self.grammar.fuzz()
 
