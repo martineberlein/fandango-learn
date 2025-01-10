@@ -41,7 +41,7 @@ if __name__ == "__main__":
         #     string_pattern="exists <cont> in <NON_TERMINAL>: str(<cont>) == <STRING>;",
         # ),
         Pattern(
-            string_pattern="exists <container> in <NON_TERMINAL>: exists <arith> in <container>.<larithexp>: int(eval(str(<arith>))) == 0;",
+            string_pattern="exists <container> in <NON_TERMINAL>: exists <arith> in <container>.<rarithexp>: int(eval(str(<arith>))) == 0;",
         )
     ]
 

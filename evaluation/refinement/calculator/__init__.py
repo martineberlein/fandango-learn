@@ -1,12 +1,12 @@
 import math
+
 from debugging_framework.input.oracle import OracleResult
 
-from fandangoLearner.core import ConstraintCandidateLearner
-from fandangoLearner.learner import FandangoLearner, FandangoInput
 from fandangoLearner.interface.fandango import parse
-
+from fandangoLearner.learner import FandangoLearner, FandangoInput
 from fandangoLearner.refinement.generator import Generator
 from fandangoLearner.refinement.core import HypothesisInputFeatureDebugger
+
 
 def calculator_oracle(inp):
     try:
@@ -18,8 +18,7 @@ def calculator_oracle(inp):
     return OracleResult.PASSING
 
 
-
-grammar = """
+GRAMMAR = """
 <start> ::= <arithexp>;
 <arithexp> ::= <function>"("<number>")";
 <function> ::= "sqrt" | "cos" | "sin" | "tan";
@@ -37,20 +36,28 @@ class FandangoGenerator(Generator):
         super().__init__(grammar, **kwargs)
 
     def generate(self, *args, **kwargs) -> FandangoInput:
-        tree = grammar.fuzz()
+        tree = self.grammar.fuzz()
 
         return FandangoInput(tree)
 
 
+def check_generator(grammar):
+    generator = FandangoGenerator(grammar)
+    for _ in range(10):
+        print(generator.generate())
+
+
 if __name__ == "__main__":
-    grammar, _ = parse(grammar)
+    parsed_grammar, _ = parse(GRAMMAR)
+
+    check_generator(parsed_grammar)
 
     avicenna = HypothesisInputFeatureDebugger(
-        grammar=grammar,
+        grammar=parsed_grammar,
         oracle=calculator_oracle,
         initial_inputs=["cos(12)", "sqrt(-900)"],
-        learner=FandangoLearner(grammar),
-        generator=FandangoGenerator(grammar),
+        learner=FandangoLearner(parsed_grammar),
+        generator=FandangoGenerator(parsed_grammar),
     )
 
     const = avicenna.explain()

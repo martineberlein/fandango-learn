@@ -1,29 +1,31 @@
 import time
-import pathlib
+import os
+import random
 
 from fandango.language.parse import parse_file
 from fandango.language.symbol import NonTerminal
 from fandangoLearner.learner import FandangoLearner
+from fandangoLearner.logger import LoggerLevel
 
 from debugging_benchmark.middle.middle import MiddleBenchmarkRepository
 from evaluation.evaluation_helper import (
-    evaluate_candidates,
-    get_inputs,
-    print_constraints,
+    get_inputs, format_results
 )
 
 
-if __name__ == "__main__":
-    grammar, _ = parse_file(pathlib.Path.cwd() / "middle.fan")
+def evaluate_middle(logger_level=LoggerLevel.INFO):
+    dirname = os.path.dirname(__file__)
+    filename = os.path.join(dirname, 'middle.fan')
+    grammar, _ = parse_file(filename)
 
     programs = MiddleBenchmarkRepository().build()
     program = programs[0]  # Middle.1
 
-    initial_inputs_failing, initial_inputs_passing = get_inputs(
-        grammar,
-        lambda x: program.oracle(x)[0],
-    )
-    initial_inputs = initial_inputs_failing.union(initial_inputs_passing)
+    # initial_inputs_failing, initial_inputs_passing = get_inputs(
+    #     grammar,
+    #     lambda x: program.oracle(x)[0],
+    # )
+    initial_inputs = set(program.get_initial_inputs())
 
     relevant_non_terminals = {
         NonTerminal("<x>"),
@@ -32,18 +34,26 @@ if __name__ == "__main__":
     }
 
     start_time_learning = time.time()
-    learner = FandangoLearner(grammar)
+    learner = FandangoLearner(grammar, logger_level=logger_level)
 
-    candidates = learner.learn_constraints(initial_inputs, relevant_non_terminals)
+    candidates = learner.learn_constraints(initial_inputs, relevant_non_terminals, oracle=lambda x: program.oracle(x)[0],)
 
     end_time_learning = time.time()
 
-    print(
-        f"Time taken to learn constraints: {end_time_learning - start_time_learning:.4f} seconds",
-        end="\n\n",
+    # round time
+    time_in_seconds = round(end_time_learning - start_time_learning, 4)
+    return format_results(
+        "Middle",
+        grammar,
+        lambda x: program.oracle(x)[0],
+        candidates,
+        time_in_seconds
     )
 
-    print_constraints(candidates, initial_inputs)
 
-    print()
-    evaluate_candidates(candidates, grammar, lambda x: program.oracle(x)[0])
+if __name__ == "__main__":
+    random.seed(1)
+    results = evaluate_middle()
+    constraints = results["candidates"]
+    for constraint in constraints:
+        print(constraint)
