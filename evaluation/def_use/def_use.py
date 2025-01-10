@@ -1,5 +1,6 @@
 import logging
 from typing import Dict, Tuple
+import random
 
 from debugging_framework.input.oracle import OracleResult
 from fandango.language.symbol import NonTerminal
@@ -76,25 +77,55 @@ def validate_lang(inp: FandangoInput):
 
 
 CONSTRAINTS = """
-forall <use> in <assgn>.<rhs>:
-    exists <def> in <assgn>:
-        str(<def>.<var>) == str(<use>.<var>) and is_before(<start>, <def>, <use>)
-;
+# (forall <use> in <start>..<assgn>:
+#     exists <def> in <start>..<assgn>:
+#         str(<def>.<var>) == str(<use>.<rhs>.<var>) and is_before(<start>, <def>, <use>))
 
-forall <assgn> in <assgn>:
-    str(<assgn>.<var>) != str(<assgn>.<rhs>.<var>)
+# (forall <a1> in <assgn>:
+#     forall <use> in <a1>.<rhs>.<var>:
+#         exists <a2> in <assgn>:
+#             forall <def> in <a2>.<var>:
+#                 str(<def>) == str(<use>) and is_before(<start>, <a2>, <a1>)
+# )
+
+# and
+# 
+
+(forall <as> in <assgn>:
+    str(<as>.<var>) != str(<as>.<rhs>.<var>)
+)
+
+# (
+# forall <as> in <assgn>:
+#     forall <r1> in <as>.<rhs>.<var>:
+#         forall <v1> in <as>.<var>:
+#             str(<v1>) != str(<r1>)
+# )
+
+and 
+
+(forall <use> in <rhs>.<var>:
+    exists <def> in <assgn>:
+        str(<def>.<var>) == str(<use>) and is_before(<start>, <def>, <use>)
+)
 ;
 """
 
 def generate_valid():
+    random.seed(5)
     grammar, constraints = parse(LANG_GRAMMAR + CONSTRAINTS)
+    print(constraints[0].check(grammar.parse("a:=1; b:=a; c:=1")))
+    print(constraints[0].check(grammar.parse("j:=t; c:=5; p:=2; r:=b; a:=g")))
+    print(constraints[0].check(grammar.parse("a:=1; b:=b; c:=2")))
     print(constraints[0].check(grammar.parse("a:=1; b:=a; c:=2")))
+
+
     fandango = Fandango(
         grammar, constraints, desired_solutions=200
     )
     solutions = fandango.evolve()
     for solution in solutions:
-        print(solution)
+        print(solution, constraints[0].check(solution))
 
 
 if __name__ == "__main__":
