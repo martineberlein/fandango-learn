@@ -9,7 +9,7 @@ from debugging_framework.input.oracle import OracleResult
 
 from .learning.candidate import FandangoConstraintCandidate
 from .data.input import FandangoInput
-from .logger import LOGGER
+from .logger import LOGGER, LoggerLevel
 from .learning.combination import ConjunctionProcessor, DisjunctionProcessor
 from .learning.instantiation import PatternProcessor
 from .core import BaseFandangoLearner
@@ -22,7 +22,7 @@ class FandangoLearner(BaseFandangoLearner):
     """
 
     def __init__(
-        self, grammar: Grammar, patterns: Optional[Iterable[str]] = None, **kwargs
+        self, grammar: Grammar, patterns: Optional[Iterable[str]] = None, logger_level: LoggerLevel = LoggerLevel.INFO, **kwargs
     ):
         """
         Initializes the FandangoLearner with a grammar and optional patterns.
@@ -32,6 +32,10 @@ class FandangoLearner(BaseFandangoLearner):
             patterns (Optional[Iterable[str]]): A collection of patterns to be used in the learning process.
             **kwargs: Additional arguments for customization.
         """
+
+        if logger_level is not None:
+            LOGGER.setLevel(logger_level.value)
+
         super().__init__(grammar, patterns, **kwargs)
         self.max_conjunction_size = 2
         self.max_disjunction_size = 2
@@ -45,6 +49,7 @@ class FandangoLearner(BaseFandangoLearner):
         self.disjunction_processor = DisjunctionProcessor(
             self.max_disjunction_size, self.min_precision, self.min_recall
         )
+
 
     def learn_constraints(
         self,
@@ -151,5 +156,5 @@ class FandangoLearner(BaseFandangoLearner):
                     candidate.evaluate(negative_inputs)
                     self.candidates.append(candidate)
             except Exception as e:
-                LOGGER.error("Error during candidate evaluation: %s", e)
+                LOGGER.debug("Error when evaluation candidate %s: %s",candidate.constraint, e)
                 continue
