@@ -4,6 +4,7 @@ from typing import Dict
 from evaluation.calculator.evaluate_calculator import evaluate_calculator
 from evaluation.heartbleed.heartbleed import evaluate_heartbleed
 from evaluation.middle.middle import evaluate_middle
+from evaluation.expression.expression import evaluate_expression
 
 from fandangoLearner.logger import LoggerLevel
 
@@ -32,6 +33,7 @@ def run_evaluation(seconds: int = 3600, random_seed: int = 1):
         evaluate_calculator,
         evaluate_heartbleed,
         evaluate_middle,
+        evaluate_expression,
     ]
 
     for experiment in experiments:
