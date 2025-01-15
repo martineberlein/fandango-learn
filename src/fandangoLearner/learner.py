@@ -50,6 +50,9 @@ class FandangoLearner(BaseFandangoLearner):
             self.max_disjunction_size, self.min_precision, self.min_recall
         )
 
+        # Refinement
+        self.all_positive_inputs = set()
+        self.all_negative_inputs = set()
 
     def learn_constraints(
         self,
@@ -77,8 +80,9 @@ class FandangoLearner(BaseFandangoLearner):
             relevant_non_terminals = set(self.grammar)
 
         positive_inputs, negative_inputs = self.categorize_inputs(test_inputs)
+        self.update_inputs(positive_inputs, negative_inputs)
 
-        sorted_positive_inputs = self.sort_and_filter_positive_inputs(positive_inputs)
+        sorted_positive_inputs = self.sort_and_filter_positive_inputs(self.all_positive_inputs)
 
         instantiated_patterns = self.pattern_processor.instantiate_patterns(
             relevant_non_terminals, sorted_positive_inputs
@@ -128,6 +132,10 @@ class FandangoLearner(BaseFandangoLearner):
         LOGGER.info("Filtered positive inputs for learning: %s", len(filtered_inputs))
         return filtered_inputs
 
+    def update_inputs(self, positive_inputs: Set[FandangoInput], negative_inputs: Set[FandangoInput]):
+        self.all_positive_inputs.update(positive_inputs)
+        self.all_negative_inputs.update(negative_inputs)
+
     def parse_candidates(
         self,
         instantiated_patterns: List[Constraint],
@@ -146,15 +154,23 @@ class FandangoLearner(BaseFandangoLearner):
         """
         for pattern in instantiated_patterns:
             candidate = FandangoConstraintCandidate(pattern)
-            try:
-                candidate.evaluate(positive_inputs)
-                if pre_filter:
-                    if candidate.recall() >= self.min_recall:
-                        candidate.evaluate(negative_inputs)
+            if candidate not in self.candidates:
+                try:
+                    candidate.evaluate(self.all_positive_inputs)
+                    if pre_filter:
+                        if candidate.recall() >= self.min_recall:
+                            candidate.evaluate(self.all_negative_inputs)
+                            self.candidates.append(candidate)
+                    else:
+                        candidate.evaluate(self.all_negative_inputs)
                         self.candidates.append(candidate)
-                else:
+                except Exception as e:
+                    LOGGER.debug("Error when evaluation candidate %s: %s",candidate.constraint, e)
+                    continue
+            else:
+                candidate.evaluate(positive_inputs)
+                if candidate.recall() >= self.min_recall:
                     candidate.evaluate(negative_inputs)
-                    self.candidates.append(candidate)
-            except Exception as e:
-                LOGGER.debug("Error when evaluation candidate %s: %s",candidate.constraint, e)
-                continue
+                else:
+                    self.candidates.remove(candidate)
+                    continue
