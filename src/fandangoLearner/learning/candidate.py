@@ -9,7 +9,7 @@ from fandango.constraints.base import (
     DisjunctionConstraint,
 )
 from fandangoLearner.data.input import FandangoInput
-
+from fandangoLearner.language.constraints import NegationConstraint
 
 class ConstraintCandidate(ABC):
     """
@@ -174,7 +174,19 @@ class FandangoConstraintCandidate(ConstraintCandidate):
 
         :return: The negation of the candidate.
         """
-        raise NotImplementedError()
+        cache = {}
+        for inp in self.cache.keys():
+            cache[inp] = not self.cache[inp]
+
+        failing_inputs_eval_results = [not eval_result for eval_result in self.failing_inputs_eval_results]
+        passing_inputs_eval_results = [not eval_result for eval_result in self.passing_inputs_eval_results]
+
+        return FandangoConstraintCandidate(
+            constraint=NegationConstraint(self.constraint),
+            failing_inputs_eval_results=failing_inputs_eval_results,
+            passing_inputs_eval_results=passing_inputs_eval_results,
+            cache=cache,
+        )
 
     def _update_eval_results_and_combination(
         self, eval_result: bool, inp: FandangoInput

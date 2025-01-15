@@ -134,6 +134,21 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
         self.assertEqual(combined_candidate.cache[self.failing_input], True)
         self.assertEqual(combined_candidate.cache[self.passing_input], True)
 
+    def test_negation(self):
+        candidate = FandangoConstraintCandidate(
+            self.get_constraint("int(<number>) <= 0;")
+        )
+        candidate.evaluate([self.failing_input, self.passing_input])
+        self.assertEqual(candidate.cache[self.failing_input], True)
+        self.assertEqual(candidate.cache[self.passing_input], False)
+
+        negated_candidate = -candidate
+        self.assertEqual(negated_candidate.precision(), 0.0)
+        self.assertEqual(negated_candidate.recall(), 0.0)
+
+        self.assertEqual(negated_candidate.cache[self.failing_input], False)
+        self.assertEqual(negated_candidate.cache[self.passing_input], True)
+
     def test_reset(self):
         inputs = [self.failing_input, self.passing_input]
         self.candidate.evaluate(inputs)
