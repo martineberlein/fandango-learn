@@ -5,6 +5,7 @@ from typing import Set, Union, List
 from fandangoLearner.data.input import FandangoInput
 from fandangoLearner.learning.candidate import FandangoConstraintCandidate
 from fandango.language.grammar import Grammar
+from fandango.evolution.algorithm import Fandango
 
 
 class Generator(ABC):
@@ -68,18 +69,25 @@ class FandangoGenerator(Generator):
     def __init__(self, grammar, **kwargs):
         super().__init__(grammar, **kwargs)
 
-    def generate_test_inputs(self, candidates: FandangoConstraintCandidate= None, num_inputs: int = 2, **kwargs) -> Set[FandangoInput]:
+    def generate_test_inputs(self, candidate: FandangoConstraintCandidate=None, num_inputs: int = 10, **kwargs) -> Set[FandangoInput]:
         """
         Generate multiple inputs to be used in the debugging process.
         """
         test_inputs = set()
-        for _ in range(num_inputs):
-            inp = self.generate(**kwargs)
-            if inp:
-                test_inputs.add(inp)
+        while len(test_inputs) < num_inputs:
+            test_inputs.update(self.generate(candidate=candidate, **kwargs))
+
         return test_inputs
 
-    def generate(self, *args, **kwargs) -> FandangoInput:
-        tree = self.grammar.fuzz()
+    def generate(self, candidate: FandangoConstraintCandidate=None, **kwargs) -> Set[FandangoInput]:
+        fandango = Fandango(
+            grammar=self.grammar,
+            constraints=[candidate.constraint],
+        )
 
-        return FandangoInput(tree)
+        solutions = fandango.evolve()
+
+        test_inputs = set()
+        for inp in solutions:
+                test_inputs.add(FandangoInput(tree=inp))
+        return test_inputs
