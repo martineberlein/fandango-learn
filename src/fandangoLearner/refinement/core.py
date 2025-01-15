@@ -4,6 +4,7 @@ import time
 import logging
 
 from fandango.language.grammar import Grammar
+from fandango.language.symbol import NonTerminal
 
 from fandangoLearner.types import OracleType
 from fandangoLearner.data.input import FandangoInput
@@ -54,7 +55,7 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         grammar: Grammar,
         oracle: OracleType,
         initial_inputs: Union[Iterable[str], Iterable[FandangoInput]],
-        learner: Optional[ConstraintCandidateLearner] = None,
+        learner: Optional[FandangoLearner] = None,
         generator: Optional[Generator] = None,
         timeout_seconds: int = 3600,
         max_iterations: Optional[int] = 10,
@@ -68,14 +69,14 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         self.timeout_seconds = timeout_seconds
         self.max_iterations = max_iterations
         self.strategy = RecallPriorityStringLengthFitness()
-        self.learner: ConstraintCandidateLearner = (
+        self.learner: FandangoLearner = (
             learner if learner else FandangoLearner(self.grammar)
         )
         self.generator: Generator = (
             generator if generator else FandangoGenerator(self.grammar)
         )
         self.runner: ExecutionHandler = SingleExecutionHandler(self.oracle)
-        self.engine: Engine = SingleEngine(generator)
+        # self.engine: Engine = SingleEngine(generator)
 
     def set_runner(self, runner: ExecutionHandler):
         """
@@ -167,8 +168,9 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         The main loop of the hypothesis-based input feature debugger.
         """
         candidates = self.learn_candidates(test_inputs)
-        # negated_candidates = self.negate_candidates(candidates)
-        inputs = self.generate_test_inputs(candidates) # +negated_candidates)
+        negated_candidates = self.negate_candidates(candidates)
+        inputs = self.generate_test_inputs(candidates + negated_candidates)
+        # self.learner.reset()
         labeled_test_inputs = self.run_test_inputs(inputs)
         return labeled_test_inputs
 
@@ -176,7 +178,7 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         """
         Learn the candidates (failure diagnoses) from the test inputs.
         """
-        return self.learner.learn_constraints(test_inputs)
+        raise NotImplementedError()
 
     @staticmethod
     def negate_candidates(candidates: List[FandangoConstraintCandidate]):
@@ -194,9 +196,7 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         :param candidates: The learned candidates.
         :return Set[Input]: The generated test inputs.
         """
-        test_inputs = self.engine.generate(candidates=candidates)
-        logging.info(f"Generated {len(test_inputs)} new test inputs.")
-        return test_inputs
+        raise NotImplementedError()
 
     def run_test_inputs(self, test_inputs: Set[FandangoInput]) -> Set[FandangoInput]:
         """
@@ -234,3 +234,83 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
 
         if not (has_failing and has_passing):
             raise ValueError("The initial inputs must contain at least one failing and one passing input.")
+
+
+class FandangoRefinement(HypothesisInputFeatureDebugger):
+
+    def __init__(
+        self,
+        grammar: Grammar,
+        oracle: OracleType,
+        initial_inputs: Union[Iterable[str], Iterable[FandangoInput]],
+        max_iterations: int = 10,
+        timeout_seconds: int = 3600,
+        learner: Optional[FandangoLearner] = None,
+        generator: Optional[Generator] = None,
+        min_recall: float = 0.9,
+        min_precision: float = 0.6,
+        top_n_relevant_non_terminals: int = 3,
+        relevant_non_terminals: Optional[Set[NonTerminal]] = None,
+        **kwargs,
+    ):
+        learner: FandangoLearner = (
+            learner if learner else FandangoLearner(grammar)
+        )
+        generator: Generator = (
+            generator if generator else FandangoGenerator(grammar)
+        )
+        self.engine: Engine = ParallelEngine(generator)
+
+        super().__init__(
+            grammar,
+            oracle,
+            initial_inputs,
+            learner=learner,
+            generator=generator,
+            timeout_seconds=timeout_seconds,
+            max_iterations=max_iterations,
+            **kwargs,
+        )
+        self.max_candidates = 5
+        self.relevant_non_terminals = relevant_non_terminals
+
+    def learn_relevant_non_terminals(self):
+        return self.relevant_non_terminals
+
+    def learn_candidates(self, test_inputs: Set[FandangoInput]) -> Optional[List[FandangoConstraintCandidate]]:
+        """
+        Learn the candidates based on the test inputs. The candidates are ordered based on their scores.
+        :param test_inputs: The test inputs to learn the candidates from.
+        :return Optional[List[Candidate]]: The learned candidates.
+        """
+        logging.info("Learning the candidates.")
+        relevant_non_terminals = self.learn_relevant_non_terminals()
+
+        _ = self.learner.learn_constraints(
+            test_inputs, relevant_non_terminals=relevant_non_terminals
+        )
+        candidates = self.learner.get_best_candidates()
+        return candidates[:self.max_candidates]
+
+    def generate_test_inputs(self, candidates: List[FandangoConstraintCandidate]) -> Set[FandangoInput]:
+        """
+        Generate the test inputs based on the learned candidates.
+        :param candidates: The learned candidates.
+        :return Set[Input]: The generated test inputs.
+        """
+        logging.info(f"Generating new test inputs for {len(candidates)} candidates.")
+        test_inputs = self.engine.generate(candidates=candidates)
+        return test_inputs
+
+    def run_test_inputs(self, test_inputs: Set[FandangoInput]) -> Set[FandangoInput]:
+        """
+        Run the test inputs to label them. The test inputs are labeled based on the oracle.
+        Feature vectors are assigned to the test inputs.
+        :param test_inputs: The test inputs to run.
+        :return Set[Input]: The labeled test inputs.
+        """
+        logging.info(f"Running {len(test_inputs)} test inputs.")
+        labeled_test_inputs = self.runner.label(test_inputs=test_inputs)
+        return labeled_test_inputs
+
+

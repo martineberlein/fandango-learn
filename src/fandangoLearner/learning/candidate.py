@@ -69,6 +69,8 @@ class FandangoConstraintCandidate(ConstraintCandidate):
         :return:
         """
         for inp in inputs:
+            if inp in self.cache.keys():
+                continue
             eval_result = self.constraint.check(inp.tree)
             self._update_eval_results_and_combination(eval_result, inp)
 
@@ -110,7 +112,9 @@ class FandangoConstraintCandidate(ConstraintCandidate):
         :return: The conjunction of the candidate with the other candidate.
         """
         assert isinstance(other, FandangoConstraintCandidate)
-        assert self.cache.keys() == other.cache.keys()
+        # print(
+        #     f"Cache keys: {self.cache.keys()}, {other.cache.keys()}")
+        assert self.cache.keys() == other.cache.keys(), "Cache keys must be the same"
 
         new_failing_inputs_eval_results = []
         new_passing_inputs_eval_results = []

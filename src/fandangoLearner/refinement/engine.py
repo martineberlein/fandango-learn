@@ -1,3 +1,4 @@
+import logging
 from typing import List, Set, Type
 from queue import Queue, Empty
 from threading import Thread
@@ -50,6 +51,8 @@ class ParallelEngine(Engine):
         :param List[Candidate] candidates: The candidates to generate new inputs for.
         :return:
         """
+
+        logging.info("Generating inputs in parallel...")
 
         threads = []
         candidate_queue = Queue()
