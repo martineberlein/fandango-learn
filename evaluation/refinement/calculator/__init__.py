@@ -28,38 +28,3 @@ GRAMMAR = """
 <maybedigits> ::= "" |<digit><maybedigits>;
 <digit>::=  "0" | <onenine>;
 """
-
-
-class FandangoGenerator(Generator):
-
-    def __init__(self, grammar, **kwargs):
-        super().__init__(grammar, **kwargs)
-
-    def generate(self, *args, **kwargs) -> FandangoInput:
-        tree = self.grammar.fuzz()
-
-        return FandangoInput(tree)
-
-
-def check_generator(grammar):
-    generator = FandangoGenerator(grammar)
-    for _ in range(10):
-        print(generator.generate())
-
-
-if __name__ == "__main__":
-    parsed_grammar, _ = parse(GRAMMAR)
-
-    check_generator(parsed_grammar)
-
-    avicenna = HypothesisInputFeatureDebugger(
-        grammar=parsed_grammar,
-        oracle=calculator_oracle,
-        initial_inputs=["cos(12)", "sqrt(-900)"],
-        learner=FandangoLearner(parsed_grammar),
-        generator=FandangoGenerator(parsed_grammar),
-    )
-
-    const = avicenna.explain()
-    for candidate in const:
-        print(candidate)
