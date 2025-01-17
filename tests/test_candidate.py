@@ -189,6 +189,18 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
         self.assertEqual(candidate.cache[null_input], True)
         self.assertEqual(candidate.cache[self.failing_input], True)
 
+    def test_candidate_hash(self):
+        inputs = [self.failing_input, self.passing_input]
+        self.candidate.evaluate(inputs)
+
+        candidates = set()
+        candidates.add(self.candidate)
+        candidates.add(self.candidate)
+        candidates.add(self.candidate)
+        self.assertEqual(len(candidates), 1)
+
+        self.assertTrue(self.candidate in candidates)
+        self.assertFalse(self.candidate not in candidates)
 
 if __name__ == "__main__":
     unittest.main()
