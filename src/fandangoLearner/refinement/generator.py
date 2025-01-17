@@ -83,16 +83,16 @@ class FandangoGenerator(Generator):
         fandango = Fandango(
             grammar=self.grammar,
             constraints=[candidate.constraint],
-            max_generations=10,
+            max_generations=5,
         )
 
-        #solutions = fandango.evolve()
-
-
+        # solutions = fandango.evolve()
+        # return {FandangoInput(inp) for inp in solutions}
+        #
+        #
         test_inputs = set()
-        for _ in range(5):
+        for _ in range(10):
                 inp = self.grammar.fuzz()
                 test_inputs.add(FandangoInput(tree=inp))
 
-        print(test_inputs)
         return test_inputs
