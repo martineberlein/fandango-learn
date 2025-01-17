@@ -65,6 +65,8 @@ if __name__ == "__main__":
     )
 
     const = fandangoRE.explain()
-    print(fandangoRE.learner.get_candidates())
     for candidate in const:
         print(candidate)
+
+    for inp in fandangoRE.learner.all_positive_inputs:
+        print(inp)
