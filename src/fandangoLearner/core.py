@@ -90,7 +90,7 @@ class BaseFandangoLearner(PatternCandidateLearner, ABC):
         self.min_recall = min_recall
         self.sorting_strategy = sorting_strategy
 
-        self.candidates: List[FandangoConstraintCandidate] = []
+        self.candidates: Set[FandangoConstraintCandidate] = set()
 
     def parse_patterns(self, patterns):
         """
