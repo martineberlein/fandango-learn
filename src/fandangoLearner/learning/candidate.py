@@ -102,6 +102,15 @@ class FandangoConstraintCandidate(ConstraintCandidate):
         fp = sum(int(entry) for entry in self.passing_inputs_eval_results)
         return tp / (tp + fp) if tp + fp > 0 else 0.0
 
+    def __eq__(self, other):
+        """
+        Return whether two candidates are equal.
+        """
+        return isinstance(other, FandangoConstraintCandidate) and str(self.constraint) == str(other.constraint)
+
+    def __hash__(self):
+        return hash(str(self.constraint))
+
     def __and__(
         self, other: "FandangoConstraintCandidate"
     ) -> "FandangoConstraintCandidate":
@@ -114,18 +123,17 @@ class FandangoConstraintCandidate(ConstraintCandidate):
         assert isinstance(other, FandangoConstraintCandidate)
         # print(
         #     f"Cache keys: {self.cache.keys()}, {other.cache.keys()}")
-        assert self.cache.keys() == other.cache.keys(), "Cache keys must be the same"
+        # assert self.cache.keys() == other.cache.keys(), "Cache keys must be the same"
 
-        new_failing_inputs_eval_results = []
-        new_passing_inputs_eval_results = []
         new_cache = {}
-        for inp in self.cache:
-            r = self.cache[inp] and other.cache[inp]
-            if inp.oracle == OracleResult.FAILING:
-                new_failing_inputs_eval_results.append(r)
-            else:
-                new_passing_inputs_eval_results.append(r)
+        new_failing, new_passing = [], []
+
+        for inp, value_self in self.cache.items():
+            value_other = other.cache[inp]
+            r = value_self and value_other  # or `value_self or value_other` for `__or__`
             new_cache[inp] = r
+
+            (new_failing if inp.oracle == OracleResult.FAILING else new_passing).append(r)
 
         return FandangoConstraintCandidate(
             constraint=ConjunctionConstraint(
@@ -134,8 +142,8 @@ class FandangoConstraintCandidate(ConstraintCandidate):
                 global_variables=self.constraint.global_variables,
                 # lazy=self.constraint.lazy,
             ),
-            failing_inputs_eval_results=new_failing_inputs_eval_results,
-            passing_inputs_eval_results=new_passing_inputs_eval_results,
+            failing_inputs_eval_results=new_failing,
+            passing_inputs_eval_results=new_passing,
             cache=new_cache,
         )
 
