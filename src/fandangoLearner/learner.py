@@ -84,17 +84,18 @@ class FandangoLearner(BaseFandangoLearner):
 
         sorted_positive_inputs = self.sort_and_filter_positive_inputs(self.all_positive_inputs)
 
-        instantiated_patterns = self.pattern_processor.instantiate_patterns(
+        instantiated_candidates = self.pattern_processor.instantiate_patterns(
             relevant_non_terminals, sorted_positive_inputs
         )
 
-        self.parse_candidates(instantiated_patterns, positive_inputs, negative_inputs)
+        self.parse_candidates(instantiated_candidates, positive_inputs, negative_inputs)
 
         conjunction_candidates = self.conjunction_processor.process(self.candidates)
-        self.candidates += conjunction_candidates
+        self.candidates.update(conjunction_candidates)
 
-        disjunction_candidates = self.disjunction_processor.process(self.candidates)
-        self.candidates += disjunction_candidates
+        # disjunction_candidates = self.disjunction_processor.process(self.candidates)
+        # self.candidates += disjunction_candidates
+        # self.filter_candidates()
 
         return self.get_best_candidates()
 
@@ -138,7 +139,7 @@ class FandangoLearner(BaseFandangoLearner):
 
     def parse_candidates(
         self,
-        instantiated_patterns: List[Constraint],
+        new_candidates: Set[FandangoConstraintCandidate],
         positive_inputs: Set[FandangoInput],
         negative_inputs: Set[FandangoInput],
         pre_filter: bool = True,
@@ -147,23 +148,26 @@ class FandangoLearner(BaseFandangoLearner):
         Generates constraint candidates based on instantiated patterns and evaluates them.
 
         Args:
-            instantiated_patterns (List[Constraint]): A set of instantiated patterns.
+            new_candidates (Set[FandangoConstraintCandidate]): A set of new candidates.
             positive_inputs (Set[FandangoInput]): A set of positive inputs.
             negative_inputs (Set[FandangoInput]): A set of negative inputs.
             pre_filter (bool, optional): A boolean that specifies whether to filter
         """
-        for pattern in instantiated_patterns:
-            candidate = FandangoConstraintCandidate(pattern)
+        candidates = set(self.candidates)
+        candidates.update(new_candidates)
+
+        candidates_to_remove = set()
+        for candidate in candidates:
             if candidate not in self.candidates:
                 try:
                     candidate.evaluate(self.all_positive_inputs)
                     if pre_filter:
                         if candidate.recall() >= self.min_recall:
                             candidate.evaluate(self.all_negative_inputs)
-                            self.candidates.append(candidate)
+                            self.candidates.add(candidate)
                     else:
                         candidate.evaluate(self.all_negative_inputs)
-                        self.candidates.append(candidate)
+                        self.candidates.add(candidate)
                 except Exception as e:
                     LOGGER.debug("Error when evaluation candidate %s: %s",candidate.constraint, e)
                     continue
@@ -172,5 +176,21 @@ class FandangoLearner(BaseFandangoLearner):
                 if candidate.recall() >= self.min_recall:
                     candidate.evaluate(negative_inputs)
                 else:
-                    self.candidates.remove(candidate)
+                    candidates_to_remove.add(candidate)
                     continue
+        for candidate in candidates_to_remove:
+            self.candidates.remove(candidate)
+
+        #LOGGER.info("Number of candidates after filtering: %s", len(self.candidates))
+
+    def filter_candidates(self):
+        candidates_to_remove = [
+            candidate
+            for candidate in self.candidates
+            if candidate.specificity() < self.min_precision
+            or candidate.recall() < self.min_recall
+        ]
+        #LOGGER.info("Removing candidates: %s", len(candidates_to_remove))
+
+        for candidate in candidates_to_remove:
+            self.candidates.remove(candidate)
