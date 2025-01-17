@@ -8,6 +8,7 @@ from fandango.language.search import RuleSearch
 from fandango.language.symbol import NonTerminal
 
 from fandangoLearner.data.input import FandangoInput
+from fandangoLearner.learning.candidate import FandangoConstraintCandidate
 from fandangoLearner.logger import LOGGER
 
 
@@ -83,7 +84,7 @@ class PatternProcessor:
         self,
         relevant_non_terminals: Iterable[NonTerminal],
         positive_inputs: Set[FandangoInput],
-    ) -> List[Constraint]:
+    ) -> Set[FandangoConstraintCandidate]:
         instantiated_patterns = []
 
         value_map = self.extract_non_terminal_values(
@@ -106,7 +107,11 @@ class PatternProcessor:
             transformed = transformer.results
             final_patterns.extend(transformed)
 
-        return final_patterns
+        new_candidates = set()
+        for pattern in final_patterns:
+            new_candidates.add(FandangoConstraintCandidate(pattern))
+
+        return new_candidates
 
 
 class NonTerminalPlaceholderTransformer(ConstraintVisitor):
