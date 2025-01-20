@@ -1,3 +1,4 @@
+import time
 from abc import ABC, abstractmethod
 from queue import Queue, Empty
 from typing import Set, Union, List
@@ -74,25 +75,28 @@ class FandangoGenerator(Generator):
         Generate multiple inputs to be used in the debugging process.
         """
         test_inputs = set()
-        while len(test_inputs) < num_inputs:
-            test_inputs.update(self.generate(candidate=candidate, **kwargs))
+        start_time = time.time()
+        while len(test_inputs) < num_inputs and time.time() - start_time < 1:
+            test_inputs = self.generate(candidate=candidate, **kwargs)
+            test_inputs.update(test_inputs)
 
         return test_inputs
 
     def generate(self, candidate: FandangoConstraintCandidate=None, **kwargs) -> Set[FandangoInput]:
+        print("Starting fandango")
         fandango = Fandango(
             grammar=self.grammar,
             constraints=[candidate.constraint],
-            max_generations=5,
+            max_generations=100,
         )
 
-        # solutions = fandango.evolve()
-        # return {FandangoInput(inp) for inp in solutions}
+        solutions = fandango.evolve()
+        return {FandangoInput(inp) for inp in solutions}
         #
         #
-        test_inputs = set()
-        for _ in range(10):
-                inp = self.grammar.fuzz()
-                test_inputs.add(FandangoInput(tree=inp))
-
-        return test_inputs
+        # test_inputs = set()
+        # for _ in range(10):
+        #         inp = self.grammar.fuzz()
+        #         test_inputs.add(FandangoInput(tree=inp))
+        #
+        # return test_inputs
