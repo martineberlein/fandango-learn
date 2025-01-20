@@ -7,7 +7,7 @@ from fandango.constraints.base import Constraint
 from fandangoLearner.data.input import FandangoInput
 from fandango.constraints.base import ConjunctionConstraint, DisjunctionConstraint
 from fandangoLearner.learner import NonTerminal
-from fandangoLearner.learning.candidate import FandangoConstraintCandidate
+from fandangoLearner.learning.candidate import FandangoConstraintCandidate, CandidateSet
 
 
 class TestFandangoConstraintCandidate(unittest.TestCase):
@@ -201,6 +201,39 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
 
         self.assertTrue(self.candidate in candidates)
         self.assertFalse(self.candidate not in candidates)
+
+    def test_candidate_set(self):
+        inputs = [self.failing_input, self.passing_input]
+        self.candidate.evaluate(inputs)
+        candidate_set = CandidateSet([self.candidate])
+        self.assertTrue(self.candidate in candidate_set)
+        self.assertFalse(self.candidate not in candidate_set)
+
+        candidate_set.append(self.candidate)
+        self.assertEqual(len(candidate_set), 1)
+
+        candidate_set.remove(self.candidate)
+        self.assertEqual(len(candidate_set), 0)
+
+    def test_iterate_candidate_set(self):
+        inputs = [self.failing_input, self.passing_input]
+        self.candidate.evaluate(inputs)
+        candidate_set = CandidateSet([self.candidate])
+        for candidate in candidate_set:
+            self.assertEqual(candidate, self.candidate)
+
+    def test_candidate_set_append(self):
+        inputs = [self.failing_input, self.passing_input]
+        self.candidate.evaluate(inputs)
+
+        candidate_set = CandidateSet()
+        candidate_set.append(self.candidate)
+        self.assertEqual(len(candidate_set), 1)
+        self.assertTrue(self.candidate in candidate_set)
+        self.assertFalse(self.candidate not in candidate_set)
+
+        candidate_set.append(self.candidate)
+        self.assertEqual(len(candidate_set), 1)
 
 if __name__ == "__main__":
     unittest.main()
