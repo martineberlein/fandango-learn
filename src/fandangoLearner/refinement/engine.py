@@ -53,6 +53,7 @@ class ParallelEngine(Engine):
         """
 
         logging.info("Generating inputs in parallel...")
+        logging.info(f"Number of workers: {len(self.workers)} Number of candidates: {len(candidates)}")
 
         threads = []
         candidate_queue = Queue()
