@@ -62,6 +62,7 @@ class FandangoConstraintCandidate(ConstraintCandidate):
         self.failing_inputs_eval_results = failing_inputs_eval_results or []
         self.passing_inputs_eval_results = passing_inputs_eval_results or []
         self.cache: Dict[FandangoInput, bool] = cache or {}
+        self.__hash = hash(str(self.constraint))
 
     def evaluate(self, inputs):
         """
@@ -110,7 +111,7 @@ class FandangoConstraintCandidate(ConstraintCandidate):
         return isinstance(other, FandangoConstraintCandidate) and str(self.constraint) == str(other.constraint)
 
     def __hash__(self):
-        return hash(str(self.constraint))
+        return self.__hash
 
     def __and__(
         self, other: "FandangoConstraintCandidate"
@@ -281,7 +282,8 @@ class CandidateSet:
         """
         candidate_hash = hash(candidate)
         if candidate_hash in self.candidate_hashes:
-            self.candidates[self.candidate_hashes[candidate_hash]] = self.candidates[-1]
-            self.candidate_hashes[self.candidates[-1]] = self.candidate_hashes[candidate_hash]
+            last_elem, idx = self.candidates[-1], self.candidate_hashes[candidate_hash]
+            self.candidates[idx] = last_elem
+            self.candidate_hashes[hash(last_elem)] = idx
             self.candidates.pop()
             del self.candidate_hashes[candidate_hash]
