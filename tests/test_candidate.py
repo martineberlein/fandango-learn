@@ -205,7 +205,8 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
     def test_candidate_set(self):
         inputs = [self.failing_input, self.passing_input]
         self.candidate.evaluate(inputs)
-        candidate_set = CandidateSet([self.candidate])
+        candidate_set = CandidateSet()
+        candidate_set.append(self.candidate)
         self.assertTrue(self.candidate in candidate_set)
         self.assertFalse(self.candidate not in candidate_set)
 
@@ -214,6 +215,7 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
 
         candidate_set.remove(self.candidate)
         self.assertEqual(len(candidate_set), 0)
+        self.assertEqual(len(candidate_set.candidate_hashes), 0)
 
     def test_iterate_candidate_set(self):
         inputs = [self.failing_input, self.passing_input]
