@@ -133,9 +133,10 @@ class FandangoInput(Input):
 
     def __init__(self, tree: DerivationTree, oracle: OracleResult = None):
         super().__init__(tree, oracle)
+        self.hash = hash(self.tree)
 
     def __hash__(self) -> int:
-        return hash(self.tree)
+        return self.hash
 
     @classmethod
     def from_str(
