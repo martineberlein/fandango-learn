@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import itertools
 
 from fandango.constraints.base import ConjunctionConstraint, DisjunctionConstraint
-from fandangoLearner.learning.candidate import FandangoConstraintCandidate
+from fandangoLearner.learning.candidate import FandangoConstraintCandidate, CandidateSet
 
 from fandangoLearner.logger import LOGGER
 
@@ -39,7 +39,7 @@ class ConjunctionProcessor(CombinationProcessor):
         self.max_conjunction_size = max_conjunction_size
 
     def process(
-        self, candidates: Set[FandangoConstraintCandidate]
+        self, candidates: CandidateSet
     ) -> Set[FandangoConstraintCandidate]:
         """
         Iterates of all candidates to find the best conjunctions.
@@ -89,7 +89,7 @@ class ConjunctionProcessor(CombinationProcessor):
         )
 
     def get_possible_conjunctions(
-        self, candidate_set: Set[FandangoConstraintCandidate]
+        self, candidate_set: CandidateSet
     ) -> List[Tuple[FandangoConstraintCandidate, ...]]:
         """
         Get all possible conjunctions of the candidate set with a maximum size of max_conjunction_size.

@@ -7,7 +7,7 @@ from fandango.constraints.base import (
     Constraint,
 )
 
-from .learning.candidate import ConstraintCandidate, FandangoConstraintCandidate
+from .learning.candidate import ConstraintCandidate, FandangoConstraintCandidate, CandidateSet
 from .data.input import Input as TestInput, FandangoInput
 from .learning.metric import FitnessStrategy, RecallPriorityFitness
 from .resources.patterns import Pattern
@@ -90,7 +90,7 @@ class BaseFandangoLearner(PatternCandidateLearner, ABC):
         self.min_recall = min_recall
         self.sorting_strategy = sorting_strategy
 
-        self.candidates: Set[FandangoConstraintCandidate] = set()
+        self.candidates: CandidateSet = CandidateSet()
 
     def parse_patterns(self, patterns):
         """
@@ -159,7 +159,7 @@ class BaseFandangoLearner(PatternCandidateLearner, ABC):
         Resets the precision and recall truth tables. This is useful when the learner is used for multiple runs.
         Minimum precision and recall values are not reset.
         """
-        self.candidates = []
+        self.candidates = CandidateSet()
 
     @abstractmethod
     def learn_constraints(

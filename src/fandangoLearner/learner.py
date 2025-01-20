@@ -1,10 +1,8 @@
-from typing import List, Dict, Iterable, Optional, Set, Callable
+from typing import List, Iterable, Optional, Set, Callable
 
 from fandango.language.grammar import Grammar
 from fandango.language.symbol import NonTerminal
-from fandango.constraints.base import (
-    Constraint,
-)
+
 from debugging_framework.input.oracle import OracleResult
 
 from .learning.candidate import FandangoConstraintCandidate
@@ -88,10 +86,20 @@ class FandangoLearner(BaseFandangoLearner):
             relevant_non_terminals, sorted_positive_inputs
         )
 
-        self.parse_candidates(instantiated_candidates, positive_inputs, negative_inputs)
+        candidates_to_evaluate: List[FandangoConstraintCandidate] = [] + self.candidates.candidates
+        for candidate in instantiated_candidates:
+            if candidate not in candidates_to_evaluate:
+                candidates_to_evaluate.append(candidate)
+
+        self.validate_and_add_new_candidates(candidates_to_evaluate, positive_inputs, negative_inputs)
 
         conjunction_candidates = self.conjunction_processor.process(self.candidates)
-        self.candidates.update(conjunction_candidates)
+        for candidate in conjunction_candidates:
+            self.candidates.append(candidate)
+
+        # for candidate in conjunction_candidates:
+        #     candidate.evaluate(self.all_negative_inputs)
+        #     self.candidates.append(candidate)
 
         # disjunction_candidates = self.disjunction_processor.process(self.candidates)
         # self.candidates += disjunction_candidates
@@ -137,51 +145,39 @@ class FandangoLearner(BaseFandangoLearner):
         self.all_positive_inputs.update(positive_inputs)
         self.all_negative_inputs.update(negative_inputs)
 
-    def parse_candidates(
+    def validate_and_add_new_candidates(
         self,
-        new_candidates: Set[FandangoConstraintCandidate],
+        candidates: List[FandangoConstraintCandidate],
         positive_inputs: Set[FandangoInput],
         negative_inputs: Set[FandangoInput],
-        pre_filter: bool = True,
     ) -> None:
         """
         Generates constraint candidates based on instantiated patterns and evaluates them.
 
         Args:
-            new_candidates (Set[FandangoConstraintCandidate]): A set of new candidates.
+            candidates (Set[FandangoConstraintCandidate]): A set of new candidates.
             positive_inputs (Set[FandangoInput]): A set of positive inputs.
             negative_inputs (Set[FandangoInput]): A set of negative inputs.
-            pre_filter (bool, optional): A boolean that specifies whether to filter
         """
-        candidates = set(self.candidates)
-        candidates.update(new_candidates)
-
-        candidates_to_remove = set()
         for candidate in candidates:
             if candidate not in self.candidates:
-                try:
-                    candidate.evaluate(self.all_positive_inputs)
-                    if pre_filter:
-                        if candidate.recall() >= self.min_recall:
-                            candidate.evaluate(self.all_negative_inputs)
-                            self.candidates.add(candidate)
-                    else:
-                        candidate.evaluate(self.all_negative_inputs)
-                        self.candidates.add(candidate)
-                except Exception as e:
-                    LOGGER.debug("Error when evaluation candidate %s: %s",candidate.constraint, e)
-                    continue
+                if self.evaluate_candidate(candidate, self.all_positive_inputs, self.all_negative_inputs):
+                    self.candidates.append(candidate)
+                    #LOGGER.info("Added new candidate: %s", candidate.constraint)
             else:
-                candidate.evaluate(positive_inputs)
-                if candidate.recall() >= self.min_recall:
-                    candidate.evaluate(negative_inputs)
-                else:
-                    candidates_to_remove.add(candidate)
-                    continue
-        for candidate in candidates_to_remove:
-            self.candidates.remove(candidate)
+                if not self.evaluate_candidate(candidate, positive_inputs, negative_inputs):
+                    self.candidates.remove(candidate)
+                    #LOGGER.info("Removed candidate: %s", candidate.constraint)
 
-        #LOGGER.info("Number of candidates after filtering: %s", len(self.candidates))
+    def evaluate_candidate(self, candidate: FandangoConstraintCandidate, positive_inputs, negative_inputs):
+        try:
+            candidate.evaluate(positive_inputs)
+            if candidate.recall() >= self.min_recall:
+                candidate.evaluate(negative_inputs)
+                return True
+        except Exception as e:
+            LOGGER.debug("Error when evaluation candidate %s: %s",candidate.constraint, e)
+        return False
 
     def filter_candidates(self):
         candidates_to_remove = [
