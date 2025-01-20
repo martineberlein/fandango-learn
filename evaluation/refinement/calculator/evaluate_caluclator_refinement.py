@@ -1,4 +1,6 @@
 import math
+import time
+import random
 
 from debugging_framework.input.oracle import OracleResult
 from fandango.language.symbol import NonTerminal
@@ -31,24 +33,8 @@ GRAMMAR = """
 """
 
 
-class FandangoGenerator(Generator):
-
-    def __init__(self, grammar, **kwargs):
-        super().__init__(grammar, **kwargs)
-
-    def generate(self, *args, **kwargs) -> FandangoInput:
-        tree = self.grammar.fuzz()
-
-        return FandangoInput(tree)
-
-
-def check_generator(grammar):
-    generator = FandangoGenerator(grammar)
-    for _ in range(10):
-        print(generator.generate())
-
-
 if __name__ == "__main__":
+    random.seed(1)
     parsed_grammar, _ = parse(GRAMMAR)
 
     relevant_non_terminals = {
@@ -64,7 +50,9 @@ if __name__ == "__main__":
         relevant_non_terminals=relevant_non_terminals,
     )
 
+    start_time = time.time()
     const = fandangoRE.explain()
+    print(f"Time taken: {time.time() - start_time}")
     for candidate in const:
         print(candidate)
 

@@ -54,6 +54,7 @@ def evaluate_middle(logger_level=LoggerLevel.INFO):
 if __name__ == "__main__":
     random.seed(1)
     results = evaluate_middle()
+    print("Required Time: ", results["time_in_seconds"], " seconds" )
     constraints = results["candidates"]
     for constraint in constraints:
         print(constraint)
