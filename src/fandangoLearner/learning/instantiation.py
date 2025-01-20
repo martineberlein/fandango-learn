@@ -12,6 +12,47 @@ from fandangoLearner.learning.candidate import FandangoConstraintCandidate
 from fandangoLearner.logger import LOGGER
 
 
+class ValueMaps:
+    def __init__(self, relevant_non_terminals: Set[NonTerminal]):
+        self.relevant_non_terminals = relevant_non_terminals
+        self.string_values = {nt: set() for nt in self.relevant_non_terminals}
+        self.int_values = {nt: set() for nt in self.relevant_non_terminals}
+
+    @staticmethod
+    def is_number(value: str) -> bool:
+        """Check if the given string represents a number."""
+        try:
+            float(value)
+            return True
+        except ValueError:
+            return False
+
+    def extract_non_terminal_values(self, inputs: Set[FandangoInput]) -> Tuple[
+        Dict[NonTerminal, Set[str]], Dict[NonTerminal, Set[float]]]:
+        """Extracts and returns values associated with non-terminals."""
+
+        for input_obj in inputs:
+            for non_terminal in self.relevant_non_terminals:
+                found_trees = input_obj.tree.find_all_trees(non_terminal)
+                for tree in found_trees:
+                    value = str(tree)
+                    if self.is_number(value):
+                        self.int_values[non_terminal].add(eval(value))
+                    else:
+                        self.string_values[non_terminal].add(value)
+
+        return self.string_values, self.int_values
+
+    def get_filtered_int_values(self) -> Dict[NonTerminal, Set[str]]:
+        """Filters the value map to only include min and max values for non-terminals that have integer values."""
+        reduced_int_values = {}
+        for non_terminal, values in self.int_values.items():
+            if values:
+                min_val, max_val = min(values), max(values)
+                reduced_int_values[non_terminal] = {min_val, max_val}
+        return reduced_int_values
+
+
 class PatternProcessor:
     """
     Manages the instantiation of patterns by applying the appropriate PatternInstantiation class.
@@ -20,69 +61,9 @@ class PatternProcessor:
     def __init__(self, patterns: Iterable[Constraint]):
         self.patterns = patterns
 
-    @staticmethod
-    def is_number(value: str) -> bool:
-        try:
-            float(value)
-            return True
-        except ValueError:
-            return False
-
-    def extract_non_terminal_values(
-        self,
-        relevant_non_terminals: Set[NonTerminal],
-        initial_inputs: Set[FandangoInput],
-    ) -> Dict[str, Dict[NonTerminal, List[str]]]:
-        """
-        Extracts values associated with non-terminals from initial inputs.
-
-        Args:
-            relevant_non_terminals (Set[NonTerminal]): A set of relevant non-terminals.
-            initial_inputs (Set[FandangoInput]): A set of initial inputs to extract values from.
-
-        Returns:
-            Dict[str, Dict[NonTerminal, List[str]]]: Extracted string and integer values.
-        """
-        string_values: Dict[NonTerminal, Set[str]] = {}
-        int_values: Dict[NonTerminal, Set[str]] = {}
-
-        for non_terminal in relevant_non_terminals:
-            for inp in initial_inputs:
-                found_trees = inp.tree.find_all_trees(non_terminal)
-                for tree in found_trees:
-                    value = str(tree)
-                    if self.is_number(value):
-                        int_values.setdefault(non_terminal, set())#.add(value)
-                    else:
-                        string_values.setdefault(non_terminal, set()).add(value)
-
-        return {
-            "string_values": {k: list(v) for k, v in string_values.items()},
-            "int_values": {k: list(v) for k, v in int_values.items()},
-        }
-
-    def filter_value_map(self, value_map: Dict[str, Dict[NonTerminal, List[str]]]):
-        """
-        Filters the value map to remove non-terminals with no values.
-
-        Args:
-            value_map (Dict[str, Dict[NonTerminal, List[str]]]): A value map to filter.
-
-        Returns:
-            Dict[str, Dict[NonTerminal, List[str]]]: A filtered value map.
-        """
-
-        integer_value_map = value_map["int_values"]
-        for non_terminal in integer_value_map.keys():
-            if not integer_value_map[non_terminal]:
-                continue
-            int_v = list(float(v) for v in integer_value_map[non_terminal])
-            min_, max_ = min(int_v), max(int_v)
-            integer_value_map[non_terminal] = [str(min_), str(max_)]
-
     def instantiate_patterns(
         self,
-        relevant_non_terminals: Iterable[NonTerminal],
+        relevant_non_terminals: Set[NonTerminal],
         positive_inputs: Set[FandangoInput],
     ) -> Set[FandangoConstraintCandidate]:
         instantiated_patterns = []
@@ -90,6 +71,7 @@ class PatternProcessor:
         value_map = self.extract_non_terminal_values(
             relevant_non_terminals, positive_inputs
         )
+        # TODO
         self.filter_value_map(value_map)
 
         # Replace non-terminal placeholders with actual non-terminals
