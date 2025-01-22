@@ -9,7 +9,7 @@ from .learning.candidate import FandangoConstraintCandidate
 from .data.input import FandangoInput
 from .logger import LOGGER, LoggerLevel
 from .learning.combination import ConjunctionProcessor, DisjunctionProcessor
-from .learning.instantiation import PatternProcessor
+from .learning.instantiation import PatternProcessor, ValueMaps
 from .core import BaseFandangoLearner
 from .types import OracleType
 
@@ -82,8 +82,11 @@ class FandangoLearner(BaseFandangoLearner):
 
         sorted_positive_inputs = self.sort_and_filter_positive_inputs(self.all_positive_inputs)
 
+        value_maps = ValueMaps(relevant_non_terminals)
+        value_maps.extract_non_terminal_values(self.all_positive_inputs)
+
         instantiated_candidates = self.pattern_processor.instantiate_patterns(
-            relevant_non_terminals, sorted_positive_inputs
+            relevant_non_terminals, sorted_positive_inputs, value_maps=value_maps
         )
 
         candidates_to_evaluate: List[FandangoConstraintCandidate] = [] + self.candidates.candidates
