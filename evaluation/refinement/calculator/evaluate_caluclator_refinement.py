@@ -23,7 +23,8 @@ def calculator_oracle(inp):
     return OracleResult.PASSING
 
 
-def evaluate_calculator_refinement(logger_level=LoggerLevel.CRITICAL):
+def evaluate_calculator_refinement(logger_level=LoggerLevel.CRITICAL, random_seed=1):
+    random.seed(random_seed)
     dirname = os.path.dirname(__file__)
     filename = os.path.join(dirname, "calculator.fan")
     grammar, _ = parse_file(filename)
@@ -63,9 +64,6 @@ def evaluate_calculator_refinement(logger_level=LoggerLevel.CRITICAL):
 
     end_time_learning = time.time()
 
-    for inp in fandango_re.learner.all_positive_inputs:
-        print(inp)
-
     # round time
     time_in_seconds = round(end_time_learning - start_time_learning, 4)
     return format_results(
@@ -74,7 +72,6 @@ def evaluate_calculator_refinement(logger_level=LoggerLevel.CRITICAL):
 
 
 if __name__ == "__main__":
-    random.seed(1)
     results = evaluate_calculator_refinement(LoggerLevel.CRITICAL)
     print("Required Time: ", results["time_in_seconds"], " seconds")
     constraints = results["candidates"]

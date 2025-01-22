@@ -11,7 +11,8 @@ from debugging_benchmark.middle.middle import MiddleBenchmarkRepository
 from evaluation.evaluation_helper import get_inputs, format_results
 
 
-def evaluate_middle(logger_level=LoggerLevel.INFO):
+def evaluate_middle(logger_level=LoggerLevel.INFO, random_seed=1):
+    random.seed(random_seed)
     dirname = os.path.dirname(__file__)
     filename = os.path.join(dirname, "middle.fan")
     grammar, _ = parse_file(filename)

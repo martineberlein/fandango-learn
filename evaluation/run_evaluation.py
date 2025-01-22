@@ -8,6 +8,7 @@ from evaluation.heartbleed.heartbleed import evaluate_heartbleed
 from evaluation.middle.middle import evaluate_middle
 from evaluation.expression.expression import evaluate_expression
 from evaluation.refinement.calculator.evaluate_caluclator_refinement import evaluate_calculator_refinement
+from evaluation.refinement.heartbleed.evaluate_heartbleed_refinement import evaluate_heartbleed_refinement
 from fandangoLearner.logger import LoggerLevel
 
 
@@ -36,7 +37,7 @@ def write_log_header(log_file="evaluation_results.log"):
         file.write("=" * 80 + "\n")
 
 
-def row_print_results(results: Dict, log_file="evaluation_results.log"):
+def row_print_results(results: Dict, log_file="evaluation_results.log", write_to_file: bool = True):
     header = f"{'Subject':<15} {'Total':<6} {'Correct':<8} {'Percentage':<10} {'Mean Length':<12} {'Precision':<10} {'Recall':<10} {'Time (s)':<10}"
     output = []
     if not hasattr(row_print_results, "header_printed"):
@@ -58,25 +59,27 @@ def row_print_results(results: Dict, log_file="evaluation_results.log"):
     for line in output:
         print(line)
 
-    with open(log_file, "a") as file:
-        file.write("\n".join(output) + "\n")
+    if write_to_file:
+        with open(log_file, "a") as file:
+            file.write("\n".join(output) + "\n")
 
 
-def run_evaluation(seconds: int = 3600, random_seed: int = 1):
-    random.seed(random_seed)
+def run_evaluation(seconds: int = 3600, random_seed: int = 1, write_to_file: bool = True):
     log_file = get_log_file_name()
-    write_log_header(log_file)  # Write the log header
+    if write_to_file:
+        write_log_header(log_file)  # Write the log header
 
     experiments = [
-        evaluate_calculator_refinement,
         evaluate_calculator,
+        evaluate_calculator_refinement,
         evaluate_heartbleed,
+        evaluate_heartbleed_refinement,
         evaluate_middle,
         evaluate_expression,
     ]
     for experiment in experiments:
-        row_print_results(experiment(logger_level=LoggerLevel.CRITICAL), log_file)
+        row_print_results(experiment(logger_level=LoggerLevel.CRITICAL, random_seed=random_seed), log_file, write_to_file)
 
 
 if __name__ == "__main__":
-    run_evaluation()
+    run_evaluation(write_to_file=True)
