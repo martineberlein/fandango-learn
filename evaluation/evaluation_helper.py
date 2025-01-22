@@ -88,6 +88,8 @@ def format_results(
     sorting_strategy = RecallPriorityFitness()
     evaluation_inputs = generate_evaluation_inputs(grammar, oracle, num_inputs)
 
+    candidates = candidates or []
+
     for candidate in candidates:
         candidate.evaluate(evaluation_inputs)
 
@@ -104,9 +106,9 @@ def format_results(
 
     return {
         "name": name,
-        "candidates": candidates,
+        "candidates": candidates if candidates else None,
         "time_in_seconds": time_in_seconds,
-        "best_candidates": best_candidate,
-        "precision": best_candidate[0].precision(),
-        "recall": best_candidate[0].recall(),
+        "best_candidates": best_candidate if candidates else None,
+        "precision": best_candidate[0].precision() if candidates else None,
+        "recall": best_candidate[0].recall() if candidates else None,
     }
