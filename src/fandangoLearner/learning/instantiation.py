@@ -477,7 +477,7 @@ class IntegerValuePlaceholderTransformer(ValuePlaceholderTransformer):
 
     def update_value_map(self, bound: NonTerminal, search: RuleSearch):
         """ """
-        if search in self.value_maps._int_values:
+        if search.symbol in self.value_maps._int_values:
             self.value_maps._int_values[bound] = self.value_maps._int_values[search.symbol]
 
     def remove_value_map(self, bound: NonTerminal):
@@ -509,7 +509,7 @@ class StringValuePlaceholderTransformer(ValuePlaceholderTransformer):
 
     def update_value_map(self, bound: NonTerminal, search: RuleSearch):
         """ """
-        if search in self.value_maps._string_values:
+        if search.symbol in self.value_maps._string_values:
             self.value_maps._string_values[bound] = self.value_maps._string_values[search.symbol]
 
     def remove_value_map(self, bound: NonTerminal):
