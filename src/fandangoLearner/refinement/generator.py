@@ -84,19 +84,19 @@ class FandangoGenerator(Generator):
 
     def generate(self, candidate: FandangoConstraintCandidate=None, **kwargs) -> Set[FandangoInput]:
         print("Starting fandango")
-        fandango = Fandango(
-            grammar=self.grammar,
-            constraints=[candidate.constraint],
-            max_generations=100,
-        )
+        # fandango = Fandango(
+        #     grammar=self.grammar,
+        #     constraints=[candidate.constraint],
+        #     max_generations=100,
+        # )
+        #
+        # solutions = fandango.evolve()
+        # return {FandangoInput(inp) for inp in solutions}
+        #
+        #
+        test_inputs = set()
+        for _ in range(10):
+                inp = self.grammar.fuzz()
+                test_inputs.add(FandangoInput(tree=inp))
 
-        solutions = fandango.evolve()
-        return {FandangoInput(inp) for inp in solutions}
-        #
-        #
-        # test_inputs = set()
-        # for _ in range(10):
-        #         inp = self.grammar.fuzz()
-        #         test_inputs.add(FandangoInput(tree=inp))
-        #
-        # return test_inputs
+        return test_inputs
