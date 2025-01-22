@@ -95,7 +95,7 @@ class FandangoGenerator(Generator):
         #
         #
         test_inputs = set()
-        for _ in range(10):
+        for _ in range(5):
                 inp = self.grammar.fuzz()
                 test_inputs.add(FandangoInput(tree=inp))
 

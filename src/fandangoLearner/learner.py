@@ -83,7 +83,7 @@ class FandangoLearner(BaseFandangoLearner):
         sorted_positive_inputs = self.sort_and_filter_positive_inputs(self.all_positive_inputs)
 
         value_maps = ValueMaps(relevant_non_terminals)
-        value_maps.extract_non_terminal_values(self.all_positive_inputs)
+        value_maps.extract_non_terminal_values(sorted_positive_inputs)
 
         instantiated_candidates = self.pattern_processor.instantiate_patterns(
             relevant_non_terminals, sorted_positive_inputs, value_maps=value_maps
