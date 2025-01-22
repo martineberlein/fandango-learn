@@ -15,8 +15,18 @@ from fandangoLearner.logger import LOGGER
 class ValueMaps:
     def __init__(self, relevant_non_terminals: Set[NonTerminal]):
         self.relevant_non_terminals = relevant_non_terminals
-        self.string_values = {nt: set() for nt in self.relevant_non_terminals}
-        self.int_values = {nt: set() for nt in self.relevant_non_terminals}
+        self._string_values = {nt: set() for nt in self.relevant_non_terminals}
+        self._int_values = {nt: set() for nt in self.relevant_non_terminals}
+
+
+    def get_string_values(self, non_terminal: NonTerminal) -> Set[str]:
+        return self._string_values[non_terminal]
+
+    def get_int_values(self, non_terminal: NonTerminal) -> Set[int]:
+        return self._int_values[non_terminal]
+
+    def get_filtered_int_values(self) -> Dict[NonTerminal, Set[str]]:
+        return self.calculate_filtered_int_values()
 
     @staticmethod
     def is_number(value: str) -> bool:
@@ -27,7 +37,7 @@ class ValueMaps:
         except ValueError:
             return False
 
-    def extract_non_terminal_values(self, inputs: Set[FandangoInput]) -> Tuple[
+    def calculate_non_terminal_values(self, inputs: Set[FandangoInput]) -> Tuple[
         Dict[NonTerminal, Set[str]], Dict[NonTerminal, Set[float]]]:
         """Extracts and returns values associated with non-terminals."""
 
@@ -37,16 +47,16 @@ class ValueMaps:
                 for tree in found_trees:
                     value = str(tree)
                     if self.is_number(value):
-                        self.int_values[non_terminal].add(eval(value))
+                        self._int_values[non_terminal].add(eval(value))
                     else:
-                        self.string_values[non_terminal].add(value)
+                        self._string_values[non_terminal].add(value)
 
-        return self.string_values, self.int_values
+        return self._string_values, self._int_values
 
-    def get_filtered_int_values(self) -> Dict[NonTerminal, Set[str]]:
+    def calculate_filtered_int_values(self) -> Dict[NonTerminal, Set[str]]:
         """Filters the value map to only include min and max values for non-terminals that have integer values."""
         reduced_int_values = {}
-        for non_terminal, values in self.int_values.items():
+        for non_terminal, values in self._int_values.items():
             if values:
                 min_val, max_val = min(values), max(values)
                 reduced_int_values[non_terminal] = {min_val, max_val}
