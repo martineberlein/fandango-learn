@@ -11,7 +11,8 @@ from fandangoLearner.refinement.core import HypothesisInputFeatureDebugger
 def calculator_oracle(inp):
     try:
         eval(
-            str(inp), {"sqrt": math.sqrt, "sin": math.sin, "cos": math.cos, "tan": math.tan}
+            str(inp),
+            {"sqrt": math.sqrt, "sin": math.sin, "cos": math.cos, "tan": math.tan},
         )
     except ValueError:
         return OracleResult.FAILING

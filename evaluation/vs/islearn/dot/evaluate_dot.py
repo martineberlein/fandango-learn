@@ -27,7 +27,6 @@ if __name__ == "__main__":
     def prop(tree: language.DerivationTree) -> bool:
         return render_dot(tree) is True
 
-
     dirname = os.path.abspath(os.path.dirname(__file__))
     parser = PEGParser(DOT_GRAMMAR)
     reducer = InputReducer(DOT_GRAMMAR, prop, k=3)
@@ -41,7 +40,6 @@ if __name__ == "__main__":
     # sample_tree = language.DerivationTree.from_parse_tree(list(parser.parse(dot_code))[0])
     # sys.exit(0)
     ###
-
 
     urls = [
         "https://raw.githubusercontent.com/ecliptik/qmk_firmware-germ/56ea98a6e5451e102d943a539a6920eb9cba1919/users/dennytom/chording_engine/state_machine.dot",
@@ -62,27 +60,31 @@ if __name__ == "__main__":
         reduced_tree_file = f"{dirname}/inputs/{file_name}.reduced.tree"
 
         if os.path.isfile(tree_file) and os.path.isfile(reduced_tree_file):
-            with open(tree_file, 'rb') as file:
+            with open(tree_file, "rb") as file:
                 positive_trees.append(pickle.loads(file.read()))
 
-            with open(reduced_tree_file, 'rb') as file:
+            with open(reduced_tree_file, "rb") as file:
                 reduced_trees.append(pickle.loads(file.read()))
 
             continue
 
         with urllib.request.urlopen(url) as f:
             # The DOT grammar does not contain comments, so we remove them.
-            dot_code: str = f.read().decode('utf-8').strip()
+            dot_code: str = f.read().decode("utf-8").strip()
             dot_code = re.sub(r"(^|\n)\s*//.*?(\n|$)", "", dot_code)
             dot_code = dot_code.replace("\\n", "\n")
             dot_code = dot_code.replace("\r\n", "\n")
-            dot_code = re.compile(r'/\*.*?\*/', re.DOTALL).sub("", dot_code)
+            dot_code = re.compile(r"/\*.*?\*/", re.DOTALL).sub("", dot_code)
 
             # Make sure we still have valid DOT.
-            assert render_dot(dot_code) is True, f"URL {url} is invalid, code:\n{dot_code}"
+            assert (
+                render_dot(dot_code) is True
+            ), f"URL {url} is invalid, code:\n{dot_code}"
 
         try:
-            sample_tree = language.DerivationTree.from_parse_tree(list(parser.parse(dot_code))[0])
+            sample_tree = language.DerivationTree.from_parse_tree(
+                list(parser.parse(dot_code))[0]
+            )
         except SyntaxError:
             print(f"URL {url} is invalid, code:\n{dot_code}")
             sys.exit(1)
@@ -90,19 +92,24 @@ if __name__ == "__main__":
         reduced_tree = reducer.reduce_by_smallest_subtree_replacement(sample_tree)
 
         try:
-            with open(tree_file, 'wb') as sample_file:
+            with open(tree_file, "wb") as sample_file:
                 sample_file.write(pickle.dumps(sample_tree))
 
             try:
-                with open(reduced_tree_file, 'wb') as reduced_file:
+                with open(reduced_tree_file, "wb") as reduced_file:
                     reduced_file.write(pickle.dumps(reduced_tree))
             except Exception as err:
-                print(f'Could not save reduced input to file {reduced_tree_file}: {err}')
-                print('This is *not critical*. Inputs are only saved to speed up later runs.')
+                print(
+                    f"Could not save reduced input to file {reduced_tree_file}: {err}"
+                )
+                print(
+                    "This is *not critical*. Inputs are only saved to speed up later runs."
+                )
         except Exception as err:
-            print(f'Could not save sample input to file {tree_file}: {err}')
-            print('This is *not critical*. Inputs are only saved to speed up later runs.')
-
+            print(f"Could not save sample input to file {tree_file}: {err}")
+            print(
+                "This is *not critical*. Inputs are only saved to speed up later runs."
+            )
 
         positive_trees.append(sample_tree)
         reduced_trees.append(reduced_tree)
@@ -124,20 +131,34 @@ if __name__ == "__main__":
         max_disjunction_size=2,
         filter_inputs_for_learning_by_kpaths=False,
         min_recall=1,
-        min_specificity=.8,
+        min_specificity=0.8,
         reduce_inputs_for_learning=False,
         generate_new_learning_samples=False,
         exclude_nonterminals={
-            "<WS>", "<WSS>", "<MWSS>",
-            "<esc_or_no_string_endings>", "<esc_or_no_string_ending>", "<no_string_ending>", "<LETTER_OR_DIGITS>",
-            "<LETTER>", "<maybe_minus>", "<maybe_comma>", "<maybe_semi>"
-        }
+            "<WS>",
+            "<WSS>",
+            "<MWSS>",
+            "<esc_or_no_string_endings>",
+            "<esc_or_no_string_ending>",
+            "<no_string_ending>",
+            "<LETTER_OR_DIGITS>",
+            "<LETTER>",
+            "<maybe_minus>",
+            "<maybe_comma>",
+            "<maybe_semi>",
+        },
     ).learn_invariants()
 
-    print("\n".join(map(lambda p: f"{p[1]}: " + ISLaUnparser(p[0]).unparse(), result.items())))
+    print(
+        "\n".join(
+            map(lambda p: f"{p[1]}: " + ISLaUnparser(p[0]).unparse(), result.items())
+        )
+    )
 
     best_invariant, (specificity, sensitivity) = next(iter(result.items()))
-    print(f"Best invariant (*estimated* specificity {specificity:.2f}, sensitivity: {sensitivity:.2f}):")
+    print(
+        f"Best invariant (*estimated* specificity {specificity:.2f}, sensitivity: {sensitivity:.2f}):"
+    )
     print(ISLaUnparser(best_invariant).unparse())
 
     # Generate inputs for validation
@@ -148,31 +169,39 @@ if __name__ == "__main__":
 
     # We run two mutation fuzzers and a grammar fuzzer in parallel
     mutation_fuzzer = MutationFuzzer(DOT_GRAMMAR, learning_inputs, prop, k=3)
-    mutate_fuzz = mutation_fuzzer.run(500, alpha=.1, yield_negative=True)
+    mutate_fuzz = mutation_fuzzer.run(500, alpha=0.1, yield_negative=True)
 
     grammar_fuzzer = isla.fuzzer.GrammarCoverageFuzzer(DOT_GRAMMAR)
 
     i = 0
-    while (len(validation_inputs) < target_number_positive_inputs
-           or len(negative_validation_inputs) < target_number_negative_inputs):
+    while (
+        len(validation_inputs) < target_number_positive_inputs
+        or len(negative_validation_inputs) < target_number_negative_inputs
+    ):
         if i % 10 == 0:
-            print(f"Fuzzing: {len(validation_inputs):02} positive / {len(negative_validation_inputs):02} negative inputs")
+            print(
+                f"Fuzzing: {len(validation_inputs):02} positive / {len(negative_validation_inputs):02} negative inputs"
+            )
 
         fuzzer_inputs = [
             next(mutate_fuzz),
-            grammar_fuzzer.expand_tree(DerivationTree("<start>", None))
+            grammar_fuzzer.expand_tree(DerivationTree("<start>", None)),
         ]
 
         for idx, inp in enumerate(fuzzer_inputs):
-            if (len(validation_inputs) < target_number_positive_inputs and
-                    prop(inp) and
-                    not tree_in(inp, validation_inputs)):
+            if (
+                len(validation_inputs) < target_number_positive_inputs
+                and prop(inp)
+                and not tree_in(inp, validation_inputs)
+            ):
                 validation_inputs.append(inp)
                 if idx == 0:
                     mutation_fuzzer.population.add(inp)
-            elif (len(negative_validation_inputs) < target_number_negative_inputs and
-                  not prop(inp) and
-                  not tree_in(inp, negative_validation_inputs)):
+            elif (
+                len(negative_validation_inputs) < target_number_negative_inputs
+                and not prop(inp)
+                and not tree_in(inp, negative_validation_inputs)
+            ):
                 negative_validation_inputs.append(inp)
 
         i += 1

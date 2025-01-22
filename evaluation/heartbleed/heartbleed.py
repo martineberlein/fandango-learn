@@ -8,13 +8,16 @@ from fandangoLearner.learner import FandangoLearner
 from fandangoLearner.data.input import FandangoInput
 from fandangoLearner.logger import LoggerLevel
 
-from evaluation.heartbleed.heartbeat import initial_inputs as heartbleed_inputs, oracle_simple as oracle
+from evaluation.heartbleed.heartbeat import (
+    initial_inputs as heartbleed_inputs,
+    oracle_simple as oracle,
+)
 from evaluation.evaluation_helper import format_results
 
 
 def evaluate_heartbleed(logger_level=LoggerLevel.INFO):
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, 'heartbleed.fan')
+    filename = os.path.join(dirname, "heartbleed.fan")
     grammar, _ = parse_file(filename)
 
     initial_inputs = {
@@ -35,19 +38,13 @@ def evaluate_heartbleed(logger_level=LoggerLevel.INFO):
 
     # round time
     time_in_seconds = round(end_time_learning - start_time_learning, 4)
-    return format_results(
-        "Heartbleed",
-        grammar,
-        oracle,
-        candidates,
-        time_in_seconds
-    )
+    return format_results("Heartbleed", grammar, oracle, candidates, time_in_seconds)
 
 
 if __name__ == "__main__":
     random.seed(1)
     results = evaluate_heartbleed()
-    print("Required Time: ", results["time_in_seconds"], " seconds" )
+    print("Required Time: ", results["time_in_seconds"], " seconds")
     constraints = results["candidates"]
     for constraint in constraints:
         print(constraint)

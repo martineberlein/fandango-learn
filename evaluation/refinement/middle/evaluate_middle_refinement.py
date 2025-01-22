@@ -51,4 +51,3 @@ def evaluate_middle(logger_level=LoggerLevel.INFO):
 if __name__ == "__main__":
     random.seed(1)
     evaluate_middle()
-

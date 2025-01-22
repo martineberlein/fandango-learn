@@ -10,18 +10,15 @@ from fandangoLearner.logger import LoggerLevel
 
 
 # Return the evaluation results as a tuple of values (subject, total, valid, percentage, diversity, mean_length, median)
-def better_print_results(
-    results: Dict
-):
+def better_print_results(results: Dict):
     print("================================")
-    print(f"{results["name"]} Evaluation Results")
+    print(f"{results['name']} Evaluation Results")
     print("================================")
-    print(f"Learned Constraints: {len(results["candidates"])}")
+    print(f"Learned Constraints: {len(results['candidates'])}")
     print(f"Best Equivalent Constraints: {len(results['best_candidates'])}")
-    print(f"Precision: {results["precision"]:.4f}")
-    print(f"Recall: {results["recall"]:.4f}")
+    print(f"Precision: {results['precision']:.4f}")
+    print(f"Recall: {results['recall']:.4f}")
     print(f"Time: {results['time_in_seconds']:.4f} seconds")
-    print("")
     print("")
 
 

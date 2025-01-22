@@ -18,22 +18,24 @@ def dfs(tree, action):
     for child in children:
         dfs(child, action)
 
+
 def get_subtree(tree, path: Tuple[int, ...]):
     """Access a subtree based on `path` (a list of children numbers)"""
 
     curr_node = tree
     while path:
-        #print(curr_node[0])
+        # print(curr_node[0])
         curr_node = curr_node[path[0]]
         path = path[1:]
 
     return curr_node
 
+
 def tree_to_string(tree):
     node, children = tree.symbol, tree.children
     if not children:
         return node
-    return ''.join(str(tree_to_string(child)) for child in children)
+    return "".join(str(tree_to_string(child)) for child in children)
 
 
 LANG_GRAMMAR = """
@@ -44,6 +46,7 @@ LANG_GRAMMAR = """
 <var> ::= "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z";
 <digit>::=  "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
 """
+
 
 def eval_lang(inp_tree):
     def assgnlhs(assgn):
@@ -67,6 +70,7 @@ def eval_lang(inp_tree):
     dfs(inp_tree, evalAssignments)
 
     return valueMap
+
 
 def validate_lang(inp: FandangoInput):
     try:
@@ -111,6 +115,7 @@ and
 ;
 """
 
+
 def generate_valid():
     random.seed(5)
     grammar, constraints = parse(LANG_GRAMMAR + CONSTRAINTS)
@@ -119,10 +124,7 @@ def generate_valid():
     print(constraints[0].check(grammar.parse("a:=1; b:=b; c:=2")))
     print(constraints[0].check(grammar.parse("a:=1; b:=a; c:=2")))
 
-
-    fandango = Fandango(
-        grammar, constraints, desired_solutions=200
-    )
+    fandango = Fandango(grammar, constraints, desired_solutions=200)
     solutions = fandango.evolve()
     for solution in solutions:
         print(solution, constraints[0].check(solution))
@@ -152,9 +154,7 @@ if __name__ == "__main__":
     for inp in test_inputs:
         print(inp, inp.oracle)
 
-    learner = FandangoLearner(
-        grammar
-    )
+    learner = FandangoLearner(grammar)
     learned_constraints = learner.learn_constraints(test_inputs)
 
     for constraint in learner.get_best_candidates():

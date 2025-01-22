@@ -10,16 +10,12 @@ from isla.type_defs import ParseTree
 import string
 
 LANG_GRAMMAR = {
-    "<start>":
-        ["<stmt>"],
-    "<stmt>":
-        ["<assgn>", "<assgn> ; <stmt>"],
-    "<assgn>":
-        ["<var> := <rhs>"],
-    "<rhs>":
-        ["<var>", "<digit>"],
+    "<start>": ["<stmt>"],
+    "<stmt>": ["<assgn>", "<assgn> ; <stmt>"],
+    "<assgn>": ["<var> := <rhs>"],
+    "<rhs>": ["<var>", "<digit>"],
     "<var>": list(string.ascii_lowercase),
-    "<digit>": list(string.digits)
+    "<digit>": list(string.digits),
 }
 
 
@@ -47,12 +43,14 @@ def eval_lang(inp: str) -> Dict[str, int]:
 
     return valueMap
 
+
 def validate_lang(inp: DerivationTree) -> bool:
     try:
         eval_lang(str(inp))
         return True
     except Exception:
         return False
+
 
 if __name__ == "__main__":
 
@@ -64,6 +62,11 @@ if __name__ == "__main__":
         # },
     ).learn_invariants()
 
-    print("\n".join(map(
-        lambda p: f"{p[1]}: " + ISLaUnparser(p[0]).unparse(),
-        {f: p for f, p in result.items() if p[0] > .0}.items())))
+    print(
+        "\n".join(
+            map(
+                lambda p: f"{p[1]}: " + ISLaUnparser(p[0]).unparse(),
+                {f: p for f, p in result.items() if p[0] > 0.0}.items(),
+            )
+        )
+    )
