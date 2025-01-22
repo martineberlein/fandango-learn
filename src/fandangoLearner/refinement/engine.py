@@ -4,6 +4,7 @@ from queue import Queue, Empty
 from threading import Thread
 from multiprocessing import Process, Queue as ProcessQueue, Manager
 
+from fandangoLearner.logger import LOGGER
 from fandangoLearner.learning.candidate import FandangoConstraintCandidate
 from .generator import Generator
 
@@ -52,8 +53,8 @@ class ParallelEngine(Engine):
         :return:
         """
 
-        logging.info("Generating inputs in parallel...")
-        logging.info(f"Number of workers: {len(self.workers)} Number of candidates: {len(candidates)}")
+        LOGGER.debug("Generating inputs in parallel...")
+        LOGGER.debug(f"Number of workers: {len(self.workers)} Number of candidates: {len(candidates)}")
 
         threads = []
         candidate_queue = Queue()

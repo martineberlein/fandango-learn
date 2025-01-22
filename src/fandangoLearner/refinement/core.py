@@ -12,6 +12,7 @@ from fandangoLearner.core import ConstraintCandidateLearner
 from fandangoLearner.learner import FandangoLearner
 from fandangoLearner.learning.candidate import FandangoConstraintCandidate
 from fandangoLearner.learning.metric import FitnessStrategy, RecallPriorityStringLengthFitness
+from fandangoLearner.logger import LoggerLevel, LOGGER
 from .generator import Generator, FandangoGenerator
 from .runner import SingleExecutionHandler, ExecutionHandler
 from .engine import Engine, SingleEngine, ParallelEngine
@@ -27,15 +28,16 @@ class InputFeatureDebugger(ABC):
         grammar: Grammar,
         oracle: OracleType,
         initial_inputs: Union[Iterable[str], Iterable[FandangoInput]],
-        enable_logging: bool = False,
+        logger_level: LoggerLevel = LoggerLevel.INFO,
     ):
         """
         Initialize the input feature debugger with a grammar, oracle, and initial inputs.
         """
+        LOGGER.setLevel(logger_level.value)
+
         self.initial_inputs = initial_inputs
         self.grammar = grammar
         self.oracle = oracle
-        # configure_logging(enable_logging)
 
     @abstractmethod
     def explain(self, *args, **kwargs):
@@ -137,12 +139,12 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         """
         iteration = 0
         start_time = self.set_timeout()
-        logging.info("Starting the hypothesis-based input feature debugger.")
+        LOGGER.info("Starting the hypothesis-based input feature debugger.")
         try:
             test_inputs: Set[FandangoInput] = self.prepare_test_inputs()
 
             while self.check_iteration_limits(iteration, start_time):
-                logging.info(f"Starting iteration {iteration}.")
+                LOGGER.info(f"Starting iteration {iteration}.")
                 new_test_inputs = self.hypothesis_loop(test_inputs)
                 test_inputs.update(new_test_inputs)
 
@@ -202,7 +204,7 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         """
         Run the test inputs.
         """
-        logging.info("Running the test inputs.")
+        LOGGER.info("Running the test inputs.")
         return self.runner.label(test_inputs=test_inputs)
 
     def get_best_candidates(
@@ -251,10 +253,11 @@ class FandangoRefinement(HypothesisInputFeatureDebugger):
         min_precision: float = 0.6,
         top_n_relevant_non_terminals: int = 3,
         relevant_non_terminals: Optional[Set[NonTerminal]] = None,
+        logger_level: LoggerLevel = LoggerLevel.INFO,
         **kwargs,
     ):
         learner: FandangoLearner = (
-            learner if learner else FandangoLearner(grammar)
+            learner if learner else FandangoLearner(grammar, logger_level=logger_level)
         )
         generator: Generator = (
             generator if generator else FandangoGenerator(grammar)
@@ -269,6 +272,7 @@ class FandangoRefinement(HypothesisInputFeatureDebugger):
             generator=generator,
             timeout_seconds=timeout_seconds,
             max_iterations=max_iterations,
+            logger_level=logger_level,
             **kwargs,
         )
         self.max_candidates = 5
@@ -283,7 +287,7 @@ class FandangoRefinement(HypothesisInputFeatureDebugger):
         :param test_inputs: The test inputs to learn the candidates from.
         :return Optional[List[Candidate]]: The learned candidates.
         """
-        logging.info("Learning the candidates.")
+        LOGGER.info("Learning the candidates.")
         relevant_non_terminals = self.learn_relevant_non_terminals()
 
         _ = self.learner.learn_constraints(
@@ -298,7 +302,7 @@ class FandangoRefinement(HypothesisInputFeatureDebugger):
         :param candidates: The learned candidates.
         :return Set[Input]: The generated test inputs.
         """
-        logging.info(f"Generating new test inputs for {len(candidates)} candidates.")
+        LOGGER.info(f"Generating new test inputs for {len(candidates)} candidates.")
         test_inputs = self.engine.generate(candidates=candidates)
         return test_inputs
 
@@ -309,7 +313,7 @@ class FandangoRefinement(HypothesisInputFeatureDebugger):
         :param test_inputs: The test inputs to run.
         :return Set[Input]: The labeled test inputs.
         """
-        logging.info(f"Running {len(test_inputs)} test inputs.")
+        LOGGER.info(f"Running {len(test_inputs)} test inputs.")
         labeled_test_inputs = self.runner.label(test_inputs=test_inputs)
         return labeled_test_inputs
 

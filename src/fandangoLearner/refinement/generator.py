@@ -83,7 +83,7 @@ class FandangoGenerator(Generator):
         return test_inputs
 
     def generate(self, candidate: FandangoConstraintCandidate=None, **kwargs) -> Set[FandangoInput]:
-        print("Starting fandango")
+        #print("Starting fandango")
         # fandango = Fandango(
         #     grammar=self.grammar,
         #     constraints=[candidate.constraint],
