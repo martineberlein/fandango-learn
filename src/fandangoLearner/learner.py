@@ -51,6 +51,7 @@ class FandangoLearner(BaseFandangoLearner):
         # Refinement
         self.all_positive_inputs = set()
         self.all_negative_inputs = set()
+        self.removed_candidates = set()
 
     def learn_constraints(
         self,
@@ -90,7 +91,7 @@ class FandangoLearner(BaseFandangoLearner):
         )
 
         candidates_to_evaluate: List[FandangoConstraintCandidate] = [] + self.candidates.candidates
-        for candidate in instantiated_candidates:
+        for candidate in instantiated_candidates - self.removed_candidates:
             if candidate not in candidates_to_evaluate:
                 candidates_to_evaluate.append(candidate)
 
@@ -167,10 +168,12 @@ class FandangoLearner(BaseFandangoLearner):
                 if self.evaluate_candidate(candidate, self.all_positive_inputs, self.all_negative_inputs):
                     self.candidates.append(candidate)
                     #LOGGER.info("Added new candidate: %s", candidate.constraint)
+                else:
+                    self.removed_candidates.add(candidate)
             else:
                 if not self.evaluate_candidate(candidate, positive_inputs, negative_inputs):
                     self.candidates.remove(candidate)
-                    #LOGGER.info("Removed candidate: %s", candidate.constraint)
+                    self.removed_candidates.add(candidate)
 
     def evaluate_candidate(self, candidate: FandangoConstraintCandidate, positive_inputs, negative_inputs):
         try:
@@ -189,7 +192,7 @@ class FandangoLearner(BaseFandangoLearner):
             if candidate.specificity() < self.min_precision
             or candidate.recall() < self.min_recall
         ]
-        #LOGGER.info("Removing candidates: %s", len(candidates_to_remove))
+        LOGGER.info("Removing candidates: %s", len(candidates_to_remove))
 
         for candidate in candidates_to_remove:
             self.candidates.remove(candidate)
