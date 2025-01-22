@@ -48,9 +48,9 @@ def evaluate_expression(logger_level=LoggerLevel.INFO):
         Pattern(
             string_pattern="str(<NON_TERMINAL>) == <STRING>;",
         ),
-        Pattern(
-            string_pattern="exists <container> in <NON_TERMINAL>: exists <arith> in <container>.<rarithexp>: int(eval(str(<arith>))) == 0;",
-        ),
+        # Pattern(
+        #     string_pattern="exists <container> in <NON_TERMINAL>: exists <arith> in <container>.<rarithexp>: int(eval(str(<arith>))) == 0;",
+        # ),
     ]
 
     initial_inputs = {
