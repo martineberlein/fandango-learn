@@ -36,7 +36,7 @@ class TestConjunctionProcessor(unittest.TestCase):
         }
 
         value_map = ValueMaps(relevant_non_terminals)
-        value_map.extract_non_terminal_values(self.test_inputs)
+        value_map.calculate_non_terminal_values(self.test_inputs)
 
         # Expected results
         expected_int_values = {
@@ -51,10 +51,10 @@ class TestConjunctionProcessor(unittest.TestCase):
         }
 
         # Verify integer values are extracted correctly
-        self.assertEqual(value_map.int_values, expected_int_values)
+        self.assertEqual(value_map.get_int_values(), expected_int_values)
 
         # Verify string values are extracted correctly
-        self.assertEqual(value_map.string_values, expected_string_values)
+        self.assertEqual(value_map.get_string_values(), expected_string_values)
 
     def test_value_map_min_max(self):
         relevant_non_terminals = {
@@ -63,7 +63,7 @@ class TestConjunctionProcessor(unittest.TestCase):
             NonTerminal("<function>"),
         }
         value_map = ValueMaps(relevant_non_terminals)
-        value_map.extract_non_terminal_values(self.test_inputs)
+        value_map.calculate_non_terminal_values(self.test_inputs)
 
         result = value_map.get_filtered_int_values()
         self.assertEqual(
@@ -84,7 +84,7 @@ class TestConjunctionProcessor(unittest.TestCase):
             NonTerminal("<function>"),
         }
         value_map = ValueMaps(relevant_non_terminals)
-        string_values = value_map.extract_non_terminal_values(test_inputs)
+        string_values = value_map.calculate_non_terminal_values(test_inputs)
         print(string_values)
         red = value_map.get_filtered_int_values()
         print(red)
