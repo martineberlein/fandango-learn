@@ -9,6 +9,8 @@ from evaluation.middle.middle import evaluate_middle
 from evaluation.expression.expression import evaluate_expression
 from evaluation.refinement.calculator.evaluate_caluclator_refinement import evaluate_calculator_refinement
 from evaluation.refinement.heartbleed.evaluate_heartbleed_refinement import evaluate_heartbleed_refinement
+from evaluation.refinement.middle.evaluate_middle_refinement import evaluate_middle_refinement
+
 from fandangoLearner.logger import LoggerLevel
 
 
@@ -75,6 +77,7 @@ def run_evaluation(seconds: int = 3600, random_seed: int = 1, write_to_file: boo
         evaluate_heartbleed,
         evaluate_heartbleed_refinement,
         evaluate_middle,
+        evaluate_middle_refinement,
         evaluate_expression,
     ]
     for experiment in experiments:
@@ -83,3 +86,4 @@ def run_evaluation(seconds: int = 3600, random_seed: int = 1, write_to_file: boo
 
 if __name__ == "__main__":
     run_evaluation(write_to_file=True)
+
