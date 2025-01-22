@@ -15,7 +15,8 @@ from evaluation.heartbleed.heartbeat import (
 from evaluation.evaluation_helper import format_results
 
 
-def evaluate_heartbleed(logger_level=LoggerLevel.INFO):
+def evaluate_heartbleed(logger_level=LoggerLevel.INFO, random_seed=1):
+    random.seed(random_seed)
     dirname = os.path.dirname(__file__)
     filename = os.path.join(dirname, "heartbleed.fan")
     grammar, _ = parse_file(filename)

@@ -15,7 +15,8 @@ from evaluation.evaluation_helper import (
 )
 
 
-def evaluate_expression(logger_level=LoggerLevel.INFO):
+def evaluate_expression(logger_level=LoggerLevel.INFO, random_seed=1):
+    random.seed(random_seed)
     dirname = os.path.dirname(__file__)
     filename = os.path.join(dirname, "expression.fan")
     grammar, _ = parse_file(filename)

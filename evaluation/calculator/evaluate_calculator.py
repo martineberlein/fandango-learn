@@ -22,7 +22,8 @@ def calculator_oracle(inp):
     return OracleResult.PASSING
 
 
-def evaluate_calculator(logger_level=LoggerLevel.INFO):
+def evaluate_calculator(logger_level=LoggerLevel.INFO, random_seed=1):
+    random.seed(random_seed)
     dirname = os.path.dirname(__file__)
     filename = os.path.join(dirname, "calculator.fan")
     grammar, _ = parse_file(filename)
@@ -63,7 +64,6 @@ def evaluate_calculator(logger_level=LoggerLevel.INFO):
 
 
 if __name__ == "__main__":
-    random.seed(1)
     results = evaluate_calculator()
     print("Required Time: ", results["time_in_seconds"], " seconds")
     constraints = results["candidates"]
