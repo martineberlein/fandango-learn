@@ -46,9 +46,7 @@ class ConjunctionProcessor(CombinationProcessor):
         :param candidates:
         :return:
         """
-        print("Start conjunction processing:")
         combinations = self.get_possible_conjunctions(candidates)
-        print("Found %s possible conjunctions" % len(combinations))
 
         conjunction_candidates = set()
         for combination in combinations:
