@@ -121,21 +121,25 @@ for operator in [
 # )
 
 
-Pattern(
-    string_pattern="exists <container> in <NON_TERMINAL>: int(<container>) <= <INTEGER>;",
-)
-
-Pattern(
-    string_pattern="exists <container> in <NON_TERMINAL>: str(<container>) != <INTEGER>;",
-)
-
-Pattern(
-    string_pattern="exists <container> in <NON_TERMINAL>: int(<container>) == <STRING>;",
-)
-
-Pattern(
-    string_pattern="exists <container_1> in <NON_TERMINAL>: exists <container_2> in <NON_TERMINAL>: int(<container_1>) > len(str(<container_2>));",
-)
+# Pattern(
+#     string_pattern="exists <container> in <NON_TERMINAL>: int(<container>) <= <INTEGER>;",
+# )
+#
+# Pattern(
+#     string_pattern="exists <container> in <NON_TERMINAL>: str(<container>) != <INTEGER>;",
+# )
+#
+# Pattern(
+#     string_pattern="exists <container> in <NON_TERMINAL>: int(<container>) == <STRING>;",
+# )
+#
+# Pattern(
+#     string_pattern="exists <elem> in <NON_TERMINAL>: str(<elem>) == <STRING>;",
+# )
+#
+# Pattern(
+#     string_pattern="exists <container_1> in <NON_TERMINAL>: exists <container_2> in <NON_TERMINAL>: int(<container_1>) > len(str(<container_2>));",
+# )
 
 
 if __name__ == "__main__":
