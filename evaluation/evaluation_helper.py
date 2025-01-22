@@ -76,7 +76,15 @@ def get_inputs(
 
     return failing_inputs, passing_inputs
 
-def format_results(name: str, grammar, oracle, candidates: List[FandangoConstraintCandidate], time_in_seconds: float, num_inputs=2000):
+
+def format_results(
+    name: str,
+    grammar,
+    oracle,
+    candidates: List[FandangoConstraintCandidate],
+    time_in_seconds: float,
+    num_inputs=2000,
+):
     sorting_strategy = RecallPriorityFitness()
     evaluation_inputs = generate_evaluation_inputs(grammar, oracle, num_inputs)
 
@@ -88,8 +96,11 @@ def format_results(name: str, grammar, oracle, candidates: List[FandangoConstrai
         key=lambda c: sorting_strategy.evaluate(c),
         reverse=True,
     )
-    best_candidate = [candidate for candidate in sorted_candidates if sorting_strategy.is_equal(
-        candidate, sorted_candidates[0])]
+    best_candidate = [
+        candidate
+        for candidate in sorted_candidates
+        if sorting_strategy.is_equal(candidate, sorted_candidates[0])
+    ]
 
     return {
         "name": name,

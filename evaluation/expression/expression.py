@@ -17,7 +17,7 @@ from evaluation.evaluation_helper import (
 
 def evaluate_expression(logger_level=LoggerLevel.INFO):
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, 'expression.fan')
+    filename = os.path.join(dirname, "expression.fan")
     grammar, _ = parse_file(filename)
 
     benchmark = ExpressionBenchmarkRepository().build()
@@ -28,7 +28,14 @@ def evaluate_expression(logger_level=LoggerLevel.INFO):
     #     lambda x: expression.oracle(x)[0],
     # )
     # initial_inputs = initial_inputs_failing.union(initial_inputs_passing)
-    initial_inputs = ["1 / (1 - 1)", "9 / 0" ,"1 + 3", "2 * 3", "4 - 2", "5 * (1 - 1)",]
+    initial_inputs = [
+        "1 / (1 - 1)",
+        "9 / 0",
+        "1 + 3",
+        "2 * 3",
+        "4 - 2",
+        "5 * (1 - 1)",
+    ]
 
     # initial_inputs = expression.get_initial_inputs()
     inps = []
@@ -43,7 +50,7 @@ def evaluate_expression(logger_level=LoggerLevel.INFO):
         ),
         Pattern(
             string_pattern="exists <container> in <NON_TERMINAL>: exists <arith> in <container>.<rarithexp>: int(eval(str(<arith>))) == 0;",
-        )
+        ),
     ]
 
     initial_inputs = {
@@ -72,7 +79,7 @@ def evaluate_expression(logger_level=LoggerLevel.INFO):
         grammar,
         lambda x: expression.oracle(x)[0],
         learned_constraints,
-        time_in_seconds
+        time_in_seconds,
     )
 
 

@@ -41,7 +41,9 @@ def download_and_clean_dot_file(url):
 
 def parse_and_reduce(parser, reducer, dot_code):
     try:
-        sample_tree = language.DerivationTree.from_parse_tree(list(parser.parse(dot_code))[0])
+        sample_tree = language.DerivationTree.from_parse_tree(
+            list(parser.parse(dot_code))[0]
+        )
         reduced_tree = reducer.reduce_by_smallest_subtree_replacement(sample_tree)
     except SyntaxError as e:
         raise ValueError(f"Failed to parse or reduce DOT code: {e}")
@@ -59,19 +61,19 @@ def load_or_generate_trees(urls, input_dir, parser, reducer):
         reduced_tree_file = input_dir / f"{file_name}.reduced.tree"
 
         if tree_file.exists() and reduced_tree_file.exists():
-            with open(tree_file, 'rb') as file:
+            with open(tree_file, "rb") as file:
                 positive_trees.append(pickle.loads(file.read()))
 
-            with open(reduced_tree_file, 'rb') as file:
+            with open(reduced_tree_file, "rb") as file:
                 reduced_trees.append(pickle.loads(file.read()))
             continue
 
         dot_code = download_and_clean_dot_file(url)
         sample_tree, reduced_tree = parse_and_reduce(parser, reducer, dot_code)
 
-        with open(tree_file, 'wb') as sample_file:
+        with open(tree_file, "wb") as sample_file:
             sample_file.write(pickle.dumps(sample_tree))
-        with open(reduced_tree_file, 'wb') as reduced_file:
+        with open(reduced_tree_file, "wb") as reduced_file:
             reduced_file.write(pickle.dumps(reduced_tree))
 
         positive_trees.append(sample_tree)
@@ -95,15 +97,25 @@ def learn_invariants(grammar, positive_examples, prop):
         reduce_inputs_for_learning=False,
         generate_new_learning_samples=False,
         exclude_nonterminals={
-            "<WS>", "<WSS>", "<MWSS>",
-            "<esc_or_no_string_endings>", "<esc_or_no_string_ending>", "<no_string_ending>", "<LETTER_OR_DIGITS>",
-            "<LETTER>", "<maybe_minus>", "<maybe_comma>", "<maybe_semi>"
-        }
+            "<WS>",
+            "<WSS>",
+            "<MWSS>",
+            "<esc_or_no_string_endings>",
+            "<esc_or_no_string_ending>",
+            "<no_string_ending>",
+            "<LETTER_OR_DIGITS>",
+            "<LETTER>",
+            "<maybe_minus>",
+            "<maybe_comma>",
+            "<maybe_semi>",
+        },
     )
     return learner.learn_invariants()
 
 
-def evaluate_invariants(best_invariant, validation_inputs, negative_validation_inputs, grammar, graph):
+def evaluate_invariants(
+    best_invariant, validation_inputs, negative_validation_inputs, grammar, graph
+):
     tp, tn, fp, fn = 0, 0, 0, 0
 
     for inp in validation_inputs:
@@ -138,17 +150,23 @@ def main():
         "https://raw.githubusercontent.com/Cloudofyou/tt-demo/5504ac17790d3863bf036f6ce8d651a862fa6b0f/tt-demo.dot",
     ]
 
-    positive_trees, reduced_trees = load_or_generate_trees(urls, input_dir, parser, reducer)
+    positive_trees, reduced_trees = load_or_generate_trees(
+        urls, input_dir, parser, reducer
+    )
     learning_inputs = reduced_trees[:3]
     validation_inputs = positive_trees[3:]
 
     invariants = learn_invariants(DOT_GRAMMAR, learning_inputs, render_dot)
     best_invariant, (specificity, sensitivity) = next(iter(invariants.items()))
 
-    print(f"Best invariant (*estimated* specificity {specificity:.2f}, sensitivity: {sensitivity:.2f}):")
+    print(
+        f"Best invariant (*estimated* specificity {specificity:.2f}, sensitivity: {sensitivity:.2f}):"
+    )
     print(ISLaUnparser(best_invariant).unparse())
 
-    tp, tn, fp, fn = evaluate_invariants(best_invariant, validation_inputs, [], DOT_GRAMMAR, graph)
+    tp, tn, fp, fn = evaluate_invariants(
+        best_invariant, validation_inputs, [], DOT_GRAMMAR, graph
+    )
     print(f"TP: {tp} | FN: {fn} | FP: {fp} | TN: {tn}")
 
 

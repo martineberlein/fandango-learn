@@ -14,7 +14,8 @@ from fandangoLearner.logger import LoggerLevel
 def calculator_oracle(inp):
     try:
         eval(
-            str(inp), {"sqrt": math.sqrt, "sin": math.sin, "cos": math.cos, "tan": math.tan}
+            str(inp),
+            {"sqrt": math.sqrt, "sin": math.sin, "cos": math.cos, "tan": math.tan},
         )
     except ValueError:
         return OracleResult.FAILING
@@ -23,7 +24,7 @@ def calculator_oracle(inp):
 
 def evaluate_calculator(logger_level=LoggerLevel.INFO):
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, 'calculator.fan')
+    filename = os.path.join(dirname, "calculator.fan")
     grammar, _ = parse_file(filename)
 
     initial_inputs = {
@@ -54,21 +55,17 @@ def evaluate_calculator(logger_level=LoggerLevel.INFO):
 
     end_time_learning = time.time()
 
-    #round time
+    # round time
     time_in_seconds = round(end_time_learning - start_time_learning, 4)
     return format_results(
-        "Calculator",
-        grammar,
-        calculator_oracle,
-        learned_constraints,
-        time_in_seconds
+        "Calculator", grammar, calculator_oracle, learned_constraints, time_in_seconds
     )
 
 
 if __name__ == "__main__":
     random.seed(1)
     results = evaluate_calculator()
-    print("Required Time: ", results["time_in_seconds"], " seconds" )
+    print("Required Time: ", results["time_in_seconds"], " seconds")
     constraints = results["candidates"]
     for constraint in constraints:
         print(constraint)
