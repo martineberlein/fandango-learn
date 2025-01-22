@@ -8,10 +8,11 @@ from fandangoLearner.refinement.core import FandangoRefinement
 from fandangoLearner.logger import LoggerLevel
 
 from debugging_benchmark.middle.middle import MiddleBenchmarkRepository
-from evaluation.evaluation_helper import get_inputs, format_results
+from evaluation.evaluation_helper import format_results
 
 
-def evaluate_middle(logger_level=LoggerLevel.INFO):
+def evaluate_middle_refinement(logger_level=LoggerLevel.INFO, random_seed=1):
+    random.seed(random_seed)
     dirname = os.path.dirname(__file__)
     filename = os.path.join(dirname, "middle.fan")
     grammar, _ = parse_file(filename)
@@ -30,24 +31,30 @@ def evaluate_middle(logger_level=LoggerLevel.INFO):
         NonTerminal("<y>"),
         NonTerminal("<z>"),
     }
+    start_time_learning = time.time()
 
-    fandangoRE = FandangoRefinement(
+    fandango_re = FandangoRefinement(
         grammar=grammar,
         oracle=lambda x: program.oracle(x)[0],
         initial_inputs=initial_inputs,
         relevant_non_terminals=relevant_non_terminals,
+        logger_level=logger_level,
     )
 
-    start_time = time.time()
-    const = fandangoRE.explain()
-    print(f"Time taken: {time.time() - start_time}")
-    for candidate in const:
-        print(candidate)
+    candidates = fandango_re.explain()
 
-    for inp in fandangoRE.learner.all_positive_inputs:
-        print(inp)
+    end_time_learning = time.time()
+
+    # round time
+    time_in_seconds = round(end_time_learning - start_time_learning, 4)
+    return format_results(
+        "MiddleRE", grammar, lambda x: program.oracle(x)[0], candidates, time_in_seconds
+    )
 
 
 if __name__ == "__main__":
-    random.seed(1)
-    evaluate_middle()
+    results = evaluate_middle_refinement()
+    print("Required Time: ", results["time_in_seconds"], " seconds")
+    constraints = results["candidates"]
+    for constraint in constraints:
+        print(constraint)
