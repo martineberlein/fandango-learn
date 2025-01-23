@@ -1,4 +1,10 @@
 import unittest
+
+from fandango.language.grammar import Grammar
+from fandango.language.tree import DerivationTree
+
+from fandangoLearner.interface.fandango import parse, parse_constraint
+
 from fandangoLearner.resources.patterns import Pattern
 from fandangoLearner.resources.placeholders import Placeholder, PlaceholderType
 
@@ -63,6 +69,34 @@ class TestPatternsWithPlaceholders(unittest.TestCase):
         """
         with self.assertRaises(ValueError):
             Placeholder("invalid_type")  # This should raise an exception
+
+    def test_exists_pattern(self):
+        """
+        Test Pattern with exists placeholder
+        """
+        pattern = Pattern(
+            string_pattern=f"exists <container> in <NON_TERMINAL>: int(<container>) <= 5;"
+        )
+        print(type(pattern.instantiated_pattern))
+
+    def test_inside_pattern(self):
+        """
+        Test Pattern with inside placeholder
+        """
+        grammar = """
+        <start> ::= <A> | <B>;
+        <A> ::= "a";
+        <B> ::= "b";
+        """
+        grammar, _ = parse(grammar)
+        print(grammar)
+        inp1 = grammar.parse("a")
+        inp2 = grammar.parse("b")
+
+        constraint = parse_constraint("exists <elem> in <A>: is_inside(<elem>, <start>);")
+        print(constraint.check(inp1))
+        print(constraint.check(inp2))
+
 
 
 if __name__ == "__main__":
