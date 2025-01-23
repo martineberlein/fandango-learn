@@ -4,11 +4,13 @@ import math
 import random
 
 from debugging_framework.input.oracle import OracleResult
-from fandango.language.parse import parse_file
+
 
 from evaluation.evaluation_helper import format_results
 from fandangoLearner.learner import FandangoLearner, NonTerminal, FandangoInput
 from fandangoLearner.logger import LoggerLevel
+from fandangoLearner.interface.fandango import parse_file
+from fandangoLearner.resources.patterns import Pattern
 
 
 def calculator_oracle(inp):
@@ -47,6 +49,8 @@ def evaluate_calculator(logger_level=LoggerLevel.INFO, random_seed=1):
         NonTerminal("<function>"),
     }
 
+    # print("Check: ", constraint.check(FandangoInput.from_str(grammar, "sqrt(-900)").tree))
+
     start_time_learning = time.time()
     learner = FandangoLearner(grammar, logger_level=logger_level)
 
@@ -64,7 +68,7 @@ def evaluate_calculator(logger_level=LoggerLevel.INFO, random_seed=1):
 
 
 if __name__ == "__main__":
-    results = evaluate_calculator()
+    results = evaluate_calculator(random_seed=1)
     print("Required Time: ", results["time_in_seconds"], " seconds")
     constraints = results["candidates"]
     for constraint in constraints:
