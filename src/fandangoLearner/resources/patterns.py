@@ -141,6 +141,10 @@ for operator in [
 #     string_pattern="exists <container_1> in <NON_TERMINAL>: exists <container_2> in <NON_TERMINAL>: int(<container_1>) > len(str(<container_2>));",
 # )
 
+Pattern(
+    string_pattern="exists <elem> in <NON_TERMINAL>: is_inside(<elem>, <start>);",
+)
+
 
 if __name__ == "__main__":
     grammar, _ = parse_file("./../../../playground/calculator.fan")
