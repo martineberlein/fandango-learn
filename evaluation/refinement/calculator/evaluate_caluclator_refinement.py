@@ -72,7 +72,7 @@ def evaluate_calculator_refinement(logger_level=LoggerLevel.CRITICAL, random_see
 
 
 if __name__ == "__main__":
-    results = evaluate_calculator_refinement(LoggerLevel.CRITICAL)
+    results = evaluate_calculator_refinement(LoggerLevel.CRITICAL, random_seed=3)
     print("Required Time: ", results["time_in_seconds"], " seconds")
     constraints = results["candidates"]
     for constraint in constraints:

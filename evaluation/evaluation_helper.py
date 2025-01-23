@@ -1,3 +1,4 @@
+import random
 from typing import List, Callable, Set
 import time
 
@@ -47,6 +48,7 @@ def generate_evaluation_inputs(grammar, oracle: Callable, num_inputs=2000):
     """
     Generate the evaluation inputs.
     """
+    random.seed(1)
     evaluation_inputs = []
     for _ in range(num_inputs):
         inp = grammar.fuzz()
