@@ -2,7 +2,7 @@ import os
 import time
 import random
 
-from fandango.language.parse import parse_file
+from fandangoLearner.interface.fandango import parse_file
 from islearn.learner import InvariantLearner
 from evaluation.heartbleed.heartbeat import initial_inputs
 from fandangoLearner.learner import FandangoLearner, NonTerminal, FandangoInput

@@ -21,7 +21,7 @@ from debugging_benchmark.tests4py_benchmark.repository import (
 def evaluate_pysnooper2(logger_level=LoggerLevel.INFO, random_seed=1):
     random.seed(random_seed)
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "pysnooper.fan")
+    filename = os.path.join(dirname, "pysnooper2.fan")
     grammar, _ = parse_file(filename)
 
     program = PysnooperBenchmarkRepository().build()[0]
@@ -83,8 +83,6 @@ def evaluate_pysnooper3(logger_level=LoggerLevel.INFO, random_seed=1):
         relevant_non_terminals=relevant_non_terminals,
         oracle=lambda x :program.oracle(x)[0],
     )
-    for c in learned_constraints:
-        print(c)
 
     end_time_learning = time.time()
 
