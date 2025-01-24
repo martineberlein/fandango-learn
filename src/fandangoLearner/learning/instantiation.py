@@ -29,6 +29,9 @@ class ValueMaps:
     def get_string_values(self) -> Dict[NonTerminal, Set[str]]:
         return self._string_values
 
+    def get_int_values(self) -> Dict[NonTerminal, Set[int]]:
+        return self._int_values
+
     @staticmethod
     def is_number(value: str) -> bool:
         """Check if the given string represents a number."""
