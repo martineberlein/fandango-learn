@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fandangoLearner"
-version = "0.0.1"
+version = "0.0.2"
 authors = [
     { name = "Martin Eberlein", email = "martin.eberlein@hu-berlin.de" },
 ]
 readme = "README.md"
 license = { file = "COPYING" }
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
@@ -20,8 +20,8 @@ classifiers = [
     "Topic :: Software Development :: Testing"
 ]
 dependencies = [
-    "fandango @ git+https://github.com/fandango-fuzzer/fandango.git",
-    "debugging-benchmark @ git+https://github.com/martineberlein/debugging-benchmark.git"
+    "fandango-fuzzer @ git+https://github.com/fandango-fuzzer/fandango.git@learner",
+    "debugging-benchmark @ git+https://github.com/martineberlein/debugging-benchmark.git",
 ]
 
 [project.optional-dependencies]
