@@ -7,9 +7,6 @@ name = "fandangoLearner"
 version = "0.0.1"
 authors = [
     { name = "Martin Eberlein", email = "martin.eberlein@hu-berlin.de" },
-    { name = "José Antonio Zamudio Amaya", email = "jose.zamudio@cispa.de" },
-    { name = "Marius Smytzek", email = "marius.smytzek@cispa.de" },
-    { name = "Andreas Zeller", email = "andreas.zeller@cispa.de" },
 ]
 readme = "README.md"
 license = { file = "COPYING" }
