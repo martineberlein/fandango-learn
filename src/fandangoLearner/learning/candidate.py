@@ -237,7 +237,9 @@ class CandidateSet:
         self.candidate_hashes = dict()
         self.candidates = []
 
-        for idx, candidate in enumerate(self.candidates):
+        candidates = candidates or []
+
+        for idx, candidate in enumerate(candidates):
             candidate_hash = hash(candidate)
             if candidate_hash not in self.candidate_hashes:
                 self.candidate_hashes[candidate_hash] = idx
