@@ -148,5 +148,5 @@ def run_evaluation(seconds: int = 3600, write_to_file: bool = True):
 
 
 if __name__ == "__main__":
-    run_evaluation(write_to_file=False)
+    run_evaluation(write_to_file=True)
 
