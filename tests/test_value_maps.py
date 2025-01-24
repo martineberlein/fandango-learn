@@ -36,7 +36,7 @@ class TestConjunctionProcessor(unittest.TestCase):
         }
 
         value_map = ValueMaps(relevant_non_terminals)
-        value_map.calculate_non_terminal_values(self.test_inputs)
+        value_map.extract_non_terminal_values(self.test_inputs)
 
         # Expected results
         expected_int_values = {
@@ -63,7 +63,7 @@ class TestConjunctionProcessor(unittest.TestCase):
             NonTerminal("<function>"),
         }
         value_map = ValueMaps(relevant_non_terminals)
-        value_map.calculate_non_terminal_values(self.test_inputs)
+        value_map.extract_non_terminal_values(self.test_inputs)
 
         result = value_map.get_filtered_int_values()
         self.assertEqual(
@@ -75,7 +75,7 @@ class TestConjunctionProcessor(unittest.TestCase):
 
     def test_large_input_size(self):
         test_inputs = set()
-        for _ in range(10000):
+        for _ in range(1000):
             test_inputs.add(FandangoInput(self.grammar.fuzz()))
 
         relevant_non_terminals = {
@@ -84,10 +84,13 @@ class TestConjunctionProcessor(unittest.TestCase):
             NonTerminal("<function>"),
         }
         value_map = ValueMaps(relevant_non_terminals)
-        string_values = value_map.calculate_non_terminal_values(test_inputs)
-        print(string_values)
-        red = value_map.get_filtered_int_values()
-        print(red)
+        value_map.extract_non_terminal_values(test_inputs)
+
+        function_values = value_map.get_string_values_for_non_terminal(NonTerminal("<function>"))
+        reduced_int_values = value_map.get_filtered_int_values()
+
+        self.assertEqual(len(function_values), 4)
+        self.assertEqual(len(reduced_int_values[NonTerminal("<number>")]), 2)
 
 if __name__ == '__main__':
     unittest.main()

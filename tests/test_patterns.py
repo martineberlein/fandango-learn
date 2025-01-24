@@ -1,9 +1,6 @@
 import unittest
 
-from fandango.language.grammar import Grammar
-from fandango.language.tree import DerivationTree
-
-from fandangoLearner.interface.fandango import parse, parse_constraint
+from fandangoLearner.interface.fandango import parse_contents, parse_constraint
 
 from fandangoLearner.resources.patterns import Pattern
 from fandangoLearner.resources.placeholders import Placeholder, PlaceholderType
@@ -88,15 +85,14 @@ class TestPatternsWithPlaceholders(unittest.TestCase):
         <A> ::= "a";
         <B> ::= "b";
         """
-        grammar, _ = parse(grammar)
-        print(grammar)
+        grammar, _ = parse_contents(grammar)
+
         inp1 = grammar.parse("a")
         inp2 = grammar.parse("b")
 
         constraint = parse_constraint("exists <elem> in <A>: is_inside(<elem>, <start>);")
-        print(constraint.check(inp1))
-        print(constraint.check(inp2))
-
+        self.assertTrue(constraint.check(inp1))
+        self.assertFalse(constraint.check(inp2))
 
 
 if __name__ == "__main__":
