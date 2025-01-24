@@ -16,20 +16,28 @@ class TestConjunctionProcessor(unittest.TestCase):
         self.grammar, self.constraints = parse(filename)
 
         # Set up a ConjunctionProcessor with constraints
-        self.processor = ConjunctionProcessor(max_conjunction_size=3, min_precision=0.6, min_recall=0.9)
+        self.processor = ConjunctionProcessor(
+            max_conjunction_size=3, min_precision=0.6, min_recall=0.9
+        )
 
         test_inputs = [
-            ("sqrt(-1)",True),
-            ("sqrt(-900)",True),
+            ("sqrt(-1)", True),
+            ("sqrt(-900)", True),
             ("sqrt(3)", False),
             ("cos(3)", False),
             ("sin(-1)", False),
         ]
-        self.test_inputs = [FandangoInput.from_str(self.grammar, inp, res) for inp, res in test_inputs]
+        self.test_inputs = [
+            FandangoInput.from_str(self.grammar, inp, res) for inp, res in test_inputs
+        ]
 
         self.candidate1 = FandangoConstraintCandidate(self.constraints[0])
-        self.candidate2 = FandangoConstraintCandidate(parse_constraint("str(<function>) == 'cos';"))
-        self.candidate3 = FandangoConstraintCandidate(parse_constraint("int(<number>) <= -1;"))
+        self.candidate2 = FandangoConstraintCandidate(
+            parse_constraint("str(<function>) == 'cos';")
+        )
+        self.candidate3 = FandangoConstraintCandidate(
+            parse_constraint("int(<number>) <= -1;")
+        )
 
         for candidate in [self.candidate1, self.candidate2, self.candidate3]:
             candidate.evaluate(self.test_inputs)
@@ -55,5 +63,5 @@ class TestConjunctionProcessor(unittest.TestCase):
         self.assertEqual(len(result), expected_combination_count)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

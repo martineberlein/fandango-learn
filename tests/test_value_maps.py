@@ -19,14 +19,16 @@ class TestConjunctionProcessor(unittest.TestCase):
         self.grammar, _ = parse_file(file)
 
         test_inputs = [
-            ("sqrt(-1)",True),
+            ("sqrt(-1)", True),
             ("sqrt(-10)", True),
-            ("sqrt(-900)",True),
+            ("sqrt(-900)", True),
             ("sqrt(3)", False),
             ("cos(3)", False),
             ("sin(-1)", False),
         ]
-        self.test_inputs = {FandangoInput.from_str(self.grammar, inp, res) for inp, res in test_inputs}
+        self.test_inputs = {
+            FandangoInput.from_str(self.grammar, inp, res) for inp, res in test_inputs
+        }
 
     def test_value_map(self):
         relevant_non_terminals = {
@@ -47,7 +49,7 @@ class TestConjunctionProcessor(unittest.TestCase):
         expected_string_values = {
             NonTerminal("<number>"): set(),
             NonTerminal("<maybeminus>"): {"-", ""},
-            NonTerminal("<function>"): {"sin", "sqrt", "cos"}
+            NonTerminal("<function>"): {"sin", "sqrt", "cos"},
         }
 
         # Verify integer values are extracted correctly
@@ -69,8 +71,8 @@ class TestConjunctionProcessor(unittest.TestCase):
         self.assertEqual(
             result,
             {
-                NonTerminal("<number>"): { 3, -900},
-            }
+                NonTerminal("<number>"): {3, -900},
+            },
         )
 
     def test_large_input_size(self):
@@ -86,11 +88,14 @@ class TestConjunctionProcessor(unittest.TestCase):
         value_map = ValueMaps(relevant_non_terminals)
         value_map.extract_non_terminal_values(test_inputs)
 
-        function_values = value_map.get_string_values_for_non_terminal(NonTerminal("<function>"))
+        function_values = value_map.get_string_values_for_non_terminal(
+            NonTerminal("<function>")
+        )
         reduced_int_values = value_map.get_filtered_int_values()
 
         self.assertEqual(len(function_values), 4)
         self.assertEqual(len(reduced_int_values[NonTerminal("<number>")]), 2)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

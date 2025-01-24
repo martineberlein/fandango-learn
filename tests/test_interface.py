@@ -31,7 +31,6 @@ class InterfaceTest(unittest.TestCase):
         self.assertEqual(len(constraints), 1)
         self.assertIsInstance(constraints[0], Constraint)
 
-
     def test_parse_contents(self):
         """
         Test the parse contents function.
