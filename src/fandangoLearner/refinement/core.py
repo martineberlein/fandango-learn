@@ -13,7 +13,7 @@ from fandangoLearner.learner import FandangoLearner
 from fandangoLearner.learning.candidate import FandangoConstraintCandidate
 from fandangoLearner.learning.metric import FitnessStrategy, RecallPriorityStringLengthFitness
 from fandangoLearner.logger import LoggerLevel, LOGGER
-from .generator import Generator, FandangoGenerator
+from .generator import Generator, FandangoGrammarGenerator
 from .runner import SingleExecutionHandler, ExecutionHandler
 from .engine import Engine, SingleEngine, ParallelEngine
 
@@ -75,7 +75,7 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
             learner if learner else FandangoLearner(self.grammar)
         )
         self.generator: Generator = (
-            generator if generator else FandangoGenerator(self.grammar)
+            generator if generator else FandangoGrammarGenerator(self.grammar)
         )
         self.runner: ExecutionHandler = SingleExecutionHandler(self.oracle)
         # self.engine: Engine = SingleEngine(generator)
@@ -260,7 +260,7 @@ class FandangoRefinement(HypothesisInputFeatureDebugger):
             learner if learner else FandangoLearner(grammar, logger_level=logger_level)
         )
         generator: Generator = (
-            generator if generator else FandangoGenerator(grammar)
+            generator if generator else FandangoGrammarGenerator(grammar)
         )
         self.engine: Engine = ParallelEngine(generator)
 
