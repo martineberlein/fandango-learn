@@ -1,14 +1,10 @@
 import unittest
-from unittest.mock import MagicMock
-from debugging_framework.input.oracle import OracleResult
-from fandango.language.tree import DerivationTree
-from fandango.language.parse import parse
-from fandango.constraints.base import Constraint
-from fandangoLearner.data.input import FandangoInput
-from fandango.constraints.base import ConjunctionConstraint, DisjunctionConstraint
-from fandangoLearner.learner import NonTerminal
-from fandangoLearner.learning.candidate import FandangoConstraintCandidate, CandidateSet
 
+from debugging_framework.input.oracle import OracleResult
+
+from fandangoLearner.data.input import FandangoInput
+from fandangoLearner.learning.candidate import FandangoConstraintCandidate, CandidateSet
+from fandangoLearner.interface.fandango import parse_contents, parse_constraint
 
 class TestFandangoConstraintCandidate(unittest.TestCase):
 
@@ -23,15 +19,9 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
         <digit>::=  "0" | <onenine>;
     """
 
-    def get_constraint(self, constraint):
-        _, constraints = parse(constraint)
-        self.assertEqual(1, len(constraints))
-        return constraints[0]
-
     def setUp(self):
-        grammar, constraints = parse(
+        grammar, constraints = parse_contents(
             self.GRAMMAR + "(int(<number>) <= -10 and str(<function>) == 'sqrt');",
-            check_constraints=False,
         )
         self.constraint = constraints[0]
         self.grammar = grammar
@@ -85,10 +75,10 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
     def test_and_operator(self):
         # Create another candidate with a similar constraint
         candidate = FandangoConstraintCandidate(
-            self.get_constraint("int(<number>) <= 0;")
+            parse_constraint("int(<number>) <= 0;")
         )
         other_candidate = FandangoConstraintCandidate(
-            self.get_constraint("str(<function>) == 'sqrt';")
+            parse_constraint("str(<function>) == 'sqrt';")
         )
 
         # Evaluate both candidates
@@ -113,10 +103,10 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
     def test_or_operator(self):
         # Create another candidate with a different constraint
         candidate = FandangoConstraintCandidate(
-            self.get_constraint("int(<number>) <= 0;")
+            parse_constraint("int(<number>) <= 0;")
         )
         other_candidate = FandangoConstraintCandidate(
-            self.get_constraint("str(<function>) == 'sqrt';")
+            parse_constraint("str(<function>) == 'sqrt';")
         )
 
         # Evaluate both candidates
@@ -136,7 +126,7 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
 
     def test_negation(self):
         candidate = FandangoConstraintCandidate(
-            self.get_constraint("int(<number>) <= 0;")
+            parse_constraint("int(<number>) <= 0;")
         )
         candidate.evaluate([self.failing_input, self.passing_input])
         self.assertEqual(candidate.cache[self.failing_input], True)
@@ -172,7 +162,7 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
 
     def test_constraint_with_missing_non_terminals(self):
         candidate = FandangoConstraintCandidate(
-            self.get_constraint("str(<maybeminus>) == '-';")
+            parse_constraint("str(<maybeminus>) == '-';")
         )
         null_input = FandangoInput.from_str(
             self.grammar, "sqrt(0)", OracleResult.PASSING
@@ -236,6 +226,15 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
 
         candidate_set.append(self.candidate)
         self.assertEqual(len(candidate_set), 1)
+
+    def test_candidate_set_instantiation(self):
+        inputs = [self.failing_input, self.passing_input]
+        self.candidate.evaluate(inputs)
+
+        candidate_set = CandidateSet([self.candidate])
+        self.assertEqual(len(candidate_set), 1)
+        self.assertTrue(self.candidate in candidate_set)
+        self.assertFalse(self.candidate not in candidate_set)
 
 if __name__ == "__main__":
     unittest.main()
