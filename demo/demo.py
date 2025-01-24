@@ -1,5 +1,5 @@
 from fandangoLearner.learner import FandangoLearner, NonTerminal, FandangoInput
-from fandangoLearner.interface.fandango import parse
+from fandangoLearner.interface.fandango import parse_contents
 
 
 grammar = """
@@ -15,13 +15,12 @@ grammar = """
 
 
 if __name__ == "__main__":
-    grammar, _ = parse(grammar)
+    grammar, _ = parse_contents(grammar)
 
     initial_inputs = {
         ("sqrt(-900)", True),
         ("sqrt(-10)", True),
         ("sqrt(0)", False),
-        # ("sqrt(-1)", True),
         ("sin(-900)", False),
         ("sqrt(2)", False),
         ("cos(10)", False),
