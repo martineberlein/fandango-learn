@@ -33,3 +33,12 @@ def parse_constraint(constraint: str, disable_logging=True) -> Constraint:
     assert len(constraints) == 1, "Expected exactly one constraint"
     assert isinstance(constraints[0], Constraint), "Expected a constraint"
     return constraints[0]
+
+
+def parse_contents(*args, disable_logging=True, **kwargs):
+    """
+    Wrapper for the parse_contents function from fandango.language.parse
+    """
+    if disable_logging:
+        logging.getLogger("fandango").disabled = True
+    return fandango_parse_content(*args, **kwargs)
