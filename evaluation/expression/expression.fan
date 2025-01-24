@@ -1,6 +1,6 @@
 <start> ::= <arithexp>;
-<arithexp> ::= <arithexp><operator><larithexp> | <number> | "(" <arithexp> ")";
-<larithexp> ::= <arithexp>;
+<arithexp> ::= <arithexp><operator><rarithexp> | <number> | "(" <arithexp> ")";
+<rarithexp> ::= <arithexp>;
 <operator> ::= " + " | " - " | " * " | " / ";
 <number> ::= <maybeminus><onenine><maybedigits> | "0";
 <maybeminus> ::= "~ " | "";

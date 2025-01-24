@@ -31,7 +31,7 @@ We start by defining the grammar for our input language.
 This example focuses on arithmetic expressions using trigonometric and square root functions.
 
 ```python
-from fandango.language.parse import parse
+from fandangoLearner.interface.fandango import parse_contents
 
 grammar = """
 <start> ::= <arithexp>;
@@ -44,7 +44,7 @@ grammar = """
 <digit>::=  "0" | <onenine>;
 """
 
-grammar, _ = parse(grammar)
+grammar, _ = parse_contents(grammar)
 ```
 
 ### Step 2: Provide Initial Inputs
@@ -117,11 +117,11 @@ for constraint in learner.get_best_candidates():
 The output will show the constraints that best explain the failures in the initial inputs.
 
 ```plaintext
-(str(<function>) == 'sqrt' and int(<number>) <= -10), 
+(int(<number>) <= -10 and str(<function>) == 'sqrt'), 
 Precision: 1.0, Recall: 1.0 (based on 2 failing and 4 passing inputs)
 ```
 
-We can see that the constraint `(str(<function>) == 'sqrt' and int(<number>) <= -10)` explains why the inputs `sqrt(-900)` and `sqrt(-10)` fail.
+We can see that the constraint `(int(<number>) <= -10 and str(<function>) == 'sqrt')` explains why the inputs `sqrt(-900)` and `sqrt(-10)` fail.
 However, this constraint is too specific and does not generalize well to other inputs.
 Thus, we need a feedback loop that automatically refines these constraints to generate general constraints that captures the essence of the failure.
 We will use **Avicenna** to provide this feedback loop.
@@ -184,3 +184,10 @@ new idea:
 - exists and forall constraints can be quite similar to each other, when that use bounded nonterminals that are applied only once.
    - we might want to use forall constraints only when they are really needed, i.e. when the nonterminal is used multiple times.
 
+## TODOs
+
+- CLI
+- Documentation
+- InputReducer
+- AttributeSearches
+- Extend Eval

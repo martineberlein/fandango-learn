@@ -1,18 +1,17 @@
-from typing import List, Dict, Iterable, Optional, Set, Callable
+from typing import List, Iterable, Optional, Set, Callable
 
 from fandango.language.grammar import Grammar
 from fandango.language.symbol import NonTerminal
-from fandango.constraints.base import (
-    Constraint,
-)
+
 from debugging_framework.input.oracle import OracleResult
 
 from .learning.candidate import FandangoConstraintCandidate
 from .data.input import FandangoInput
-from .logger import LOGGER
+from .logger import LOGGER, LoggerLevel
 from .learning.combination import ConjunctionProcessor, DisjunctionProcessor
-from .learning.instantiation import PatternProcessor
+from .learning.instantiation import PatternProcessor, ValueMaps
 from .core import BaseFandangoLearner
+from .types import OracleType
 
 
 class FandangoLearner(BaseFandangoLearner):
@@ -21,7 +20,7 @@ class FandangoLearner(BaseFandangoLearner):
     """
 
     def __init__(
-        self, grammar: Grammar, patterns: Optional[Iterable[str]] = None, **kwargs
+        self, grammar: Grammar, patterns: Optional[Iterable[str]] = None, logger_level: LoggerLevel = LoggerLevel.INFO, **kwargs
     ):
         """
         Initializes the FandangoLearner with a grammar and optional patterns.
@@ -31,6 +30,10 @@ class FandangoLearner(BaseFandangoLearner):
             patterns (Optional[Iterable[str]]): A collection of patterns to be used in the learning process.
             **kwargs: Additional arguments for customization.
         """
+
+        if logger_level is not None:
+            LOGGER.setLevel(logger_level.value)
+
         super().__init__(grammar, patterns, **kwargs)
         self.max_conjunction_size = 2
         self.max_disjunction_size = 2
@@ -45,11 +48,16 @@ class FandangoLearner(BaseFandangoLearner):
             self.max_disjunction_size, self.min_precision, self.min_recall
         )
 
+        # Refinement
+        self.all_positive_inputs = set()
+        self.all_negative_inputs = set()
+        self.removed_candidates = set()
+
     def learn_constraints(
         self,
         test_inputs: set[FandangoInput] | set[str],
         relevant_non_terminals: Set[NonTerminal] = None,
-        oracle: Callable[[str], OracleResult] = None,
+        oracle: OracleType = None,
         **kwargs,
     ) -> Optional[List[FandangoConstraintCandidate]]:
         """
@@ -58,6 +66,7 @@ class FandangoLearner(BaseFandangoLearner):
         Args:
             test_inputs (Set[FandangoInput]): A set of test inputs used for learning constraints.
             relevant_non_terminals (Set[NonTerminal], optional): A set of non-terminals relevant for learning.
+            oracle (OracleType, optional): An oracle function to evaluate inputs.
             **kwargs: Additional arguments for learning customization.
 
         Returns:
@@ -70,20 +79,35 @@ class FandangoLearner(BaseFandangoLearner):
             relevant_non_terminals = set(self.grammar)
 
         positive_inputs, negative_inputs = self.categorize_inputs(test_inputs)
+        self.update_inputs(positive_inputs, negative_inputs)
 
-        sorted_positive_inputs = self.sort_and_filter_positive_inputs(positive_inputs)
+        sorted_positive_inputs = self.sort_and_filter_positive_inputs(self.all_positive_inputs)
 
-        instantiated_patterns = self.pattern_processor.instantiate_patterns(
-            relevant_non_terminals, sorted_positive_inputs
+        value_maps = ValueMaps(relevant_non_terminals)
+        value_maps.extract_non_terminal_values(self.all_positive_inputs)
+
+        instantiated_candidates = self.pattern_processor.instantiate_patterns(
+            relevant_non_terminals, sorted_positive_inputs, value_maps=value_maps
         )
 
-        self.parse_candidates(instantiated_patterns, positive_inputs, negative_inputs)
+        candidates_to_evaluate: List[FandangoConstraintCandidate] = [] + self.candidates.candidates
+        for candidate in instantiated_candidates - self.removed_candidates:
+            if candidate not in candidates_to_evaluate:
+                candidates_to_evaluate.append(candidate)
+
+        self.validate_and_add_new_candidates(candidates_to_evaluate, positive_inputs, negative_inputs)
 
         conjunction_candidates = self.conjunction_processor.process(self.candidates)
-        self.candidates += conjunction_candidates
+        for candidate in conjunction_candidates:
+            self.candidates.append(candidate)
 
-        disjunction_candidates = self.disjunction_processor.process(self.candidates)
-        self.candidates += disjunction_candidates
+        # for candidate in conjunction_candidates:
+        #     candidate.evaluate(self.all_negative_inputs)
+        #     self.candidates.append(candidate)
+
+        # disjunction_candidates = self.disjunction_processor.process(self.candidates)
+        # self.candidates += disjunction_candidates
+        # self.filter_candidates()
 
         return self.get_best_candidates()
 
@@ -121,31 +145,54 @@ class FandangoLearner(BaseFandangoLearner):
         LOGGER.info("Filtered positive inputs for learning: %s", len(filtered_inputs))
         return filtered_inputs
 
-    def parse_candidates(
+    def update_inputs(self, positive_inputs: Set[FandangoInput], negative_inputs: Set[FandangoInput]):
+        self.all_positive_inputs.update(positive_inputs)
+        self.all_negative_inputs.update(negative_inputs)
+
+    def validate_and_add_new_candidates(
         self,
-        instantiated_patterns: List[Constraint],
+        candidates: List[FandangoConstraintCandidate],
         positive_inputs: Set[FandangoInput],
         negative_inputs: Set[FandangoInput],
-        pre_filter: bool = True,
     ) -> None:
         """
         Generates constraint candidates based on instantiated patterns and evaluates them.
 
         Args:
-            instantiated_patterns (List[Constraint]): A list of instantiated patterns and their corresponding non-terminals.
-            test_inputs (Set[FandangoInput]): A set of test inputs to evaluate candidates.
-            pre_filter (bool):
+            candidates (Set[FandangoConstraintCandidate]): A set of new candidates.
+            positive_inputs (Set[FandangoInput]): A set of positive inputs.
+            negative_inputs (Set[FandangoInput]): A set of negative inputs.
         """
-        for pattern in instantiated_patterns:
-            candidate = FandangoConstraintCandidate(pattern)
-            try:
-                candidate.evaluate(positive_inputs)
-                if pre_filter:
-                    if candidate.recall() >= self.min_recall:
-                        candidate.evaluate(negative_inputs)
-                        self.candidates.append(candidate)
-                else:
-                    candidate.evaluate(negative_inputs)
+        for candidate in candidates:
+            if candidate not in self.candidates:
+                if self.evaluate_candidate(candidate, self.all_positive_inputs, self.all_negative_inputs):
                     self.candidates.append(candidate)
-            except Exception:
-                continue
+                    #LOGGER.info("Added new candidate: %s", candidate.constraint)
+                else:
+                    self.removed_candidates.add(candidate)
+            else:
+                if not self.evaluate_candidate(candidate, positive_inputs, negative_inputs):
+                    self.candidates.remove(candidate)
+                    self.removed_candidates.add(candidate)
+
+    def evaluate_candidate(self, candidate: FandangoConstraintCandidate, positive_inputs, negative_inputs):
+        try:
+            candidate.evaluate(positive_inputs)
+            if candidate.recall() >= self.min_recall:
+                candidate.evaluate(negative_inputs)
+                return True
+        except Exception as e:
+            LOGGER.debug("Error when evaluation candidate %s: %s",candidate.constraint, e)
+        return False
+
+    def filter_candidates(self):
+        candidates_to_remove = [
+            candidate
+            for candidate in self.candidates
+            if candidate.specificity() < self.min_precision
+            or candidate.recall() < self.min_recall
+        ]
+        LOGGER.info("Removing candidates: %s", len(candidates_to_remove))
+
+        for candidate in candidates_to_remove:
+            self.candidates.remove(candidate)

@@ -5,7 +5,7 @@ from fandango.constraints import predicates
 from fandango.language.search import RuleSearch
 from fandango.language.symbol import NonTerminal
 
-from fandangoLearner.interface.fandango import parse, parse_file
+from fandangoLearner.interface.fandango import parse_file, parse_constraint
 from fandangoLearner.data.input import FandangoInput
 
 
@@ -29,7 +29,7 @@ class Pattern:
         self.string_pattern = string_pattern
         self.instantiated_pattern = (
             instantiated_pattern
-            or parse(string_pattern, check_constraints=True, use_cache=use_cache)[1][0]
+            or parse_constraint(string_pattern)
         )
         self.__class__.registry.append(self)
 
@@ -121,20 +121,28 @@ for operator in [
 # )
 
 
-Pattern(
-    string_pattern="exists <container> in <NON_TERMINAL>: int(<container>) <= <INTEGER>;",
-)
+# Pattern(
+#     string_pattern="exists <container> in <NON_TERMINAL>: int(<container>) <= <INTEGER>;",
+# )
+#
+# Pattern(
+#     string_pattern="exists <container> in <NON_TERMINAL>: str(<container>) != <INTEGER>;",
+# )
+#
+# Pattern(
+#     string_pattern="exists <container> in <NON_TERMINAL>: int(<container>) == <STRING>;",
+# )
+#
+# Pattern(
+#     string_pattern="exists <elem> in <NON_TERMINAL>: str(<elem>) == <STRING>;",
+# )
+#
+# Pattern(
+#     string_pattern="exists <container_1> in <NON_TERMINAL>: exists <container_2> in <NON_TERMINAL>: int(<container_1>) > len(str(<container_2>));",
+# )
 
 Pattern(
-    string_pattern="exists <container> in <NON_TERMINAL>: str(<container>) != <INTEGER>;",
-)
-
-Pattern(
-    string_pattern="exists <container> in <NON_TERMINAL>: int(<container>) == <STRING>;",
-)
-
-Pattern(
-    string_pattern="exists <container_1> in <NON_TERMINAL>: exists <container_2> in <NON_TERMINAL>: int(<container_1>) > len(str(<container_2>));",
+    string_pattern="exists <elem> in <NON_TERMINAL>: is_inside(<elem>, <start>);",
 )
 
 

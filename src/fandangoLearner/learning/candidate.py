@@ -9,6 +9,7 @@ from fandango.constraints.base import (
     DisjunctionConstraint,
 )
 from fandangoLearner.data.input import FandangoInput
+from fandangoLearner.language.constraints import NegationConstraint
 
 
 class ConstraintCandidate(ABC):
@@ -61,6 +62,7 @@ class FandangoConstraintCandidate(ConstraintCandidate):
         self.failing_inputs_eval_results = failing_inputs_eval_results or []
         self.passing_inputs_eval_results = passing_inputs_eval_results or []
         self.cache: Dict[FandangoInput, bool] = cache or {}
+        self.__hash = hash(str(self.constraint))
 
     def evaluate(self, inputs):
         """
@@ -69,6 +71,8 @@ class FandangoConstraintCandidate(ConstraintCandidate):
         :return:
         """
         for inp in inputs:
+            if inp in self.cache.keys():
+                continue
             eval_result = self.constraint.check(inp.tree)
             self._update_eval_results_and_combination(eval_result, inp)
 
@@ -100,6 +104,15 @@ class FandangoConstraintCandidate(ConstraintCandidate):
         fp = sum(int(entry) for entry in self.passing_inputs_eval_results)
         return tp / (tp + fp) if tp + fp > 0 else 0.0
 
+    def __eq__(self, other):
+        """
+        Return whether two candidates are equal.
+        """
+        return isinstance(other, FandangoConstraintCandidate) and str(self.constraint) == str(other.constraint)
+
+    def __hash__(self):
+        return self.__hash
+
     def __and__(
         self, other: "FandangoConstraintCandidate"
     ) -> "FandangoConstraintCandidate":
@@ -110,18 +123,21 @@ class FandangoConstraintCandidate(ConstraintCandidate):
         :return: The conjunction of the candidate with the other candidate.
         """
         assert isinstance(other, FandangoConstraintCandidate)
-        assert self.cache.keys() == other.cache.keys()
+        # print(
+        #     f"Cache keys Self: {self.cache.keys()}, Other {other.cache.keys()}")
+        # print(self.constraint)
+        # print(other.constraint)
+        assert self.cache.keys() == other.cache.keys(), "Cache keys must be the same"
 
-        new_failing_inputs_eval_results = []
-        new_passing_inputs_eval_results = []
         new_cache = {}
-        for inp in self.cache:
-            r = self.cache[inp] and other.cache[inp]
-            if inp.oracle == OracleResult.FAILING:
-                new_failing_inputs_eval_results.append(r)
-            else:
-                new_passing_inputs_eval_results.append(r)
+        new_failing, new_passing = [], []
+
+        for inp, value_self in self.cache.items():
+            value_other = other.cache[inp]
+            r = value_self and value_other  # or `value_self or value_other` for `__or__`
             new_cache[inp] = r
+
+            (new_failing if inp.oracle == OracleResult.FAILING else new_passing).append(r)
 
         return FandangoConstraintCandidate(
             constraint=ConjunctionConstraint(
@@ -130,8 +146,8 @@ class FandangoConstraintCandidate(ConstraintCandidate):
                 global_variables=self.constraint.global_variables,
                 # lazy=self.constraint.lazy,
             ),
-            failing_inputs_eval_results=new_failing_inputs_eval_results,
-            passing_inputs_eval_results=new_passing_inputs_eval_results,
+            failing_inputs_eval_results=new_failing,
+            passing_inputs_eval_results=new_passing,
             cache=new_cache,
         )
 
@@ -168,6 +184,26 @@ class FandangoConstraintCandidate(ConstraintCandidate):
             cache=new_cache,
         )
 
+    def __neg__(self):
+        """
+        Return the negation of the candidate.
+
+        :return: The negation of the candidate.
+        """
+        cache = {}
+        for inp in self.cache.keys():
+            cache[inp] = not self.cache[inp]
+
+        failing_inputs_eval_results = [not eval_result for eval_result in self.failing_inputs_eval_results]
+        passing_inputs_eval_results = [not eval_result for eval_result in self.passing_inputs_eval_results]
+
+        return FandangoConstraintCandidate(
+            constraint=NegationConstraint(self.constraint),
+            failing_inputs_eval_results=failing_inputs_eval_results,
+            passing_inputs_eval_results=passing_inputs_eval_results,
+            cache=cache,
+        )
+
     def _update_eval_results_and_combination(
         self, eval_result: bool, inp: FandangoInput
     ):
@@ -193,3 +229,63 @@ class FandangoConstraintCandidate(ConstraintCandidate):
             f"(based on {len(self.failing_inputs_eval_results)} failing "
             f"and {len(self.passing_inputs_eval_results)} passing inputs)"
         )
+
+
+class CandidateSet:
+
+    def __init__(self, candidates: Optional[List[FandangoConstraintCandidate]] = None):
+        self.candidate_hashes = dict()
+        self.candidates = []
+
+        candidates = candidates or []
+
+        for idx, candidate in enumerate(candidates):
+            candidate_hash = hash(candidate)
+            if candidate_hash not in self.candidate_hashes:
+                self.candidate_hashes[candidate_hash] = idx
+                self.candidates.append(candidate)
+
+    def __repr__(self):
+        """
+        Return a string representation of the candidate set and its candidates.
+        """
+        return f"CandidateSet({repr(self.candidates)})"
+
+    def __str__(self):
+        """
+        Return a string representation of the candidate set and its candidates.
+        """
+        return "\n".join(map(str, self.candidates))
+
+    def __len__(self):
+        """
+        Return the number of candidates in the candidate set.
+        """
+        return len(self.candidates)
+
+    def __iter__(self):
+        """
+        Iterate over the candidates in the candidate set.
+        """
+        return iter(self.candidates)
+
+    def append(self, candidate: FandangoConstraintCandidate):
+        """
+        Add a candidate to the candidate set.
+        """
+        candidate_hash = hash(candidate)
+        if candidate_hash not in self.candidate_hashes:
+            self.candidate_hashes[candidate_hash] = len(self.candidates)
+            self.candidates.append(candidate)
+
+    def remove(self, candidate: FandangoConstraintCandidate):
+        """
+        Remove a candidate from the candidate set.
+        """
+        candidate_hash = hash(candidate)
+        if candidate_hash in self.candidate_hashes:
+            last_elem, idx = self.candidates[-1], self.candidate_hashes[candidate_hash]
+            self.candidates[idx] = last_elem
+            self.candidate_hashes[hash(last_elem)] = idx
+            self.candidates.pop()
+            del self.candidate_hashes[candidate_hash]

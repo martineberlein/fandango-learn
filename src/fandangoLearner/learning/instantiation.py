@@ -1,14 +1,70 @@
-from abc import ABC, abstractmethod
-from itertools import product
+from abc import ABC
 from copy import deepcopy
-from typing import List, Dict, Set, Iterable, Tuple, Callable, Type
+from typing import List, Dict, Set, Iterable, Tuple, Callable
 
 from fandango.constraints.base import *
 from fandango.language.search import RuleSearch
 from fandango.language.symbol import NonTerminal
 
 from fandangoLearner.data.input import FandangoInput
+from fandangoLearner.learning.candidate import FandangoConstraintCandidate
 from fandangoLearner.logger import LOGGER
+
+
+class ValueMaps:
+    def __init__(self, relevant_non_terminals: Set[NonTerminal]):
+        self.relevant_non_terminals = relevant_non_terminals
+        self._string_values = {nt: set() for nt in self.relevant_non_terminals}
+        self._int_values = {nt: set() for nt in self.relevant_non_terminals}
+
+    def get_string_values_for_non_terminal(self, non_terminal: NonTerminal) -> Set[str]:
+        return self._string_values[non_terminal]
+
+    def get_int_values_for_non_terminal(self, non_terminal: NonTerminal) -> Set[int]:
+        return self._int_values[non_terminal]
+
+    def get_filtered_int_values(self) -> Dict[NonTerminal, Set[str]]:
+        return self._calculate_filtered_int_values()
+
+    def get_string_values(self) -> Dict[NonTerminal, Set[str]]:
+        return self._string_values
+
+    def get_int_values(self) -> Dict[NonTerminal, Set[int]]:
+        return self._int_values
+
+    @staticmethod
+    def is_number(value: str) -> bool:
+        """Check if the given string represents a number."""
+        try:
+            float(value)
+            return True
+        except ValueError:
+            return False
+
+    def extract_non_terminal_values(self, inputs: Set[FandangoInput]) -> Tuple[
+        Dict[NonTerminal, Set[str]], Dict[NonTerminal, Set[float]]]:
+        """Extracts and returns values associated with non-terminals."""
+
+        for input_obj in inputs:
+            for non_terminal in self.relevant_non_terminals:
+                found_trees = input_obj.tree.find_all_trees(non_terminal)
+                for tree in found_trees:
+                    value = str(tree)
+                    if self.is_number(value):
+                        self._int_values[non_terminal].add(eval(value))
+                    else:
+                        self._string_values[non_terminal].add(value)
+
+        return self._string_values, self._int_values
+
+    def _calculate_filtered_int_values(self) -> Dict[NonTerminal, Set[str]]:
+        """Filters the value map to only include min and max values for non-terminals that have integer values."""
+        reduced_int_values = {}
+        for non_terminal, values in self._int_values.items():
+            if values:
+                min_val, max_val = min(values), max(values)
+                reduced_int_values[non_terminal] = {min_val, max_val}
+        return reduced_int_values
 
 
 class PatternProcessor:
@@ -19,94 +75,41 @@ class PatternProcessor:
     def __init__(self, patterns: Iterable[Constraint]):
         self.patterns = patterns
 
-    @staticmethod
-    def is_number(value: str) -> bool:
-        try:
-            float(value)
-            return True
-        except ValueError:
-            return False
-
-    def extract_non_terminal_values(
-        self,
-        relevant_non_terminals: Set[NonTerminal],
-        initial_inputs: Set[FandangoInput],
-    ) -> Dict[str, Dict[NonTerminal, List[str]]]:
-        """
-        Extracts values associated with non-terminals from initial inputs.
-
-        Args:
-            relevant_non_terminals (Set[NonTerminal]): A set of relevant non-terminals.
-            initial_inputs (Set[FandangoInput]): A set of initial inputs to extract values from.
-
-        Returns:
-            Dict[str, Dict[NonTerminal, List[str]]]: Extracted string and integer values.
-        """
-        string_values: Dict[NonTerminal, Set[str]] = {}
-        int_values: Dict[NonTerminal, Set[str]] = {}
-
-        for non_terminal in relevant_non_terminals:
-            for inp in initial_inputs:
-                found_trees = inp.tree.find_all_trees(non_terminal)
-                for tree in found_trees:
-                    value = str(tree)
-                    if self.is_number(value):
-                        int_values.setdefault(non_terminal, set())#.add(value)
-                    else:
-                        string_values.setdefault(non_terminal, set()).add(value)
-
-        return {
-            "string_values": {k: list(v) for k, v in string_values.items()},
-            "int_values": {k: list(v) for k, v in int_values.items()},
-        }
-
-    def filter_value_map(self, value_map: Dict[str, Dict[NonTerminal, List[str]]]):
-        """
-        Filters the value map to remove non-terminals with no values.
-
-        Args:
-            value_map (Dict[str, Dict[NonTerminal, List[str]]]): A value map to filter.
-
-        Returns:
-            Dict[str, Dict[NonTerminal, List[str]]]: A filtered value map.
-        """
-
-        integer_value_map = value_map["int_values"]
-        for non_terminal in integer_value_map.keys():
-            if not integer_value_map[non_terminal]:
-                continue
-            int_v = list(float(v) for v in integer_value_map[non_terminal])
-            min_, max_ = min(int_v), max(int_v)
-            integer_value_map[non_terminal] = [str(min_), str(max_)]
-
     def instantiate_patterns(
         self,
-        relevant_non_terminals: Iterable[NonTerminal],
+        relevant_non_terminals: Set[NonTerminal],
         positive_inputs: Set[FandangoInput],
-    ) -> List[Constraint]:
-        instantiated_patterns = []
-
-        value_map = self.extract_non_terminal_values(
-            relevant_non_terminals, positive_inputs
-        )
-        self.filter_value_map(value_map)
+        value_maps: ValueMaps,
+    ) -> Set[FandangoConstraintCandidate]:
 
         # Replace non-terminal placeholders with actual non-terminals
+        instantiated_patterns = []
         for pattern in self.patterns:
             transformer = NonTerminalPlaceholderTransformer(relevant_non_terminals)
             pattern.accept(transformer)
             transformed = transformer.results
             instantiated_patterns.extend(transformed)
 
-        final_patterns = []
+        string_patterns = []
         # Replace value placeholders with actual values
         for pattern in instantiated_patterns:
-            transformer = ValuePlaceholderTransformer(value_map, positive_inputs)
+            transformer = StringValuePlaceholderTransformer(value_maps, positive_inputs)
             pattern.accept(transformer)
             transformed = transformer.results
-            final_patterns.extend(transformed)
+            string_patterns.extend(transformed)
 
-        return final_patterns
+        int_patterns = []
+        for pattern in string_patterns:
+            transformer = IntegerValuePlaceholderTransformer(value_maps, positive_inputs)
+            pattern.accept(transformer)
+            transformed = transformer.results
+            int_patterns.extend(transformed)
+
+        new_candidates = set()
+        for pattern in int_patterns:
+            new_candidates.add(FandangoConstraintCandidate(pattern))
+
+        return new_candidates
 
 
 class NonTerminalPlaceholderTransformer(ConstraintVisitor):
@@ -236,14 +239,14 @@ class NonTerminalPlaceholderTransformer(ConstraintVisitor):
         self.results.append(constraint)
 
 
-class ValuePlaceholderTransformer(ConstraintVisitor):
+class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
     """
     A visitor for replacing placeholders like <STRING> or <INTEGER> in constraints with actual values.
     """
 
     def __init__(
         self,
-        value_maps: Dict[str, Dict[NonTerminal, List[str]]],
+        value_maps: ValueMaps,
         test_inputs: Set[FandangoInput],
     ):
         """
@@ -253,52 +256,34 @@ class ValuePlaceholderTransformer(ConstraintVisitor):
             value_maps (Dict[str, Dict[NonTerminal, List[str]]]): Mapping of placeholders to their replacement values.
         """
         super().__init__()
-        self.value_maps = value_maps
+        self.value_maps: ValueMaps = value_maps
         self.results: List[Constraint] = []
         self.test_inputs: Set[FandangoInput] = test_inputs
 
     def do_continue(self, constraint: "Constraint") -> bool:
         return False
 
+    @abstractmethod
     def update_value_map(self, bound: NonTerminal, search: RuleSearch):
         """ """
-        for type in self.value_maps.keys():
-            # string, int
-            if search in self.value_maps[type].keys():
-                if isinstance(search, RuleSearch):
-                    self.value_maps[type][bound] = self.value_maps[type][search.symbol]
+        raise NotImplementedError()
 
+    @abstractmethod
     def remove_value_map(self, bound: NonTerminal):
-        for type in self.value_maps.keys():
-            if bound in self.value_maps[type].keys():
-                del self.value_maps[type][bound]
+        raise NotImplementedError()
 
+    @abstractmethod
     def visit_comparison_constraint(self, constraint: "ComparisonConstraint"):
         """
         Replace placeholders in a ComparisonConstraint with corresponding values.
         """
-        instantiated_patterns = [(constraint, set())]
-        # Replace <STRING> placeholders
-        instantiated_patterns = self.replace_placeholders(
-            instantiated_patterns,
-            NonTerminal("<STRING>"),
-            self.value_maps["string_values"],
-            lambda x: f"'{x}'",
-        )
-        # Replace <INTEGER> placeholders
-        instantiated_patterns = self.replace_placeholders(
-            instantiated_patterns,
-            NonTerminal("<INTEGER>"),
-            self.value_maps["int_values"],
-            lambda x: x,
-        )
-
-        self.results.extend([pattern for pattern, _ in instantiated_patterns])
+        raise NotImplementedError()
 
     def visit_forall_constraint(self, constraint: "ForallConstraint"):
         """
         Recursively visit the statement inside a ForallConstraint.
         """
+        assert isinstance(constraint.search, RuleSearch), f"AttributeSearch not yet supported! {constraint}"
 
         self.update_value_map(constraint.bound, constraint.search)
         constraint.statement.accept(self)
@@ -319,6 +304,8 @@ class ValuePlaceholderTransformer(ConstraintVisitor):
         """
         Recursively visit the statement inside an ExistsConstraint.
         """
+        assert isinstance(constraint.search, RuleSearch), f"AttributeSearch not yet supported! {constraint}"
+
         self.update_value_map(constraint.bound, constraint.search)
         constraint.statement.accept(self)
         self.remove_value_map(constraint.bound)
@@ -423,7 +410,7 @@ class ValuePlaceholderTransformer(ConstraintVisitor):
         self,
         initialized_patterns: List[Tuple[Constraint, Set[NonTerminal]]],
         placeholder: NonTerminal,
-        values: Dict[NonTerminal, List[str]],
+        values: Dict[NonTerminal, Set[str]],
         format_value: Callable[[str], str],
     ) -> List[Tuple[Constraint, Set[NonTerminal]]]:
         """
@@ -485,3 +472,66 @@ class ValuePlaceholderTransformer(ConstraintVisitor):
                 new_patterns.append((pattern, non_terminals))
 
         return new_patterns
+
+class IntegerValuePlaceholderTransformer(ValuePlaceholderTransformer):
+
+    def __init__(self, value_maps: ValueMaps, test_inputs: Set[FandangoInput]):
+        super().__init__(value_maps, test_inputs)
+
+    def update_value_map(self, bound: NonTerminal, search: RuleSearch):
+        """ """
+        if search.symbol in self.value_maps._int_values:
+            self.value_maps._int_values[bound] = self.value_maps._int_values[search.symbol]
+
+    def remove_value_map(self, bound: NonTerminal):
+        if bound in self.value_maps._int_values:
+            del self.value_maps._int_values[bound]
+
+    def visit_comparison_constraint(self, constraint: "ComparisonConstraint"):
+        """
+        Replace placeholders in a ComparisonConstraint with corresponding values.
+        :param constraint:
+        :return:
+        """
+
+        instantiated_patterns = [(constraint, set())]
+        # Replace <INTEGER> placeholders
+        instantiated_patterns = self.replace_placeholders(
+            instantiated_patterns,
+            NonTerminal("<INTEGER>"),
+            values=self.value_maps.get_filtered_int_values(),
+            format_value = lambda x: f"{x}",
+        )
+
+        self.results.extend([pattern for pattern, _ in instantiated_patterns])
+
+class StringValuePlaceholderTransformer(ValuePlaceholderTransformer):
+
+    def __init__(self, value_maps: ValueMaps, test_inputs: Set[FandangoInput]):
+        super().__init__(value_maps, test_inputs)
+
+    def update_value_map(self, bound: NonTerminal, search: RuleSearch):
+        """ """
+        if search.symbol in self.value_maps._string_values:
+            self.value_maps._string_values[bound] = self.value_maps._string_values[search.symbol]
+
+    def remove_value_map(self, bound: NonTerminal):
+        if bound in self.value_maps._string_values:
+            del self.value_maps._string_values[bound]
+
+    def visit_comparison_constraint(self, constraint: "ComparisonConstraint"):
+        """
+        Replace placeholders in a ComparisonConstraint with corresponding values.
+        :param constraint:
+        :return:
+        """
+        instantiated_patterns = [(constraint, set())]
+        # Replace <STRING> placeholders
+        instantiated_patterns = self.replace_placeholders(
+            instantiated_patterns,
+            NonTerminal("<STRING>"),
+            values=self.value_maps.get_string_values(),
+            format_value=lambda x: f"'{x}'",
+        )
+
+        self.results.extend([pattern for pattern, _ in instantiated_patterns])

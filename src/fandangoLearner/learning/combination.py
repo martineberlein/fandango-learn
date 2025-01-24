@@ -1,9 +1,9 @@
-from typing import Tuple, Union, List
+from typing import Tuple, Union, List, Set
 from abc import ABC, abstractmethod
 import itertools
 
 from fandango.constraints.base import ConjunctionConstraint, DisjunctionConstraint
-from fandangoLearner.learning.candidate import FandangoConstraintCandidate
+from fandangoLearner.learning.candidate import FandangoConstraintCandidate, CandidateSet
 
 from fandangoLearner.logger import LOGGER
 
@@ -39,8 +39,8 @@ class ConjunctionProcessor(CombinationProcessor):
         self.max_conjunction_size = max_conjunction_size
 
     def process(
-        self, candidates: List[FandangoConstraintCandidate]
-    ) -> List[FandangoConstraintCandidate]:
+        self, candidates: CandidateSet
+    ) -> Set[FandangoConstraintCandidate]:
         """
         Iterates of all candidates to find the best conjunctions.
         :param candidates:
@@ -48,23 +48,23 @@ class ConjunctionProcessor(CombinationProcessor):
         """
         combinations = self.get_possible_conjunctions(candidates)
 
-        conjunction_candidates = []
+        conjunction_candidates = set()
         for combination in combinations:
             # check min recall
-            if not self.check_minimum_recall(combination):
-                continue
+            # if not self.check_minimum_recall(combination):
+            #     print("Lol")
+            #     continue
             conjunction: FandangoConstraintCandidate = combination[0]
-            con_list = [
-                conjunction,
-            ]
-            valid = True
+            # con_list = [
+            #     conjunction,
+            # ]
             for candidate in combination[1:]:
                 conjunction = conjunction & candidate
-                if not self.is_new_conjunction_valid(conjunction, con_list):
-                    valid = False
-                con_list.append(conjunction)
-            if self.is_new_conjunction_valid(conjunction, combination) and valid:
-                conjunction_candidates.append(conjunction)
+                # if not self.is_new_conjunction_valid(conjunction, con_list):
+                #     valid = False
+                # con_list.append(conjunction)
+            if self.is_new_conjunction_valid(conjunction, combination):
+                conjunction_candidates.add(conjunction)
 
         LOGGER.info("Found %s valid conjunctions", len(conjunction_candidates))
         return conjunction_candidates
@@ -87,15 +87,16 @@ class ConjunctionProcessor(CombinationProcessor):
         )
 
     def get_possible_conjunctions(
-        self, candidate_set: List[FandangoConstraintCandidate]
+        self, candidate_set: CandidateSet
     ) -> List[Tuple[FandangoConstraintCandidate, ...]]:
         """
         Get all possible conjunctions of the candidate set with a maximum size of max_conjunction_size.
         """
         combinations = []
+        sorted_candidates = sorted(candidate_set.candidates, key=lambda x: str(x))
         candidate_set_without_conjunctions = [
             candidate
-            for candidate in candidate_set
+            for candidate in sorted_candidates
             if not isinstance(candidate.constraint, ConjunctionConstraint)
         ]
         for level in range(2, self.max_conjunction_size + 1):

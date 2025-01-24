@@ -1,13 +1,10 @@
 import unittest
-from unittest.mock import MagicMock
+
 from debugging_framework.input.oracle import OracleResult
-from fandango.language.tree import DerivationTree
-from fandango.language.parse import parse
-from fandango.constraints.base import Constraint
+
 from fandangoLearner.data.input import FandangoInput
-from fandango.constraints.base import ConjunctionConstraint, DisjunctionConstraint
-from fandangoLearner.learner import NonTerminal
-from fandangoLearner.learning.candidate import FandangoConstraintCandidate
+from fandangoLearner.learning.candidate import FandangoConstraintCandidate, CandidateSet
+from fandangoLearner.interface.fandango import parse_contents, parse_constraint
 
 
 class TestFandangoConstraintCandidate(unittest.TestCase):
@@ -23,15 +20,9 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
         <digit>::=  "0" | <onenine>;
     """
 
-    def get_constraint(self, constraint):
-        _, constraints = parse(constraint)
-        self.assertEqual(1, len(constraints))
-        return constraints[0]
-
     def setUp(self):
-        grammar, constraints = parse(
+        grammar, constraints = parse_contents(
             self.GRAMMAR + "(int(<number>) <= -10 and str(<function>) == 'sqrt');",
-            check_constraints=False,
         )
         self.constraint = constraints[0]
         self.grammar = grammar
@@ -84,11 +75,9 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
 
     def test_and_operator(self):
         # Create another candidate with a similar constraint
-        candidate = FandangoConstraintCandidate(
-            self.get_constraint("int(<number>) <= 0;")
-        )
+        candidate = FandangoConstraintCandidate(parse_constraint("int(<number>) <= 0;"))
         other_candidate = FandangoConstraintCandidate(
-            self.get_constraint("str(<function>) == 'sqrt';")
+            parse_constraint("str(<function>) == 'sqrt';")
         )
 
         # Evaluate both candidates
@@ -112,11 +101,9 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
 
     def test_or_operator(self):
         # Create another candidate with a different constraint
-        candidate = FandangoConstraintCandidate(
-            self.get_constraint("int(<number>) <= 0;")
-        )
+        candidate = FandangoConstraintCandidate(parse_constraint("int(<number>) <= 0;"))
         other_candidate = FandangoConstraintCandidate(
-            self.get_constraint("str(<function>) == 'sqrt';")
+            parse_constraint("str(<function>) == 'sqrt';")
         )
 
         # Evaluate both candidates
@@ -133,6 +120,19 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
         # Not a perfect constraint
         self.assertEqual(combined_candidate.cache[self.failing_input], True)
         self.assertEqual(combined_candidate.cache[self.passing_input], True)
+
+    def test_negation(self):
+        candidate = FandangoConstraintCandidate(parse_constraint("int(<number>) <= 0;"))
+        candidate.evaluate([self.failing_input, self.passing_input])
+        self.assertEqual(candidate.cache[self.failing_input], True)
+        self.assertEqual(candidate.cache[self.passing_input], False)
+
+        negated_candidate = -candidate
+        self.assertEqual(negated_candidate.precision(), 0.0)
+        self.assertEqual(negated_candidate.recall(), 0.0)
+
+        self.assertEqual(negated_candidate.cache[self.failing_input], False)
+        self.assertEqual(negated_candidate.cache[self.passing_input], True)
 
     def test_reset(self):
         inputs = [self.failing_input, self.passing_input]
@@ -157,7 +157,7 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
 
     def test_constraint_with_missing_non_terminals(self):
         candidate = FandangoConstraintCandidate(
-            self.get_constraint("str(<maybeminus>) == '-';")
+            parse_constraint("str(<maybeminus>) == '-';")
         )
         null_input = FandangoInput.from_str(
             self.grammar, "sqrt(0)", OracleResult.PASSING
@@ -173,6 +173,63 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
 
         self.assertEqual(candidate.cache[null_input], True)
         self.assertEqual(candidate.cache[self.failing_input], True)
+
+    def test_candidate_hash(self):
+        inputs = [self.failing_input, self.passing_input]
+        self.candidate.evaluate(inputs)
+
+        candidates = set()
+        candidates.add(self.candidate)
+        candidates.add(self.candidate)
+        candidates.add(self.candidate)
+        self.assertEqual(len(candidates), 1)
+
+        self.assertTrue(self.candidate in candidates)
+        self.assertFalse(self.candidate not in candidates)
+
+    def test_candidate_set(self):
+        inputs = [self.failing_input, self.passing_input]
+        self.candidate.evaluate(inputs)
+        candidate_set = CandidateSet()
+        candidate_set.append(self.candidate)
+        self.assertTrue(self.candidate in candidate_set)
+        self.assertFalse(self.candidate not in candidate_set)
+
+        candidate_set.append(self.candidate)
+        self.assertEqual(len(candidate_set), 1)
+
+        candidate_set.remove(self.candidate)
+        self.assertEqual(len(candidate_set), 0)
+        self.assertEqual(len(candidate_set.candidate_hashes), 0)
+
+    def test_iterate_candidate_set(self):
+        inputs = [self.failing_input, self.passing_input]
+        self.candidate.evaluate(inputs)
+        candidate_set = CandidateSet([self.candidate])
+        for candidate in candidate_set:
+            self.assertEqual(candidate, self.candidate)
+
+    def test_candidate_set_append(self):
+        inputs = [self.failing_input, self.passing_input]
+        self.candidate.evaluate(inputs)
+
+        candidate_set = CandidateSet()
+        candidate_set.append(self.candidate)
+        self.assertEqual(len(candidate_set), 1)
+        self.assertTrue(self.candidate in candidate_set)
+        self.assertFalse(self.candidate not in candidate_set)
+
+        candidate_set.append(self.candidate)
+        self.assertEqual(len(candidate_set), 1)
+
+    def test_candidate_set_instantiation(self):
+        inputs = [self.failing_input, self.passing_input]
+        self.candidate.evaluate(inputs)
+
+        candidate_set = CandidateSet([self.candidate])
+        self.assertEqual(len(candidate_set), 1)
+        self.assertTrue(self.candidate in candidate_set)
+        self.assertFalse(self.candidate not in candidate_set)
 
 
 if __name__ == "__main__":

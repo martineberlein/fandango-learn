@@ -1,8 +1,10 @@
+import random
 from typing import List, Callable, Set
 import time
 
 from fandangoLearner.learning.candidate import FandangoConstraintCandidate
 from fandangoLearner.data.input import FandangoInput
+from fandangoLearner.learning.metric import RecallPriorityFitness
 
 
 def print_constraints(
@@ -46,6 +48,7 @@ def generate_evaluation_inputs(grammar, oracle: Callable, num_inputs=2000):
     """
     Generate the evaluation inputs.
     """
+    random.seed(1)
     evaluation_inputs = []
     for _ in range(num_inputs):
         inp = grammar.fuzz()
@@ -74,3 +77,40 @@ def get_inputs(
             passing_inputs.add(inp) if len(passing_inputs) < num_passing else None
 
     return failing_inputs, passing_inputs
+
+
+def format_results(
+    name: str,
+    grammar,
+    oracle,
+    candidates: List[FandangoConstraintCandidate],
+    time_in_seconds: float,
+    num_inputs=2000,
+):
+    sorting_strategy = RecallPriorityFitness()
+    evaluation_inputs = generate_evaluation_inputs(grammar, oracle, num_inputs)
+
+    candidates = candidates or []
+
+    for candidate in candidates:
+        candidate.evaluate(evaluation_inputs)
+
+    sorted_candidates = sorted(
+        candidates,
+        key=lambda c: sorting_strategy.evaluate(c),
+        reverse=True,
+    )
+    best_candidate = [
+        candidate
+        for candidate in sorted_candidates
+        if sorting_strategy.is_equal(candidate, sorted_candidates[0])
+    ]
+
+    return {
+        "name": name,
+        "candidates": candidates if candidates else None,
+        "time_in_seconds": time_in_seconds,
+        "best_candidates": best_candidate if candidates else None,
+        "precision": best_candidate[0].precision() if candidates else None,
+        "recall": best_candidate[0].recall() if candidates else None,
+    }
