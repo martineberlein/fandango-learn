@@ -5,12 +5,10 @@ import random
 
 from debugging_framework.input.oracle import OracleResult
 
-
 from evaluation.evaluation_helper import format_results
 from fandangoLearner.learner import FandangoLearner, NonTerminal, FandangoInput
 from fandangoLearner.logger import LoggerLevel
-from fandangoLearner.interface.fandango import parse_file
-from fandangoLearner.resources.patterns import Pattern
+from fandangoLearner.interface.fandango import parse
 
 
 def calculator_oracle(inp):
@@ -28,7 +26,7 @@ def evaluate_calculator(logger_level=LoggerLevel.INFO, random_seed=1):
     random.seed(random_seed)
     dirname = os.path.dirname(__file__)
     filename = os.path.join(dirname, "calculator.fan")
-    grammar, _ = parse_file(filename)
+    grammar, _ = parse(filename)
 
     initial_inputs = {
         ("sqrt(-900)", True),

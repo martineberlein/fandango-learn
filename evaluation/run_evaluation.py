@@ -119,7 +119,7 @@ def row_print_results(results: Dict, log_file="evaluation_results.log", write_to
 
 
 def run_evaluation(seconds: int = 3600, write_to_file: bool = True):
-    seeds = [1]
+    seeds = [1,2,3,4,5]
     log_file = get_log_file_name()
     if write_to_file:
         write_log_header(log_file)
@@ -129,10 +129,10 @@ def run_evaluation(seconds: int = 3600, write_to_file: bool = True):
         evaluate_calculator_refinement,
         evaluate_heartbleed,
         evaluate_heartbleed_refinement,
-        #evaluate_middle,
-        #evaluate_middle_refinement,
+        evaluate_middle,
+        evaluate_middle_refinement,
         #evaluate_expression,
-        #evaluate_pysnooper2,
+        evaluate_pysnooper2,
         evaluate_pysnooper3,
     ]
 

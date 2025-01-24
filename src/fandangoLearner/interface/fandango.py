@@ -1,16 +1,17 @@
 import logging
 
-from fandango.language.parse import parse as fandango_parse, parse_file as fandango_parse_file
+from fandango.language.parse import parse as fandango_parse, parse_content as fandango_parse_content
 from fandango.constraints.base import Constraint
 
 
-def parse(*args, disable_logging=True, **kwargs):
+def parse(file_path, disable_logging=True, **kwargs):
     """
     Wrapper for the parse function from fandango.language.parse
     """
     if disable_logging:
         logging.getLogger("fandango").disabled = True
-    return fandango_parse(*args, **kwargs)
+    file = open(file_path, "r")
+    return fandango_parse(file, use_stdlib=False, **kwargs)
 
 
 def parse_file(*args, disable_logging=True, **kwargs):
@@ -19,13 +20,16 @@ def parse_file(*args, disable_logging=True, **kwargs):
     """
     if disable_logging:
         logging.getLogger("fandango").disabled = True
-    return fandango_parse_file(*args, **kwargs)
+    return parse(*args, **kwargs)
 
 
-def parse_constraint(constraint: str) -> Constraint:
+def parse_constraint(constraint: str, disable_logging=True) -> Constraint:
     """
     Returns a constraint from a constraint string.
     """
-    _, constraints = parse(constraint)
+    if disable_logging:
+        logging.getLogger("fandango").disabled = True
+    _, constraints = fandango_parse_content(constraint, use_cache=True)
     assert len(constraints) == 1, "Expected exactly one constraint"
+    assert isinstance(constraints[0], Constraint), "Expected a constraint"
     return constraints[0]
