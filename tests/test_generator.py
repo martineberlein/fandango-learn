@@ -4,7 +4,10 @@ import os
 from fandangoLearner.data.input import FandangoInput
 from fandangoLearner.interface.fandango import parse
 from fandangoLearner.learning.candidate import FandangoConstraintCandidate
-from fandangoLearner.refinement.generator import FandangoGenerator, FandangoGrammarGenerator
+from fandangoLearner.refinement.generator import (
+    FandangoGenerator,
+    FandangoGrammarGenerator,
+)
 
 
 class TestInputGenerator(unittest.TestCase):

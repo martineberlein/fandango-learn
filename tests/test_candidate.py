@@ -6,6 +6,7 @@ from fandangoLearner.data.input import FandangoInput
 from fandangoLearner.learning.candidate import FandangoConstraintCandidate, CandidateSet
 from fandangoLearner.interface.fandango import parse_contents, parse_constraint
 
+
 class TestFandangoConstraintCandidate(unittest.TestCase):
 
     GRAMMAR = """
@@ -74,9 +75,7 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
 
     def test_and_operator(self):
         # Create another candidate with a similar constraint
-        candidate = FandangoConstraintCandidate(
-            parse_constraint("int(<number>) <= 0;")
-        )
+        candidate = FandangoConstraintCandidate(parse_constraint("int(<number>) <= 0;"))
         other_candidate = FandangoConstraintCandidate(
             parse_constraint("str(<function>) == 'sqrt';")
         )
@@ -102,9 +101,7 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
 
     def test_or_operator(self):
         # Create another candidate with a different constraint
-        candidate = FandangoConstraintCandidate(
-            parse_constraint("int(<number>) <= 0;")
-        )
+        candidate = FandangoConstraintCandidate(parse_constraint("int(<number>) <= 0;"))
         other_candidate = FandangoConstraintCandidate(
             parse_constraint("str(<function>) == 'sqrt';")
         )
@@ -125,9 +122,7 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
         self.assertEqual(combined_candidate.cache[self.passing_input], True)
 
     def test_negation(self):
-        candidate = FandangoConstraintCandidate(
-            parse_constraint("int(<number>) <= 0;")
-        )
+        candidate = FandangoConstraintCandidate(parse_constraint("int(<number>) <= 0;"))
         candidate.evaluate([self.failing_input, self.passing_input])
         self.assertEqual(candidate.cache[self.failing_input], True)
         self.assertEqual(candidate.cache[self.passing_input], False)
@@ -235,6 +230,7 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
         self.assertEqual(len(candidate_set), 1)
         self.assertTrue(self.candidate in candidate_set)
         self.assertFalse(self.candidate not in candidate_set)
+
 
 if __name__ == "__main__":
     unittest.main()

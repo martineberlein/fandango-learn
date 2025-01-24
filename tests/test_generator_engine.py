@@ -5,7 +5,11 @@ from fandangoLearner.data.input import FandangoInput
 from fandangoLearner.interface.fandango import parse, parse_constraint
 from fandangoLearner.learning.candidate import FandangoConstraintCandidate
 from fandangoLearner.refinement.generator import FandangoGenerator
-from fandangoLearner.refinement.engine import SingleEngine, ParallelEngine, ProcessBasedParallelEngine
+from fandangoLearner.refinement.engine import (
+    SingleEngine,
+    ParallelEngine,
+    ProcessBasedParallelEngine,
+)
 
 
 class TestEngine(unittest.TestCase):
@@ -33,8 +37,11 @@ class TestEngine(unittest.TestCase):
         # Check that the test_inputs contain expected patterns
         for inp in test_inputs:
             self.assertIsInstance(inp, FandangoInput)
-            self.assertTrue(self.candidate1.constraint.check(inp.tree) ^ self.candidate2.constraint.check(inp.tree))
-        #print("SingleEngine test_inputs:", [str(inp) for inp in test_inputs])
+            self.assertTrue(
+                self.candidate1.constraint.check(inp.tree)
+                ^ self.candidate2.constraint.check(inp.tree)
+            )
+        # print("SingleEngine test_inputs:", [str(inp) for inp in test_inputs])
 
     def test_parallel_engine_generate(self):
         engine = ParallelEngine(self.fandango_generator, workers=6)
@@ -44,10 +51,12 @@ class TestEngine(unittest.TestCase):
         # Check that the test_inputs contain expected patterns
         for inp in test_inputs:
             self.assertIsInstance(inp, FandangoInput)
-            self.assertTrue(self.candidate1.constraint.check(inp.tree) ^ self.candidate2.constraint.check(inp.tree))
-        #print("ParallelEngine test_inputs:", [str(inp) for inp in test_inputs])
+            self.assertTrue(
+                self.candidate1.constraint.check(inp.tree)
+                ^ self.candidate2.constraint.check(inp.tree)
+            )
+        # print("ParallelEngine test_inputs:", [str(inp) for inp in test_inputs])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
-

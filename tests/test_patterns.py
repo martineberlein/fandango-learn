@@ -12,9 +12,7 @@ class TestPatternsWithPlaceholders(unittest.TestCase):
         Test Pattern with NonTerminal placeholder
         """
         non_terminal_placeholder = Placeholder.non_terminal()
-        pattern = Pattern(
-            string_pattern=f"str({non_terminal_placeholder}) == 'test';"
-        )
+        pattern = Pattern(string_pattern=f"str({non_terminal_placeholder}) == 'test';")
         self.assertEqual(pattern.string_pattern, "str(<pl_NonTerminal>) == 'test';")
         self.assertTrue(isinstance(non_terminal_placeholder, Placeholder))
         self.assertEqual(non_terminal_placeholder.ph_type, PlaceholderType.NonTerminal)
@@ -24,9 +22,7 @@ class TestPatternsWithPlaceholders(unittest.TestCase):
         Test Pattern with int placeholder
         """
         int_placeholder = Placeholder.int()
-        pattern = Pattern(
-            string_pattern=f"int({int_placeholder}) > 5;"
-        )
+        pattern = Pattern(string_pattern=f"int({int_placeholder}) > 5;")
         self.assertEqual(pattern.string_pattern, "int(<pl_int>) > 5;")
         self.assertTrue(isinstance(int_placeholder, Placeholder))
         self.assertEqual(int_placeholder.ph_type, PlaceholderType.Int)
@@ -36,9 +32,7 @@ class TestPatternsWithPlaceholders(unittest.TestCase):
         Test Pattern with string placeholder
         """
         string_placeholder = Placeholder.string()
-        pattern = Pattern(
-            string_pattern=f"str({string_placeholder}) == 'hello';"
-        )
+        pattern = Pattern(string_pattern=f"str({string_placeholder}) == 'hello';")
         self.assertEqual(pattern.string_pattern, "str(<pl_string>) == 'hello';")
         self.assertTrue(isinstance(string_placeholder, Placeholder))
         self.assertEqual(string_placeholder.ph_type, PlaceholderType.String)
@@ -57,7 +51,7 @@ class TestPatternsWithPlaceholders(unittest.TestCase):
 
         self.assertEqual(
             pattern.string_pattern,
-            "int(<pl_int>) == len(str(<pl_string>)) + 2 * int(<pl_NonTerminal>);"
+            "int(<pl_int>) == len(str(<pl_string>)) + 2 * int(<pl_NonTerminal>);",
         )
 
     def test_invalid_placeholder_type(self):
@@ -90,7 +84,9 @@ class TestPatternsWithPlaceholders(unittest.TestCase):
         inp1 = grammar.parse("a")
         inp2 = grammar.parse("b")
 
-        constraint = parse_constraint("exists <elem> in <A>: is_inside(<elem>, <start>);")
+        constraint = parse_constraint(
+            "exists <elem> in <A>: is_inside(<elem>, <start>);"
+        )
         self.assertTrue(constraint.check(inp1))
         self.assertFalse(constraint.check(inp2))
 
