@@ -93,9 +93,10 @@ class ConjunctionProcessor(CombinationProcessor):
         Get all possible conjunctions of the candidate set with a maximum size of max_conjunction_size.
         """
         combinations = []
+        sorted_candidates = sorted(candidate_set.candidates, key=lambda x: str(x))
         candidate_set_without_conjunctions = [
             candidate
-            for candidate in candidate_set
+            for candidate in sorted_candidates
             if not isinstance(candidate.constraint, ConjunctionConstraint)
         ]
         for level in range(2, self.max_conjunction_size + 1):

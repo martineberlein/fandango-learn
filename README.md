@@ -184,3 +184,10 @@ new idea:
 - exists and forall constraints can be quite similar to each other, when that use bounded nonterminals that are applied only once.
    - we might want to use forall constraints only when they are really needed, i.e. when the nonterminal is used multiple times.
 
+## TODOs
+
+- CLI
+- Documentation
+- InputReducer
+- AttributeSearches
+- Extend Eval
