@@ -186,8 +186,9 @@ new idea:
 
 ## TODOs
 
-- CLI
-- Documentation
 - InputReducer
 - AttributeSearches
+- Better Negation
+- CLI
+- Documentation
 - Extend Eval
