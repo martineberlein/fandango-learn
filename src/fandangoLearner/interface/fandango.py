@@ -20,7 +20,7 @@ def parse_file(*args, disable_logging=True, **kwargs):
     """
     if disable_logging:
         logging.getLogger("fandango").disabled = True
-    return parse(*args, **kwargs)
+    return parse(*args, disable_logging=disable_logging, **kwargs)
 
 
 def parse_constraint(constraint: str, disable_logging=True) -> Constraint:
@@ -39,6 +39,7 @@ def parse_contents(*args, disable_logging=True, **kwargs):
     """
     Wrapper for the parse_contents function from fandango.language.parse
     """
+    logging.warning("parse_contents is deprecated, use parse instead")
     if disable_logging:
         logging.getLogger("fandango").disabled = True
     return fandango_parse_content(*args, **kwargs)
