@@ -7,7 +7,6 @@ from debugging_framework.input.oracle import OracleResult
 from fandango.language.symbol import NonTerminal
 
 from fandangoLearner.logger import LoggerLevel
-from fandangoLearner.data.input import FandangoInput
 from fandangoLearner.interface.fandango import parse_file
 from fandangoLearner.refinement.core import FandangoRefinement
 from evaluation.evaluation_helper import format_results
@@ -40,7 +39,6 @@ def evaluate_calculator_refinement(logger_level=LoggerLevel.CRITICAL, random_see
     }
     # initial_inputs = ["cos(12)", "sqrt(-900)"],
     initial_inputs = {
-        #FandangoInput.from_str(grammar, inp, oracle) for inp, oracle in initial_inputs
         inp for inp, _ in initial_inputs_strings
     }
 
@@ -72,7 +70,7 @@ def evaluate_calculator_refinement(logger_level=LoggerLevel.CRITICAL, random_see
 
 
 if __name__ == "__main__":
-    results = evaluate_calculator_refinement(LoggerLevel.CRITICAL, random_seed=3)
+    results = evaluate_calculator_refinement(LoggerLevel.INFO, random_seed=3)
     print("Required Time: ", results["time_in_seconds"], " seconds")
     constraints = results["candidates"]
     for constraint in constraints:

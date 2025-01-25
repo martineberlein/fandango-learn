@@ -2,9 +2,9 @@ import time
 import os
 import random
 
-from fandangoLearner.interface.fandango import parse_file
 from fandango.language.symbol import NonTerminal
-from fandangoLearner.learner import FandangoLearner
+
+from fandangoLearner.interface.fandango import parse_file
 from fandangoLearner.data.input import FandangoInput
 from fandangoLearner.logger import LoggerLevel
 from fandangoLearner.refinement.core import FandangoRefinement
@@ -41,7 +41,6 @@ def evaluate_heartbleed_refinement(logger_level=LoggerLevel.INFO, random_seed=1)
     )
 
     learned_constraints = fandango_re.explain()
-
     end_time_learning = time.time()
 
     # round time
