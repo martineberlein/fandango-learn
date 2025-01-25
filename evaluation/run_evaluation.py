@@ -2,18 +2,19 @@ import random
 from typing import Dict
 import subprocess
 import datetime
+import math
+
+from fandangoLearner.logger import LoggerLevel
 
 from evaluation.calculator.evaluate_calculator import evaluate_calculator
 from evaluation.heartbleed.heartbleed import evaluate_heartbleed
 from evaluation.middle.middle import evaluate_middle
-from evaluation.expression.expression import evaluate_expression
+# from evaluation.expression.expression import evaluate_expression
 from evaluation.refinement.calculator.evaluate_caluclator_refinement import evaluate_calculator_refinement
 from evaluation.refinement.heartbleed.evaluate_heartbleed_refinement import evaluate_heartbleed_refinement
 from evaluation.refinement.middle.evaluate_middle_refinement import evaluate_middle_refinement
 from evaluation.pysnooper.evaluate_pysnooper import evaluate_pysnooper2, evaluate_pysnooper3
 
-from fandangoLearner.logger import LoggerLevel
-import math
 
 def compute_stddev(values):
     if len(values) < 2:
@@ -21,6 +22,7 @@ def compute_stddev(values):
     mean = sum(values) / len(values)
     variance = sum((x - mean) ** 2 for x in values) / (len(values) - 1)
     return math.sqrt(variance)
+
 
 def average_results(results_list):
     total = sum(len(r['candidates']) for r in results_list)
