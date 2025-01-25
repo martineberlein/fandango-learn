@@ -13,9 +13,10 @@ from fandangoLearner.learner import FandangoLearner
 from fandangoLearner.learning.candidate import FandangoConstraintCandidate
 from fandangoLearner.learning.metric import FitnessStrategy, RecallPriorityStringLengthFitness
 from fandangoLearner.logger import LoggerLevel, LOGGER
-from .generator import Generator, FandangoGrammarGenerator
+from .generator import Generator, FandangoGrammarGenerator, FandangoGenerator
 from .runner import SingleExecutionHandler, ExecutionHandler
 from .engine import Engine, SingleEngine, ParallelEngine
+from .negation import construct_negations
 
 
 class InputFeatureDebugger(ABC):
@@ -172,7 +173,6 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         candidates = self.learn_candidates(test_inputs)
         negated_candidates = self.negate_candidates(candidates)
         inputs = self.generate_test_inputs(candidates + negated_candidates)
-        # self.learner.reset()
         labeled_test_inputs = self.run_test_inputs(inputs)
         return labeled_test_inputs
 
@@ -187,9 +187,7 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         """
         Negate the learned candidates.
         """
-        negated_candidates = []
-        for candidate in candidates:
-            negated_candidates.append(-candidate)
+        negated_candidates = construct_negations(candidates)
         return negated_candidates
 
     def generate_test_inputs(self, candidates: List[FandangoConstraintCandidate]) -> Set[FandangoInput]:
@@ -260,7 +258,7 @@ class FandangoRefinement(HypothesisInputFeatureDebugger):
             learner if learner else FandangoLearner(grammar, logger_level=logger_level)
         )
         generator: Generator = (
-            generator if generator else FandangoGrammarGenerator(grammar)
+            generator if generator else FandangoGenerator(grammar)
         )
         self.engine: Engine = ParallelEngine(generator)
 
