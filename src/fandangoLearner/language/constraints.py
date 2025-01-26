@@ -41,7 +41,6 @@ class NegationConstraint(Constraint):
     def __repr__(self):
         return f"~({repr(self.inner_constraint)})"
 
-
     def accept(self, visitor: "ConstraintVisitor"):
         """Accepts a visitor to visit this constraint."""
         visitor.visit_negation_constraint(self)
