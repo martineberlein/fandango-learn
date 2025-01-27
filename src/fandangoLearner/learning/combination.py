@@ -64,6 +64,8 @@ class ConjunctionProcessor(CombinationProcessor):
                 #     valid = False
                 # con_list.append(conjunction)
             if self.is_new_conjunction_valid(conjunction, combination):
+                print("Before:", [str(c) for c in combination])
+                print("Adding conjunction: ", conjunction)
                 conjunction_candidates.add(conjunction)
 
         LOGGER.info("Found %s valid conjunctions", len(conjunction_candidates))
@@ -152,6 +154,8 @@ class DisjunctionProcessor(CombinationProcessor):
                 # dis_list.append(disjunction)
 
             if self.is_new_disjunction_valid(disjunction, combination):
+                print("Before:", [str(c) for c in combination])
+                print("Adding disjunction: ", disjunction, " with precision: ", disjunction.precision())
                 disjunction_candidates.add(disjunction)
 
         LOGGER.info("Found %s valid disjunctions", len(disjunction_candidates))

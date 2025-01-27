@@ -186,6 +186,7 @@ new idea:
 
 ## TODOs
 
+- Only add new constraints if they are better than the best one so far.
 - InputReducer
 - AttributeSearches
 - Better Negation

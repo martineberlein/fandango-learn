@@ -11,8 +11,8 @@ if __name__ == "__main__":
 
     initial_inputs = [
         ("sqrt(4)", True),
-        ("sqrt(0)", False),
-        #("cos(4)", False),
+        #("sqrt(0)", False),
+        ("cos(4)", False),
     ]
 
     initial_inputs = {FandangoInput.from_str(grammar, inp, oracle) for inp, oracle in initial_inputs}
@@ -22,12 +22,17 @@ if __name__ == "__main__":
             string_pattern="import math\n"
                            "eval(str(<NON_TERMINAL>),  {'sqrt': math.sqrt, 'cos': math.cos}) == <INTEGER>;",
             use_cache=False
-        )
+        ),
+        Pattern(
+            string_pattern="exists <container> in <NON_TERMINAL>: str(<container>) == <STRING>;",
+            use_cache=False
+        ),
     ]
 
     relevant_non_terminals = {
         NonTerminal("<arithexp>"),
         NonTerminal("<number>"),
+        NonTerminal("<function>"),
         NonTerminal("<operator>"),
     }
 
