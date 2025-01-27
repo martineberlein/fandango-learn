@@ -97,13 +97,13 @@ class FandangoLearner(BaseFandangoLearner):
 
         self.validate_and_add_new_candidates(candidates_to_evaluate, positive_inputs, negative_inputs)
 
-        disjunction_candidates = self.disjunction_processor.process(self.candidates)
-        for candidate in disjunction_candidates:
-            self.candidates.append(candidate)
-
         conjunction_candidates = self.conjunction_processor.process(self.candidates)
         for candidate in conjunction_candidates:
             self.candidates.append(candidate)
+
+        # disjunction_candidates = self.disjunction_processor.process(self.candidates)
+        # for candidate in disjunction_candidates:
+        #     self.candidates.append(candidate)
 
         return self.get_best_candidates()
 

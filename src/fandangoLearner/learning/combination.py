@@ -64,8 +64,6 @@ class ConjunctionProcessor(CombinationProcessor):
                 #     valid = False
                 # con_list.append(conjunction)
             if self.is_new_conjunction_valid(conjunction, combination):
-                print("Before:", [str(c) for c in combination])
-                print("Adding conjunction: ", conjunction)
                 conjunction_candidates.add(conjunction)
 
         LOGGER.info("Found %s valid conjunctions", len(conjunction_candidates))
