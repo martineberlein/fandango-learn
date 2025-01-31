@@ -70,7 +70,7 @@ class TestPatternsWithPlaceholders(unittest.TestCase):
         )
         print(type(pattern.instantiated_pattern))
 
-    def test_inside_pattern(self):
+    def test_inside_constraint(self):
         """
         Test Pattern with inside placeholder
         """
@@ -87,9 +87,30 @@ class TestPatternsWithPlaceholders(unittest.TestCase):
         constraint = parse_constraint(
             "exists <elem> in <A>: is_inside(<elem>, <start>);"
         )
+        print(constraint)
         self.assertTrue(constraint.check(inp1))
         self.assertFalse(constraint.check(inp2))
 
+    def test_inside_pattern(self):
+        grammar = """
+        <start> ::= <A> | <B>;
+        <A> ::= "a";
+        <B> ::= "b";
+        """
+        grammar, _ = parse_contents(grammar)
+
+        inp1 = grammar.parse("a")
+        inp2 = grammar.parse("b")
+
+
+        pattern = Pattern(
+            string_pattern="exists <elem> in <A>: is_inside(<elem>, <start>);",
+        )
+        constraint = pattern.instantiated_pattern
+        print(constraint.check(inp1))
+        print(constraint.check(inp2))
+        self.assertTrue(constraint.check(inp1))
+        self.assertFalse(constraint.check(inp2))
 
 if __name__ == "__main__":
     unittest.main()

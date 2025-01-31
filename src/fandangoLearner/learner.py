@@ -95,19 +95,16 @@ class FandangoLearner(BaseFandangoLearner):
             if candidate not in candidates_to_evaluate:
                 candidates_to_evaluate.append(candidate)
 
+        LOGGER.info("Evaluating %s candidates", len(candidates_to_evaluate))
         self.validate_and_add_new_candidates(candidates_to_evaluate, positive_inputs, negative_inputs)
 
         conjunction_candidates = self.conjunction_processor.process(self.candidates)
         for candidate in conjunction_candidates:
             self.candidates.append(candidate)
 
-        # for candidate in conjunction_candidates:
-        #     candidate.evaluate(self.all_negative_inputs)
-        #     self.candidates.append(candidate)
-
         # disjunction_candidates = self.disjunction_processor.process(self.candidates)
-        # self.candidates += disjunction_candidates
-        # self.filter_candidates()
+        # for candidate in disjunction_candidates:
+        #     self.candidates.append(candidate)
 
         return self.get_best_candidates()
 
@@ -167,7 +164,7 @@ class FandangoLearner(BaseFandangoLearner):
             if candidate not in self.candidates:
                 if self.evaluate_candidate(candidate, self.all_positive_inputs, self.all_negative_inputs):
                     self.candidates.append(candidate)
-                    #LOGGER.info("Added new candidate: %s", candidate.constraint)
+                    LOGGER.debug("Added new candidate: %s", candidate)
                 else:
                     self.removed_candidates.add(candidate)
             else:
@@ -192,7 +189,7 @@ class FandangoLearner(BaseFandangoLearner):
             if candidate.specificity() < self.min_precision
             or candidate.recall() < self.min_recall
         ]
-        LOGGER.info("Removing candidates: %s", len(candidates_to_remove))
+        LOGGER.debug("Removing candidates: %s", len(candidates_to_remove))
 
         for candidate in candidates_to_remove:
             self.candidates.remove(candidate)

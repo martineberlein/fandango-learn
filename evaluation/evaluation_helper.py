@@ -2,6 +2,8 @@ import random
 from typing import List, Callable, Set
 import time
 
+from debugging_framework.input.oracle import OracleResult
+
 from fandangoLearner.learning.candidate import FandangoConstraintCandidate
 from fandangoLearner.data.input import FandangoInput
 from fandangoLearner.learning.metric import RecallPriorityFitness
@@ -52,7 +54,9 @@ def generate_evaluation_inputs(grammar, oracle: Callable, num_inputs=2000):
     evaluation_inputs = []
     for _ in range(num_inputs):
         inp = grammar.fuzz()
-        evaluation_inputs.append((str(inp), oracle(str(inp))))
+        oracle_result = oracle(str(inp))
+        if oracle_result != OracleResult.UNDEFINED:
+            evaluation_inputs.append((str(inp), oracle_result))
 
     return {
         FandangoInput.from_str(grammar, inp, result)
@@ -93,6 +97,7 @@ def format_results(
     candidates = candidates or []
 
     for candidate in candidates:
+        candidate.reset()
         candidate.evaluate(evaluation_inputs)
 
     sorted_candidates = sorted(

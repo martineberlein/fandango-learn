@@ -2,10 +2,12 @@ import unittest
 from pathlib import Path
 import os
 
+from fandango.constraints.base import DisjunctionConstraint
+
 from fandangoLearner.data.input import FandangoInput
 from fandangoLearner.interface.fandango import parse_file, parse_constraint, parse
 from fandangoLearner.learning.candidate import FandangoConstraintCandidate
-from fandangoLearner.learning.combination import ConjunctionProcessor
+from fandangoLearner.learning.combination import ConjunctionProcessor, DisjunctionProcessor
 from fandangoLearner.learning.candidate import CandidateSet
 
 
@@ -61,6 +63,25 @@ class TestConjunctionProcessor(unittest.TestCase):
             print(cand)
         expected_combination_count = 4  # C(1, 2), C(1, 3), C(2, 3), C(1, 2, 3)
         self.assertEqual(len(result), expected_combination_count)
+
+    def test_process_disjunctions(self):
+        candidate1 = FandangoConstraintCandidate(
+            parse_constraint("int(<number>) == -1;")
+        )
+        candidate2 = FandangoConstraintCandidate(
+            parse_constraint("int(<number>) == -900;")
+        )
+        for candidate in [candidate1, candidate2]:
+            candidate.evaluate(self.test_inputs)
+
+        candidates = CandidateSet([candidate1, candidate2])
+        processor = DisjunctionProcessor(2, 0.6, 0.9)
+        result = processor.process(candidates)
+
+        self.assertEqual(len(result), 1)
+        for cand in result:
+            self.assertTrue(isinstance(cand.constraint, DisjunctionConstraint))
+
 
 
 if __name__ == "__main__":

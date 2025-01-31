@@ -124,12 +124,12 @@ class DisjunctionProcessor(CombinationProcessor):
         self.max_disjunction_size = max_disjunction_size
 
         self.validation_strategy: DisjunctionValidationStrategy = (
-            DefaultDisjunctionValidation(self.min_precision)
+            RecallThresholdValidation(min_recall=min_recall)
         )
 
     def process(
-        self, candidates: List[FandangoConstraintCandidate]
-    ) -> List[FandangoConstraintCandidate]:
+        self, candidates: CandidateSet
+    ) -> Set[FandangoConstraintCandidate]:
         """
         Iterates over all candidates to find the best disjunctions.
         :param candidates:
@@ -137,24 +137,24 @@ class DisjunctionProcessor(CombinationProcessor):
         """
         combinations = self.get_possible_disjunctions(candidates)
 
-        disjunction_candidates = []
+        disjunction_candidates = set()
         for combination in combinations:
-            if not self.check_minimum_recall(combination):
-                continue
 
             disjunction: FandangoConstraintCandidate = combination[0]
-            dis_list = [
-                disjunction,
-            ]
-            valid = True
+            # dis_list = [
+            #     disjunction,
+            # ]
+            # valid = True
             for candidate in combination[1:]:
                 disjunction = disjunction | candidate
-                if not self.is_new_disjunction_valid(disjunction, dis_list):
-                    valid = False
-                dis_list.append(disjunction)
+                # if not self.is_new_disjunction_valid(disjunction, dis_list):
+                #     valid = False
+                # dis_list.append(disjunction)
 
-            if self.is_new_disjunction_valid(disjunction, combination) and valid:
-                disjunction_candidates.append(disjunction)
+            if self.is_new_disjunction_valid(disjunction, combination):
+                print("Before:", [str(c) for c in combination])
+                print("Adding disjunction: ", disjunction, " with precision: ", disjunction.precision())
+                disjunction_candidates.add(disjunction)
 
         LOGGER.info("Found %s valid disjunctions", len(disjunction_candidates))
         return disjunction_candidates
@@ -174,15 +174,17 @@ class DisjunctionProcessor(CombinationProcessor):
         return self.validation_strategy.is_valid(disjunction, combination)
 
     def get_possible_disjunctions(
-        self, candidate_set: List[FandangoConstraintCandidate]
+        self, candidate_set: CandidateSet
     ) -> List[Tuple[FandangoConstraintCandidate, ...]]:
         """
         Get all possible disjunctions of the candidate set with a maximum size of max_disjunction_size.
         """
         combinations = []
+        sorted_candidates = sorted(candidate_set.candidates, key=lambda x: str(x))
+
         candidate_set_without_disjunctions = [
             candidate
-            for candidate in candidate_set
+            for candidate in sorted_candidates
             if not isinstance(candidate.constraint, DisjunctionConstraint)
         ]
         for level in range(2, self.max_disjunction_size + 1):
@@ -234,6 +236,28 @@ class DefaultDisjunctionValidation(DisjunctionValidationStrategy):
         new_precision = disjunction.precision()
         return new_precision > self.min_precision and all(
             new_precision > candidate.precision() for candidate in combination
+        )
+
+
+class RecallThresholdValidation(DisjunctionValidationStrategy):
+    """
+    Validates that the new disjunction's recall exceeds a minimum threshold.
+    """
+
+    def __init__(self, min_recall: float):
+        self.min_recall = min_recall
+
+    def is_valid(
+        self,
+        disjunction: FandangoConstraintCandidate,
+        combination: Union[
+            List[FandangoConstraintCandidate], Tuple[FandangoConstraintCandidate, ...]
+        ],
+        **kwargs,
+    ) -> bool:
+        new_recall = disjunction.recall()
+        return new_recall > self.min_recall and all(
+            new_recall > candidate.recall() for candidate in combination
         )
 
 

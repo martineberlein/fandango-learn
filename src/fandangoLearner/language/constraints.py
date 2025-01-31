@@ -20,28 +20,26 @@ class NegationConstraint(Constraint):
         """
         # Evaluate the fitness of the inner constraint
         inner_fitness = self.inner_constraint.fitness(tree, scope)
+        #print("InnerFitness: ", inner_fitness.failing_trees)
 
         # Negate the fitness results
-        solved = 0
-        total = inner_fitness.total
+        solved = 1 - inner_fitness.solved
+        total = 1
         success = not inner_fitness.success
-        if success:
-             solved = 1
 
-        #failing_trees = [
-        #    FailingTree(tree=t.node, cause=self) for t in inner_fitness.failing_trees
-        #]
+        failing_trees = list()
+        if not success:
+            failing_trees.append(FailingTree(tree, self))
 
         return ConstraintFitness(
             solved=solved,
             total=total,
             success=success,
-            # failing_trees=failing_trees,
+            failing_trees=failing_trees,
         )
 
     def __repr__(self):
         return f"~({repr(self.inner_constraint)})"
-
 
     def accept(self, visitor: "ConstraintVisitor"):
         """Accepts a visitor to visit this constraint."""

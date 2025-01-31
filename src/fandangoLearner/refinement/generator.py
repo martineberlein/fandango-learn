@@ -3,10 +3,11 @@ from abc import ABC, abstractmethod
 from queue import Queue, Empty
 from typing import Set, Union, List
 
-from fandangoLearner.data.input import FandangoInput
-from fandangoLearner.learning.candidate import FandangoConstraintCandidate
 from fandango.language.grammar import Grammar
 from fandango.evolution.algorithm import Fandango
+
+from fandangoLearner.data.input import FandangoInput
+from fandangoLearner.learning.candidate import FandangoConstraintCandidate
 
 
 class Generator(ABC):
@@ -70,23 +71,28 @@ class FandangoGenerator(Generator):
     def __init__(self, grammar, **kwargs):
         super().__init__(grammar, **kwargs)
 
-    def generate_test_inputs(self, candidate: FandangoConstraintCandidate=None, num_inputs: int = 2, time_out: int = 1, **kwargs) -> Set[FandangoInput]:
+    def generate_test_inputs(self, candidate: FandangoConstraintCandidate=None, num_inputs: int = 10, time_out: int = 1, **kwargs) -> List[FandangoInput]:
         """
         Generate multiple inputs to be used in the debugging process.
         """
-        test_inputs: Set[FandangoInput] = set()
+        test_inputs_hashes = set()
+        test_inputs: list[FandangoInput] = list()
         start_time = time.time()
         while len(test_inputs) < num_inputs and time.time() - start_time < time_out:
             new_inputs = self.generate(candidate=candidate, **kwargs)
-            test_inputs.update(new_inputs)
-
-        return test_inputs
+            for inp in new_inputs:
+                if inp not in test_inputs_hashes:
+                    test_inputs_hashes.add(inp)
+                    test_inputs.append(inp)
+        #print("Generating test inputs for candidate: ", candidate, test_inputs[:num_inputs])
+        return test_inputs[:num_inputs]
 
     def generate(self, candidate: FandangoConstraintCandidate=None, **kwargs) -> Set[FandangoInput]:
         fandango = Fandango(
             grammar=self.grammar,
             constraints=[candidate.constraint],
             max_generations=100,
+            #random_seed=1,
         )
 
         solutions = fandango.evolve()

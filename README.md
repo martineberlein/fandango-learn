@@ -14,6 +14,7 @@ Furthermore, **Avicenna** provides the means to automatically learn the set of r
 - [Installation](#install-development-testing)
 - [Notebooks](#notebooks)
 - [Reusability](#reusability)
+- [Benchmark-Results](#benchmark)
 
 ---
 
@@ -171,6 +172,25 @@ The code should be reusable for other projects, such as Avicenna.
 Therefore, the code uses many abstract classes that are already implemented in Avicenna and AvicennaISLearn.
 This makes comparing both approaches FandangoLearn and ISLearn extremely easy.
 
+
+# Benchmark
+
+**Date:** 2025-01-27 10:45:40  
+**Git Branch:** `dev`  
+**Last Commit:** `76d77e252f2dcc848e705e62ab7fc56485b008f6`
+
+| **Subject**      | **Total** | **Correct** | **Percentage** | **#Seeds** | **Mean Precision** | **P-StdDev** | **Mean Recall** | **R-StdDev** | **Time (s)** |
+|-------------------|-----------|-------------|----------------|------------|--------------------|--------------|-----------------|--------------|-------------|
+| Calculator        | 1         | 1           | 100.00         | 5          | 1.0000            | 0.0000       | 0.9174          | 0.0000       | 0.0326      |
+| CalculatorRE      | 1         | 1           | 100.00         | 5          | 1.0000            | 0.0000       | 1.0000          | 0.0000       | 3.2854      |
+| Heartbleed        | 4         | 2           | 50.00          | 5          | 1.0000            | 0.0000       | 1.0000          | 0.0000       | 0.0121      |
+| HeartbleedRE      | 2         | 2           | 100.00         | 5          | 1.0000            | 0.0000       | 1.0000          | 0.0000       | 4.1509      |
+| Middle            | 84        | 1           | 1.19           | 5          | 1.0000            | 0.0000       | 1.0000          | 0.0000       | 0.0395      |
+| MiddleRE          | 1         | 1           | 55.56          | 5          | 1.0000            | 0.0000       | 1.0000          | 0.0000       | 32.1872     |
+| Pysnooper2        | 2         | 1           | 50.00          | 5          | 1.0000            | 0.0000       | 1.0000          | 0.0000       | 0.0492      |
+| Pysnooper3        | 2         | 2           | 100.00         | 5          | 1.0000            | 0.0000       | 1.0000          | 0.0000       | 0.0592      |
+
+
 ## First Ideas
 
 - Use Pattern Based Approach
@@ -186,10 +206,14 @@ new idea:
 - exists and forall constraints can be quite similar to each other, when that use bounded nonterminals that are applied only once.
    - we might want to use forall constraints only when they are really needed, i.e. when the nonterminal is used multiple times.
 
+
+
 ## TODOs
 
-- CLI
-- Documentation
+- Only add new constraints if they are better than the best one so far.
 - InputReducer
 - AttributeSearches
+- Better Negation
+- CLI
+- Documentation
 - Extend Eval

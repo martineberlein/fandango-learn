@@ -1,8 +1,11 @@
 import unittest
 
 from debugging_framework.input.oracle import OracleResult
+from fandango.constraints.base import ConjunctionConstraint
+from fandango.evolution.algorithm import Fandango
 
 from fandangoLearner.data.input import FandangoInput
+from fandangoLearner.language.constraints import NegationConstraint
 from fandangoLearner.learning.candidate import FandangoConstraintCandidate, CandidateSet
 from fandangoLearner.interface.fandango import parse_contents, parse_constraint
 
@@ -231,6 +234,34 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
         self.assertTrue(self.candidate in candidate_set)
         self.assertFalse(self.candidate not in candidate_set)
 
+    def test_negation_fuzzing(self):
+        candidate = FandangoConstraintCandidate(parse_constraint("int(<number>) <= 0;"))
+        candidate.evaluate([self.failing_input, self.passing_input])
+        self.assertEqual(candidate.cache[self.failing_input], True)
+        self.assertEqual(candidate.cache[self.passing_input], False)
+
+        negated_candidate = NegationConstraint(candidate.constraint)
+        candidate2 = FandangoConstraintCandidate(parse_constraint("str(<function>) == 'sqrt';"))
+        test_constraint = ConjunctionConstraint([negated_candidate, candidate2.constraint])
+        #print(negated_candidate.check(self.failing_input.tree))
+        print(test_constraint)
+
+        # initial = []
+        # for _ in range(100):
+        #     initial.append(self.grammar.fuzz())
+        fandango = Fandango(
+            grammar=self.grammar,
+            constraints=[negated_candidate],
+            desired_solutions=100,
+            random_seed=1,
+            #initial_population=initial,
+        )
+        results = fandango.evolve()
+        solutions = set()
+        for inp in results:
+            solutions.add(FandangoInput(inp))
+
+        print(solutions)
 
 if __name__ == "__main__":
     unittest.main()
