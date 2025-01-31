@@ -18,7 +18,7 @@ def parse(
     if disable_logging:
         logging.getLogger("fandango").disabled = True
     file = open(file_path, "r")
-    return fandango_parse(file, use_stdlib=False, use_cache=False, **kwargs)
+    return fandango_parse(file, use_stdlib=False, use_cache=True, **kwargs)
 
 
 def parse_file(
