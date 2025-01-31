@@ -3,10 +3,11 @@ from abc import ABC, abstractmethod
 from queue import Queue, Empty
 from typing import Set, Union, List
 
-from fandangoLearner.data.input import FandangoInput
-from fandangoLearner.learning.candidate import FandangoConstraintCandidate
 from fandango.language.grammar import Grammar
 from fandango.evolution.algorithm import Fandango
+
+from fandangoLearner.data.input import FandangoInput
+from fandangoLearner.learning.candidate import FandangoConstraintCandidate
 
 
 class Generator(ABC):
