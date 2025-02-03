@@ -47,8 +47,8 @@ if __name__ == "__main__":
     grep_grammar = get_grep_grammar_path()
     grammar, _ = parse(grep_grammar)
 
-    samples = get_grep_samples()
     with bug_type() as bug:
+        samples = bug.sample_inputs()
         result = bug.execute_samples(samples)
 
     test_inputs = []

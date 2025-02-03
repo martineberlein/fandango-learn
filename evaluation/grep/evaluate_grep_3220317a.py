@@ -28,7 +28,7 @@ def generate_more_failing(bug_type_, grammar_, samples_: Collection[FandangoInpu
     positive_inputs = []
     negative_inputs = []
 
-    while len(positive_inputs) < 5:
+    while len(positive_inputs) < 5 or len(negative_inputs) < 20:
         try:
             inp = next(mutation_fuzzer.run(yield_negatives=True))
             if inp.oracle == OracleResult.FAILING:
@@ -47,8 +47,8 @@ if __name__ == "__main__":
     grep_grammar = get_grep_grammar_path()
     grammar, _ = parse(grep_grammar)
 
-    samples = get_grep_samples()
     with bug_type() as bug:
+        samples = bug.sample_inputs()
         result = bug.execute_samples(samples)
 
     test_inputs = []

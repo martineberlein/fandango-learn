@@ -21,6 +21,7 @@ def generate_more_failing(bug_type_, grammar_, samples_: Collection[FandangoInpu
             res = bug.execute_sample(str(inp))
         return res
 
+    #seeds = samples_
     seeds = [inp for inp in samples_ if inp.oracle == OracleResult.FAILING]
 
     mutation_fuzzer = MutationFuzzer(grammar_, seed_inputs=seeds, oracle=bug_oracle)
@@ -28,7 +29,7 @@ def generate_more_failing(bug_type_, grammar_, samples_: Collection[FandangoInpu
     positive_inputs = []
     negative_inputs = []
 
-    while len(positive_inputs) < 5:
+    while len(positive_inputs) < 5 or len(negative_inputs) < 20:
         try:
             inp = next(mutation_fuzzer.run(yield_negatives=True))
             if inp.oracle == OracleResult.FAILING:
@@ -47,14 +48,14 @@ if __name__ == "__main__":
     grep_grammar = get_grep_grammar_path()
     grammar, _ = parse(grep_grammar)
 
-    samples = get_grep_samples()
     with bug_type() as bug:
+        samples = bug.sample_inputs()
         result = bug.execute_samples(samples)
 
     test_inputs = []
     for inp, oracle in result:
         oracle_bool = True if oracle == OracleResult.FAILING else False
-        test_inputs.append((escape_non_ascii_utf8(inp), oracle_bool))
+        test_inputs.append((inp, oracle_bool))
 
     initial_inputs = {
         FandangoInput.from_str(grammar, inp, oracle) for inp, oracle in test_inputs
@@ -66,16 +67,23 @@ if __name__ == "__main__":
     initial_inputs.update(pos_inputs)
     initial_inputs.update(neg_inputs)
 
+    for inp in initial_inputs:
+        print(inp, inp.oracle)
+
     patterns = [
         Pattern(
             string_pattern="exists <elem> in <NON_TERMINAL>: is_inside(<elem>, <start>);",
         ),
         Pattern(
             string_pattern="str(<NON_TERMINAL>) == <STRING>;",
+        ),
+        Pattern(
+            string_pattern="exists <elem> in <NON_TERMINAL>: str_contains(<elem>, <STRING>);",
+            use_cache=False,
         )
     ]
 
-    learner = FandangoLearner(grammar, patterns=patterns, logger_level=LoggerLevel.INFO)
+    learner = FandangoLearner(grammar, patterns=patterns, max_conjunction_size=3, logger_level=LoggerLevel.INFO)
 
     learned_constraints = learner.learn_constraints(
         initial_inputs
