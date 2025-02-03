@@ -20,7 +20,7 @@ class FandangoLearner(BaseFandangoLearner):
     """
 
     def __init__(
-        self, grammar: Grammar, patterns: Optional[Iterable[str]] = None, logger_level: LoggerLevel = LoggerLevel.INFO, **kwargs
+        self, grammar: Grammar, patterns: Optional[Iterable[str]] = None, logger_level: LoggerLevel = LoggerLevel.INFO, max_conjunction_size=2, **kwargs
     ):
         """
         Initializes the FandangoLearner with a grammar and optional patterns.
@@ -35,7 +35,7 @@ class FandangoLearner(BaseFandangoLearner):
             LOGGER.setLevel(logger_level.value)
 
         super().__init__(grammar, patterns, **kwargs)
-        self.max_conjunction_size = 2
+        self.max_conjunction_size = max_conjunction_size
         self.max_disjunction_size = 2
         self.positive_learning_size = 5
 
