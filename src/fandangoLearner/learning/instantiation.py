@@ -86,7 +86,7 @@ class ValueMaps:
                         self._string_values[non_terminal].add(value)
 
             longest_common_substring = self.longest_common_substring(strings)
-            if longest_common_substring != "":
+            if len(longest_common_substring) >= 2:
                 self._string_values[non_terminal].add(longest_common_substring)
 
         return self._string_values, self._int_values
