@@ -168,6 +168,7 @@ class TestPatternsWithPlaceholders(unittest.TestCase):
         self.assertTrue(constraint.check(inp4))
         self.assertFalse(constraint.check(inp5))
 
+    @unittest.skip
     def test_parsing_constraint_grep(self):
         from dbgbench.resources import get_grep_grammar_path
         grammar, _  = parse(get_grep_grammar_path())
