@@ -38,7 +38,7 @@ class ReplaceFragmentOperator(Operator):
         self,
         inp: DerivationTree,
         path: Path,
-        fragments: dict[NonTerminal, set[DerivationTree]] = dict,
+        fragments: dict[NonTerminal, list[DerivationTree]] = dict,
         **kwargs,
     ) -> DerivationTree | None:
         subtree = get_subtree(inp, path)
@@ -170,8 +170,8 @@ class MutationFuzzer:
         self.min_mutations = min_mutation
         self.max_mutations = max_mutations
 
-        self.population: set[FandangoInput] = set()
-        self.fragments: dict[NonTerminal, set[DerivationTree]] = {}
+        self.population: list[FandangoInput] = list()
+        self.fragments: dict[NonTerminal, list[DerivationTree]] = {}
 
         self.reset()
 
@@ -182,7 +182,10 @@ class MutationFuzzer:
         ]
 
     def reset(self):
-        self.population: set[FandangoInput] = set(self.seed_inputs)
+        for inp in self.seed_inputs:
+            if inp not in self.population:
+                self.population.append(inp)
+
         self.fragments = {}
 
         for seed in self.population:
@@ -191,11 +194,12 @@ class MutationFuzzer:
     def update_fragments(self, inp: FandangoInput):
         for _, subtree in get_paths(inp.tree):
             if isinstance(subtree.symbol, NonTerminal):
-                self.fragments.setdefault(subtree.symbol, set()).add(subtree)
+                if subtree.symbol not in self.fragments:
+                    self.fragments.setdefault(subtree.symbol, []).append(subtree)
 
     def fuzz(self) -> FandangoInput:
         num_mutations = random.randint(self.min_mutations, self.max_mutations)
-        curr_inp = random.choice(list(self.population))
+        curr_inp = random.choice(self.population)
         mutations = 0
         while mutations < num_mutations:
             maybe_result = self.mutate(curr_inp)
@@ -268,11 +272,12 @@ class MutationFuzzer:
             if oracle_result != OracleResult.FAILING:
                 return False
 
-        self.population.add(inp)
+        self.population.append(inp)
 
         if update_fragments:
             self.update_fragments(inp)
 
+        print(f"Input: {inp} Added.")
         LOGGER.debug(f"Input {inp} added to the population.")
         return True
 
