@@ -1,6 +1,6 @@
-from abc import ABC
 from copy import deepcopy
 from typing import List, Dict, Set, Iterable, Tuple, Callable
+import re
 
 from fandango.constraints.base import *
 from fandango.language.search import RuleSearch
@@ -36,24 +36,58 @@ class ValueMaps:
     def is_number(value: str) -> bool:
         """Check if the given string represents a number."""
         try:
-            float(value)
+            float(eval(value))
             return True
-        except ValueError:
+        except Exception:
             return False
+
+    @staticmethod
+    def is_number_re(s):
+        if not s.strip():
+            return False
+        number_pattern = re.compile(r"^-?(?:\d+|\d*\.\d+)(?:[eE]-?\d+)?$")
+        return bool(number_pattern.match(s))
+
+    @staticmethod
+    def longest_common_substring(strings):
+        if not strings:
+            return ""
+
+        # Choose the shortest string, as any common substring must be a substring of it
+        shortest = min(strings, key=len)
+        n = len(shortest)
+
+        # Check all possible substring lengths, from longest to shortest
+        for sub_len in range(n, 0, -1):
+            # Try every substring of length sub_len in the shortest string
+            for start in range(n - sub_len + 1):
+                candidate = shortest[start:start + sub_len]
+                # Check if this candidate is in all strings
+                if all(candidate in s for s in strings):
+                    return candidate  # Return as soon as we find the longest common substring
+
+        # If no common substring is found (shouldn't happen unless the list is empty), return an empty string
+        return ""
 
     def extract_non_terminal_values(self, inputs: Set[FandangoInput]) -> Tuple[
         Dict[NonTerminal, Set[str]], Dict[NonTerminal, Set[float]]]:
         """Extracts and returns values associated with non-terminals."""
 
-        for input_obj in inputs:
-            for non_terminal in self.relevant_non_terminals:
+        for non_terminal in self.relevant_non_terminals:
+            strings = []
+            for input_obj in inputs:
                 found_trees = input_obj.tree.find_all_trees(non_terminal)
                 for tree in found_trees:
                     value = str(tree)
+                    strings.append(value)
                     if self.is_number(value):
                         self._int_values[non_terminal].add(eval(value))
                     else:
                         self._string_values[non_terminal].add(value)
+
+            longest_common_substring = self.longest_common_substring(strings)
+            if len(longest_common_substring) >= 2:
+                self._string_values[non_terminal].add(longest_common_substring)
 
         return self._string_values, self._int_values
 
@@ -535,3 +569,46 @@ class StringValuePlaceholderTransformer(ValuePlaceholderTransformer):
         )
 
         self.results.extend([pattern for pattern, _ in instantiated_patterns])
+
+    @staticmethod
+    def escape_string(s):
+        return s.encode("unicode_escape").decode("utf-8")
+
+    def visit_expression_constraint(self, constraint: "ExpressionConstraint"):
+
+        new_patterns = []
+
+        matches = [
+            key
+            for key in constraint.searches.keys()
+            if constraint.searches[key].symbol == NonTerminal("<STRING>")
+        ]
+
+        non_terminals = {
+            constraint.searches[key].symbol
+            for key in constraint.searches.keys()
+            if key not in matches
+        }
+
+        if matches:
+            for non_terminal in non_terminals:
+                values = set(self.value_maps.get_string_values_for_non_terminal(non_terminal))
+
+                for value in values:
+                    new_expression = constraint.expression
+                    for match in matches:
+                        new_expression = new_expression.replace(
+                            match, "'" + self.escape_string(str(value)) + "'", 1
+                        )
+                    new_searches = deepcopy(constraint.searches)
+                    for match in matches:
+                        del new_searches[match]
+                    new_pattern = ExpressionConstraint(
+                        expression=new_expression,
+                        searches=new_searches,
+                        local_variables=constraint.local_variables,
+                        global_variables=constraint.global_variables,
+                    )
+                    new_patterns.append(new_pattern)
+
+        self.results.extend(new_patterns)
