@@ -145,6 +145,11 @@ Pattern(
     string_pattern="exists <elem> in <NON_TERMINAL>: is_inside(<elem>, <start>);",
 )
 
+# Pattern(
+#         string_pattern="exists <elem> in <NON_TERMINAL>: str_contains(<elem>, <STRING>);",
+#         use_cache=False,
+#     )
+
 
 if __name__ == "__main__":
     grammar, _ = parse_file("./../../../playground/calculator.fan")
