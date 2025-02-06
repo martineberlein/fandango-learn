@@ -1,16 +1,38 @@
-from typing import Any
+from typing import Dict, List
 
 from fandango.language.grammar import NodeVisitor, Concatenation, Node, TerminalNode, NonTerminalNode, Alternative, \
     Option, Star, Repetition, Plus, CharSet
 
-import abc
-import enum
-import random
-from typing import Any, Dict, Iterator, List
 
-# ---------------------------------------------------------
-# Original Fandango Node classes go here (omitted for brevity)
-# ---------------------------------------------------------
+class ExpansionNameVisitor(NodeVisitor):
+
+    def visitTerminalNode(self, node: TerminalNode):
+        return str(node.symbol)
+
+
+class DerivableCharsetVisitor(NodeVisitor):
+
+    def aggregate_results(self, aggregate, result):
+        return aggregate.union(result)
+
+    def default_result(self):
+        return set()
+
+    def visitTerminalNode(self, node: TerminalNode):
+        return str(node.symbol)
+
+
+class NonTerminalVisitor(NodeVisitor):
+
+    def aggregate_results(self, aggregate, result):
+        return aggregate.union(result)
+
+    def default_result(self):
+        return set()
+
+    def visitNonTerminalNode(self, node: TerminalNode):
+        return {node.symbol}
+
 
 class CleanNameVisitor(NodeVisitor):
     """
