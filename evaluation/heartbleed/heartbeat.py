@@ -2,11 +2,10 @@ import re
 import os
 import random
 import string
-from typing import Union, Tuple
+from typing import Union
 
-from debugging_framework.input.oracle import OracleResult
+from fandangoLearner.data import FandangoInput as Input, OracleResult
 
-from fandangoLearner.data.input import FandangoInput as Input
 
 
 def vulnerable_heartbeat(payload, fake_length):
@@ -14,7 +13,7 @@ def vulnerable_heartbeat(payload, fake_length):
     return memory[:fake_length]
 
 
-def oracle_simple(test_input: str):
+def oracle_simple(test_input: str) -> OracleResult:
     heartbeat_request = str(test_input).split()
     request_length = int(heartbeat_request[1])
     request_payload = heartbeat_request[2]
