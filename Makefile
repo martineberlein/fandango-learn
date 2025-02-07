@@ -67,7 +67,19 @@ install-test install-tests:
 	$(PIP) install pytest
 	$(PIP) install -e ".[test]"
 
+# Experiments
+install-evaluation install-evaluations:
+	$(PIP) install -e ".[evaluation]"
+
 # Uninstallation
 uninstall:
 	$(PIP) uninstall -y fandangoLearner
 
+# python -m evaluation.vs_isla.run_evaluation
+.PHONY: evaluation evaluate experiment experiments
+
+evaluate evaluation:
+	$(PYTHON) -m evaluation.run_evaluation
+
+experiment experiments:
+	$(PYTHON) -m evaluation.experiments.run_experiments
