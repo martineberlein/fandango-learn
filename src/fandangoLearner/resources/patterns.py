@@ -6,7 +6,7 @@ from fandango.language.search import RuleSearch
 from fandango.language.symbol import NonTerminal
 
 from fandangoLearner.interface.fandango import parse_file, parse_constraint
-from fandangoLearner.data.input import FandangoInput
+from fandangoLearner.data import FandangoInput
 
 
 class Pattern:
@@ -27,9 +27,8 @@ class Pattern:
         use_cache: bool = True,
     ):
         self.string_pattern = string_pattern
-        self.instantiated_pattern = (
-            instantiated_pattern
-            or parse_constraint(string_pattern)
+        self.instantiated_pattern = instantiated_pattern or parse_constraint(
+            string_pattern
         )
         self.__class__.registry.append(self)
 

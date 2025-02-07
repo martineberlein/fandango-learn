@@ -12,6 +12,7 @@ class Placeholder(NonTerminal):
     """
     A placeholder is a symbol that represents a type of value, such as a non-terminal, integer or string.
     """
+
     def __init__(self, placeholder_type: PlaceholderType):
         if not isinstance(placeholder_type, PlaceholderType):
             raise ValueError(f"Invalid placeholder type: {placeholder_type}")
@@ -53,4 +54,3 @@ class Placeholder(NonTerminal):
         :return: Placeholder: The placeholder for a string.
         """
         return cls(PlaceholderType.String)
-
