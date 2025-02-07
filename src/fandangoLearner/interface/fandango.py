@@ -10,7 +10,7 @@ from fandango.constraints.base import Constraint
 
 
 def parse(
-    file_path, disable_logging=True, **kwargs
+    file_path, disable_logging=True, use_cache=True, **kwargs
 ) -> tuple[Grammar | None, list[str]]:
     """
     Wrapper for the parse function from fandango.language.parse
@@ -18,7 +18,7 @@ def parse(
     if disable_logging:
         logging.getLogger("fandango").disabled = True
     file = open(file_path, "r")
-    return fandango_parse(file, use_stdlib=False, use_cache=True, **kwargs)
+    return fandango_parse(file, use_stdlib=False, use_cache=use_cache, **kwargs)
 
 
 def parse_file(
