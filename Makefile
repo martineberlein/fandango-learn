@@ -47,15 +47,25 @@ system-dev-tools:
 	$(SYSTEM_DEV_INSTALL) $(SYSTEM_DEV_TOOLS)
 
 
-## Test
+## Tests
+TESTS = tests
+TEST_SOURCES = $(wildcard $(TESTS)/*.py $(TESTS)/resources/*)
+
+.PHONY: test tests
 test tests:
-	$(PIP) install -e ".[test]"
 	$(PYTEST)
 
-
-# Installation
+## Installation
+.PHONY: install install-test install-tests
 install:
 	$(PIP) install -e .
+
+# We separate _installing_ from _running_ tests
+# so we can run 'make tests' quickly (see above)
+# without having to reinstall things
+install-test install-tests:
+	$(PIP) install pytest
+	$(PIP) install -e ".[test]"
 
 # Uninstallation
 uninstall:
