@@ -1,53 +1,34 @@
-import string
 import unittest
+import os
+
+from fandango.language.grammar import NonTerminalNode, TerminalNode, Concatenation
+from numpy import inf
 
 from fandango.language.symbol import NonTerminal, Terminal
-from numpy import inf
-from fandango.language.grammar import Grammar
 
-from fandangoLearner.interface.fandango import parse_contents
-
+from fandangoLearner.interface.fandango import parse
 from fandangoLearner.data.input import FandangoInput
-#from fandangoLearner.reduction.feature_class import Feature, FeatureFactory, ExistenceFeature
+from fandangoLearner.reduction.feature_collector import GrammarFeatureCollector
 from fandangoLearner.reduction.feature_class import (
     FeatureFactory,
     ExistenceFeature,
     DerivationFeature,
     NumericFeature,
     LengthFeature,
-    #GrammarFeatureCollector,
 )
-
-grammar_ = """
-<start> ::= <string>;
-<string> ::= <A> | <B> | "!ab!";
-<A> ::= "a" | "b" | "c" | "d" | "e";
-<B> ::= "0" | "1" | "2" | "3" | "4" ;
-"""
-
-grammar, _ = parse_contents(grammar_)
-
-# grammar_rec: Grammar = {
-#     "<start>": ["<string>"],
-#     "<string>": ["<A>", "<B>", "!ab!"],
-#     "<A>": ["<chars><A>", ""],
-#     "<chars>": [char for char in string.ascii_lowercase],
-#     "<B>": ["<digit><B>", ""],
-#     "<digit>": [str(num) for num in range(0, 10)],
-# }
-# assert is_valid_grammar(grammar_rec)
-#
-grammar_with_minus_ = """
-<start> ::= <string>;
-<string> ::= <A> | <B>;
-<A> ::= "" | "-";
-<B> ::= "0" | "1" | "2" | "3" | "4" ;
-"""
-
-grammar_with_maybe_minus, _ = parse_contents(grammar_with_minus_)
 
 
 class FeatureExtraction(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        dirname = os.path.dirname(__file__)
+
+        cls.grammar, _ = parse(os.path.join(dirname, "resources", "grammar.fan"))
+        cls.grammar_with_maybe_minus, _ = parse(os.path.join(dirname, "resources", "grammar_with_minus.fan"))
+        cls.grammar_recursion, _ = parse(os.path.join(dirname, "resources", "grammar_recursion.fan"))
+        cls.grammar_with_quotes, _ = parse(os.path.join(dirname, "resources", "grammar_with_quotes.fan"))
+
     def test_build_existence_feature(self):
         expected_feature_list = [
             ExistenceFeature(NonTerminal("<start>")),
@@ -56,30 +37,30 @@ class FeatureExtraction(unittest.TestCase):
             ExistenceFeature(NonTerminal("<B>")),
         ]
 
-        factory = FeatureFactory(grammar)
+        factory = FeatureFactory(self.grammar)
         features = factory.build([ExistenceFeature])
 
         self.assertEqual(features, expected_feature_list)
 
     def test_build_derivation_feature(self):
         expected_feature_list = [
-            DerivationFeature(NonTerminal("<start>"), NonTerminal("<string>")),
-            DerivationFeature(NonTerminal("<string>"), NonTerminal("<A>")),
-            DerivationFeature(NonTerminal("<string>"), NonTerminal("<B>")),
-            DerivationFeature(NonTerminal("<string>"), Terminal("!ab!")),
-            DerivationFeature(NonTerminal("<A>"), Terminal("a")),
-            DerivationFeature(NonTerminal("<A>"), Terminal("b")),
-            DerivationFeature(NonTerminal("<A>"), Terminal("c")),
-            DerivationFeature(NonTerminal("<A>"), Terminal("d")),
-            DerivationFeature(NonTerminal("<A>"), Terminal("e")),
-            DerivationFeature(NonTerminal("<B>"), Terminal("0")),
-            DerivationFeature(NonTerminal("<B>"), Terminal("1")),
-            DerivationFeature(NonTerminal("<B>"), Terminal("2")),
-            DerivationFeature(NonTerminal("<B>"), Terminal("3")),
-            DerivationFeature(NonTerminal("<B>"), Terminal("4")),
+            DerivationFeature(NonTerminal("<start>"), NonTerminalNode(NonTerminal("<string>"))),
+            DerivationFeature(NonTerminal("<string>"), NonTerminalNode(NonTerminal("<A>"))),
+            DerivationFeature(NonTerminal("<string>"), NonTerminalNode(NonTerminal("<B>"))),
+            DerivationFeature(NonTerminal("<string>"), TerminalNode(Terminal('!ab!'))),
+            DerivationFeature(NonTerminal("<A>"), TerminalNode(Terminal("a"))),
+            DerivationFeature(NonTerminal("<A>"), TerminalNode(Terminal("b"))),
+            DerivationFeature(NonTerminal("<A>"), TerminalNode(Terminal("c"))),
+            DerivationFeature(NonTerminal("<A>"), TerminalNode(Terminal("d"))),
+            DerivationFeature(NonTerminal("<A>"), TerminalNode(Terminal("e"))),
+            DerivationFeature(NonTerminal("<B>"), TerminalNode(Terminal("0"))),
+            DerivationFeature(NonTerminal("<B>"), TerminalNode(Terminal("1"))),
+            DerivationFeature(NonTerminal("<B>"), TerminalNode(Terminal("2"))),
+            DerivationFeature(NonTerminal("<B>"), TerminalNode(Terminal("3"))),
+            DerivationFeature(NonTerminal("<B>"), TerminalNode(Terminal("4"))),
         ]
-
-        factory = FeatureFactory(grammar)
+        # Concatenation([TerminalNode(Terminal('!')), TerminalNode(Terminal("a")),TerminalNode(Terminal("b")), TerminalNode(Terminal('!'))])),
+        factory = FeatureFactory(self.grammar)
         features = factory.build([DerivationFeature])
 
         self.assertEqual(features, expected_feature_list)
@@ -89,7 +70,7 @@ class FeatureExtraction(unittest.TestCase):
             NumericFeature(NonTerminal("<B>")),
         ]
 
-        factory = FeatureFactory(grammar)
+        factory = FeatureFactory(self.grammar)
         features = factory.build([NumericFeature])
 
         self.assertEqual(features, expected_feature_list)
@@ -102,7 +83,7 @@ class FeatureExtraction(unittest.TestCase):
             NumericFeature(NonTerminal("<B>")),
         ]
 
-        factory = FeatureFactory(grammar_with_maybe_minus)
+        factory = FeatureFactory(self.grammar_with_maybe_minus)
         features = factory.build([NumericFeature])
 
         self.assertEqual(set(features), set(expected_feature_list))
@@ -115,37 +96,37 @@ class FeatureExtraction(unittest.TestCase):
             LengthFeature(NonTerminal("<B>")),
         ]
 
-        factory = FeatureFactory(grammar)
+        factory = FeatureFactory(self.grammar)
         features = factory.build([LengthFeature])
 
         self.assertEqual(features, expected_feature_list)
 
     def test_parse_existence_feature(self):
         inputs = ["4", "3", "a"]
-        test_inputs = [Input.from_str(grammar, inp) for inp in inputs]
+        test_inputs = [FandangoInput.from_str(self.grammar, inp) for inp in inputs]
 
         expected_feature_vectors = [
             {
-                ExistenceFeature("<start>"): 1,
-                ExistenceFeature("<string>"): 1,
-                ExistenceFeature("<A>"): 0,
-                ExistenceFeature("<B>"): 1,
+                ExistenceFeature(NonTerminal("<start>")): 1,
+                ExistenceFeature(NonTerminal("<string>")): 1,
+                ExistenceFeature(NonTerminal("<A>")): 0,
+                ExistenceFeature(NonTerminal("<B>")): 1,
             },
             {
-                ExistenceFeature("<start>"): 1,
-                ExistenceFeature("<string>"): 1,
-                ExistenceFeature("<A>"): 0,
-                ExistenceFeature("<B>"): 1,
+                ExistenceFeature(NonTerminal("<start>")): 1,
+                ExistenceFeature(NonTerminal("<string>")): 1,
+                ExistenceFeature(NonTerminal("<A>")): 0,
+                ExistenceFeature(NonTerminal("<B>")): 1,
             },
             {
-                ExistenceFeature("<start>"): 1,
-                ExistenceFeature("<string>"): 1,
-                ExistenceFeature("<A>"): 1,
-                ExistenceFeature("<B>"): 0,
+                ExistenceFeature(NonTerminal("<start>")): 1,
+                ExistenceFeature(NonTerminal("<string>")): 1,
+                ExistenceFeature(NonTerminal("<A>")): 1,
+                ExistenceFeature(NonTerminal("<B>")): 0,
             },
         ]
 
-        collector = GrammarFeatureCollector(grammar, [ExistenceFeature])
+        collector = GrammarFeatureCollector(self.grammar, [ExistenceFeature])
         for test_input, expected_feature_vectors in zip(
             test_inputs, expected_feature_vectors
         ):
@@ -154,21 +135,21 @@ class FeatureExtraction(unittest.TestCase):
 
     def test_parse_numeric_feature(self):
         inputs = ["4", "3", "a"]
-        test_inputs = [Input.from_str(grammar, inp) for inp in inputs]
+        test_inputs = [FandangoInput.from_str(self.grammar, inp) for inp in inputs]
 
         expected_feature_vectors = [
             {
-                NumericFeature("<B>"): 4.0,
+                NumericFeature(NonTerminal("<B>")): 4.0,
             },
             {
-                NumericFeature("<B>"): 3.0,
+                NumericFeature(NonTerminal("<B>")): 3.0,
             },
             {
-                NumericFeature("<B>"): -inf,
+                NumericFeature(NonTerminal("<B>")): -inf,
             },
         ]
 
-        collector = GrammarFeatureCollector(grammar, [NumericFeature])
+        collector = GrammarFeatureCollector(self.grammar, [NumericFeature])
         for test_input, expected_feature_vectors in zip(
             test_inputs, expected_feature_vectors
         ):
@@ -177,30 +158,30 @@ class FeatureExtraction(unittest.TestCase):
 
     def test_parse_features_length(self):
         inputs = ["4", "3", "a"]
-        test_inputs = [Input.from_str(grammar, inp) for inp in inputs]
+        test_inputs = [FandangoInput.from_str(self.grammar, inp) for inp in inputs]
 
         expected_feature_vectors = [
             {
-                LengthFeature("<start>"): 1,
-                LengthFeature("<string>"): 1,
-                LengthFeature("<A>"): 0,
-                LengthFeature("<B>"): 1,
+                LengthFeature(NonTerminal("<start>")): 1,
+                LengthFeature(NonTerminal("<string>")): 1,
+                LengthFeature(NonTerminal("<A>")): 0,
+                LengthFeature(NonTerminal("<B>")): 1,
             },
             {
-                LengthFeature("<start>"): 1,
-                LengthFeature("<string>"): 1,
-                LengthFeature("<A>"): 0,
-                LengthFeature("<B>"): 1,
+                LengthFeature(NonTerminal("<start>")): 1,
+                LengthFeature(NonTerminal("<string>")): 1,
+                LengthFeature(NonTerminal("<A>")): 0,
+                LengthFeature(NonTerminal("<B>")): 1,
             },
             {
-                LengthFeature("<start>"): 1,
-                LengthFeature("<string>"): 1,
-                LengthFeature("<A>"): 1,
-                LengthFeature("<B>"): 0,
+                LengthFeature(NonTerminal("<start>")): 1,
+                LengthFeature(NonTerminal("<string>")): 1,
+                LengthFeature(NonTerminal("<A>")): 1,
+                LengthFeature(NonTerminal("<B>")): 0,
             },
         ]
 
-        collector = GrammarFeatureCollector(grammar, [LengthFeature])
+        collector = GrammarFeatureCollector(self.grammar, [LengthFeature])
         for test_input, expected_feature_vectors in zip(
             test_inputs, expected_feature_vectors
         ):
@@ -209,27 +190,27 @@ class FeatureExtraction(unittest.TestCase):
 
     def test_parse_numericInterpretation_maybe_minus(self):
         inputs = ["-1", "3", "-9"]
-        test_inputs = [Input.from_str(grammar_with_maybe_minus, inp) for inp in inputs]
+        test_inputs = [FandangoInput.from_str(self.grammar_with_maybe_minus, inp) for inp in inputs]
 
         expected_feature_vectors = [
             {
-                NumericFeature("<start>"): -1.0,
-                NumericFeature("<string>"): -1.0,
-                NumericFeature("<B>"): 1.0,
+                NumericFeature(NonTerminal("<start>")): -1.0,
+                NumericFeature(NonTerminal("<string>")): -1.0,
+                NumericFeature(NonTerminal("<B>")): 1.0,
             },
             {
-                NumericFeature("<start>"): 3.0,
-                NumericFeature("<string>"): 3.0,
-                NumericFeature("<B>"): 3.0,
+                NumericFeature(NonTerminal("<start>")): 3.0,
+                NumericFeature(NonTerminal("<string>")): 3.0,
+                NumericFeature(NonTerminal("<B>")): 3.0,
             },
             {
-                NumericFeature("<start>"): -9.0,
-                NumericFeature("<string>"): -9.0,
-                NumericFeature("<B>"): 9.0,
+                NumericFeature(NonTerminal("<start>")): -9.0,
+                NumericFeature(NonTerminal("<string>")): -9.0,
+                NumericFeature(NonTerminal("<B>")): 9.0,
             },
         ]
 
-        collector = GrammarFeatureCollector(grammar_with_maybe_minus, [NumericFeature])
+        collector = GrammarFeatureCollector(self.grammar_with_maybe_minus, [NumericFeature])
         for test_input, expected_feature_vectors in zip(
             test_inputs, expected_feature_vectors
         ):
@@ -238,28 +219,28 @@ class FeatureExtraction(unittest.TestCase):
 
     def test_parse_features_numericInterpretation_recursive(self):
         inputs = ["11923", "3341923", "9", "a"]
-        test_inputs = [Input.from_str(grammar_rec, inp) for inp in inputs]
+        test_inputs = [FandangoInput.from_str(self.grammar_recursion, inp) for inp in inputs]
 
         expected_feature_vectors = [
             {
-                NumericFeature("<digit>"): 9.0,
-                NumericFeature("<B>"): 11923.0,
+                NumericFeature(NonTerminal("<digit>")): 9.0,
+                NumericFeature(NonTerminal("<B>")): 11923.0,
             },
             {
-                NumericFeature("<digit>"): 9.0,
-                NumericFeature("<B>"): 3341923.0,
+                NumericFeature(NonTerminal("<digit>")): 9.0,
+                NumericFeature(NonTerminal("<B>")): 3341923.0,
             },
             {
-                NumericFeature("<digit>"): 9.0,
-                NumericFeature("<B>"): 9.0,
+                NumericFeature(NonTerminal("<digit>")): 9.0,
+                NumericFeature(NonTerminal("<B>")): 9.0,
             },
             {
-                NumericFeature("<digit>"): -inf,
-                NumericFeature("<B>"): -inf,
+                NumericFeature(NonTerminal("<digit>")): -inf,
+                NumericFeature(NonTerminal("<B>")): -inf,
             },
         ]
 
-        collector = GrammarFeatureCollector(grammar_rec, [NumericFeature])
+        collector = GrammarFeatureCollector(self.grammar_recursion, [NumericFeature])
         for test_input, expected_feature_vectors in zip(
             test_inputs, expected_feature_vectors
         ):
@@ -268,28 +249,28 @@ class FeatureExtraction(unittest.TestCase):
 
     def test_parse_features_length_recursive(self):
         inputs = ["123", "ab"]
-        test_inputs = [Input.from_str(grammar_rec, inp) for inp in inputs]
+        test_inputs = [FandangoInput.from_str(self.grammar_recursion, inp) for inp in inputs]
 
         expected_feature_vectors = [
             {
-                LengthFeature("<start>"): 3,
-                LengthFeature("<string>"): 3,
-                LengthFeature("<A>"): 0,
-                LengthFeature("<chars>"): 0,
-                LengthFeature("<B>"): 3,
-                LengthFeature("<digit>"): 1,
+                LengthFeature(NonTerminal("<start>")): 3,
+                LengthFeature(NonTerminal("<string>")): 3,
+                LengthFeature(NonTerminal("<A>")): 0,
+                LengthFeature(NonTerminal("<char>")): 0,
+                LengthFeature(NonTerminal("<B>")): 3,
+                LengthFeature(NonTerminal("<digit>")): 1,
             },
             {
-                LengthFeature("<start>"): 2,
-                LengthFeature("<string>"): 2,
-                LengthFeature("<A>"): 2,
-                LengthFeature("<chars>"): 1,
-                LengthFeature("<B>"): 0,
-                LengthFeature("<digit>"): 0,
+                LengthFeature(NonTerminal("<start>")): 2,
+                LengthFeature(NonTerminal("<string>")): 2,
+                LengthFeature(NonTerminal("<A>")): 2,
+                LengthFeature(NonTerminal("<char>")): 1,
+                LengthFeature(NonTerminal("<B>")): 0,
+                LengthFeature(NonTerminal("<digit>")): 0,
             },
         ]
 
-        collector = GrammarFeatureCollector(grammar_rec, [LengthFeature])
+        collector = GrammarFeatureCollector(self.grammar_recursion, [LengthFeature])
         for test_input, expected_feature_vectors in zip(
             test_inputs, expected_feature_vectors
         ):
@@ -297,49 +278,44 @@ class FeatureExtraction(unittest.TestCase):
             self.assertEqual(feature_vector.features, expected_feature_vectors)
 
     def test_build_features_with_escaped_characters(self):
-        grammar_with_json_chars = {
-            "<start>": ["<arg>"],
-            "<arg>": ["<digit>", '"<digit>"'],
-            "<digit>": ["1"],
-        }
+
         expected_feature_list = [
-            DerivationFeature("<start>", "<arg>"),
-            DerivationFeature("<arg>", "<digit>"),
-            DerivationFeature("<arg>", '"<digit>"'),
-            DerivationFeature("<digit>", "1"),
+            DerivationFeature(NonTerminal("<start>"), NonTerminalNode(NonTerminal("<arg>"))),
+            DerivationFeature(NonTerminal("<arg>"), NonTerminalNode(NonTerminal("<digit>"))),
+            DerivationFeature(NonTerminal("<arg>"), Concatenation([TerminalNode(Terminal('"')),NonTerminalNode(NonTerminal('<digit>')), TerminalNode(Terminal('"')),])),
+            DerivationFeature(NonTerminal("<digit>"), TerminalNode(Terminal("1"))),
         ]
 
-        factory = FeatureFactory(grammar_with_json_chars)
+        factory = FeatureFactory(self.grammar_with_quotes)
         features = factory.build([DerivationFeature])
 
         self.assertEqual(set(features), set(expected_feature_list))
 
     def test_feature_names_with_json_chars(self):
-        grammar_with_json_chars = {
-            "<start>": ["<arg>"],
-            "<arg>": ["<digit>", '"<digit>"'],
-            "<digit>": ["1"],
-        }
         inputs = ["1", '"1"']
-        test_inputs = [Input.from_str(grammar_with_json_chars, inp) for inp in inputs]
+        test_inputs = [FandangoInput.from_str(self.grammar_with_quotes, inp) for inp in inputs]
 
         expected_feature_vectors = [
             {
-                DerivationFeature("<start>", "<arg>"): 1,
-                DerivationFeature("<arg>", "<digit>"): 1,
-                DerivationFeature("<arg>", '"<digit>"'): 0,
-                DerivationFeature("<digit>", "1"): 1,
+                DerivationFeature(NonTerminal("<start>"), NonTerminalNode(NonTerminal("<arg>"))): 1,
+                DerivationFeature(NonTerminal("<arg>"), NonTerminalNode(NonTerminal("<digit>"))): 1,
+                DerivationFeature(NonTerminal("<arg>"), Concatenation(
+                    [TerminalNode(Terminal('"')), NonTerminalNode(NonTerminal('<digit>')),
+                     TerminalNode(Terminal('"')), ])): 0,
+                DerivationFeature(NonTerminal("<digit>"), TerminalNode(Terminal("1"))): 1,
             },
             {
-                DerivationFeature("<start>", "<arg>"): 1,
-                DerivationFeature("<arg>", "<digit>"): 0,
-                DerivationFeature("<arg>", '"<digit>"'): 1,
-                DerivationFeature("<digit>", "1"): 1,
+                DerivationFeature(NonTerminal("<start>"), NonTerminalNode(NonTerminal("<arg>"))): 1,
+                DerivationFeature(NonTerminal("<arg>"), NonTerminalNode(NonTerminal("<digit>"))): 0,
+                DerivationFeature(NonTerminal("<arg>"), Concatenation(
+                    [TerminalNode(Terminal('"')), NonTerminalNode(NonTerminal('<digit>')),
+                     TerminalNode(Terminal('"')), ])): 1,
+                DerivationFeature(NonTerminal("<digit>"), TerminalNode(Terminal("1"))): 1,
             },
         ]
 
         collector = GrammarFeatureCollector(
-            grammar_with_json_chars, [DerivationFeature]
+            self.grammar_with_quotes, [DerivationFeature]
         )
 
         for test_input, expected_feature_vectors in zip(
