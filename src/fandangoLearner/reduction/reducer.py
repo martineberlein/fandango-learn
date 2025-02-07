@@ -7,12 +7,11 @@ from lightgbm import LGBMClassifier
 from sklearn import preprocessing
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
-import shap
-
+from shap import TreeExplainer, summary_plot
 
 from fandango.language.grammar import Grammar, NonTerminal
 
-from fandangoLearner.data.input import FandangoInput, OracleResult
+from fandangoLearner.data import FandangoInput, OracleResult
 from fandangoLearner.reduction.feature_class import get_reachability_map
 from fandangoLearner.reduction.feature_collector import (
     Feature,
@@ -151,7 +150,11 @@ class CorrelationRelevanceFeatureLearner(RelevanceFeatureReducer, ABC):
         relevant_features: Set[Feature] = self.get_relevant_features(
             test_inputs, x_train, y_train
         )
-        relevant_features = {feature for feature in relevant_features if feature.non_terminal != NonTerminal("<start>")}
+        relevant_features = {
+            feature
+            for feature in relevant_features
+            if feature.non_terminal != NonTerminal("<start>")
+        }
         correlated_features: Set[Feature] = self.find_correlated_features(
             x_train, relevant_features
         )
@@ -199,9 +202,13 @@ class CorrelationRelevanceFeatureLearner(RelevanceFeatureReducer, ABC):
         # If the primary feature is reachable from the correlating feature, but not vice versa, then the
         # correlating feature is a parent of the primary feature. We don't want to correlate parents with children
         # as this can lead to overfitting.
-        if correlating_feature.non_terminal in self.reachability_map[primary_feature.non_terminal] and \
-            primary_feature.non_terminal not in self.reachability_map[correlating_feature.non_terminal]:
-            #print(f"Primary: {primary_feature.non_terminal} Correlating: {correlating_feature.non_terminal}")
+        if (
+            correlating_feature.non_terminal
+            in self.reachability_map[primary_feature.non_terminal]
+            and primary_feature.non_terminal
+            not in self.reachability_map[correlating_feature.non_terminal]
+        ):
+            # print(f"Primary: {primary_feature.non_terminal} Correlating: {correlating_feature.non_terminal}")
             return False
 
         return True
@@ -351,7 +358,7 @@ class SHAPRelevanceLearner(CorrelationRelevanceFeatureLearner):
 
     @staticmethod
     def get_shap_values(classifier, x_train) -> np.ndarray:
-        explainer = shap.TreeExplainer(classifier)
+        explainer = TreeExplainer(classifier)
         shap_values = explainer.shap_values(x_train, from_call=True)
 
         # For binary classification, shap_values will be a list of two arrays.
@@ -377,4 +384,4 @@ class SHAPRelevanceLearner(CorrelationRelevanceFeatureLearner):
         """
         Display a beeswarm plot of the SHAP values.
         """
-        return shap.summary_plot(shap_values, x_train.astype("float"))
+        return summary_plot(shap_values, x_train.astype("float"))

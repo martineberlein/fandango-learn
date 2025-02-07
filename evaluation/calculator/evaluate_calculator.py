@@ -3,12 +3,11 @@ import os
 import math
 import random
 
-from debugging_framework.input.oracle import OracleResult
-
 from evaluation.evaluation_helper import format_results
 from fandangoLearner.learner import FandangoLearner, NonTerminal, FandangoInput
 from fandangoLearner.logger import LoggerLevel
 from fandangoLearner.interface.fandango import parse
+from fandangoLearner.data import OracleResult
 
 
 def calculator_oracle(inp):

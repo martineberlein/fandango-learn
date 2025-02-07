@@ -59,7 +59,9 @@ class TestInputGenerator(unittest.TestCase):
     def test_fandango_generator_with_negation_conjunction(self):
         constraint_1 = parse_constraint("int(<number>) <= 0;")
         constraint_2 = parse_constraint("str(<function>) == 'sqrt';")
-        candidate_conjunction = FandangoConstraintCandidate(ConjunctionConstraint([constraint_1, constraint_2]))
+        candidate_conjunction = FandangoConstraintCandidate(
+            ConjunctionConstraint([constraint_1, constraint_2])
+        )
         negated_candidates = construct_negations([candidate_conjunction])
 
         for negation_candidate in negated_candidates:

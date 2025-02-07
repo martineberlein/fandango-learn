@@ -6,7 +6,7 @@ from fandango.constraints.base import *
 from fandango.language.search import RuleSearch
 from fandango.language.symbol import NonTerminal
 
-from fandangoLearner.data.input import FandangoInput
+from fandangoLearner.data import FandangoInput
 from fandangoLearner.learning.candidate import FandangoConstraintCandidate
 from fandangoLearner.logger import LOGGER
 
@@ -61,7 +61,7 @@ class ValueMaps:
         for sub_len in range(n, 0, -1):
             # Try every substring of length sub_len in the shortest string
             for start in range(n - sub_len + 1):
-                candidate = shortest[start:start + sub_len]
+                candidate = shortest[start : start + sub_len]
                 # Check if this candidate is in all strings
                 if all(candidate in s for s in strings):
                     return candidate  # Return as soon as we find the longest common substring
@@ -69,8 +69,9 @@ class ValueMaps:
         # If no common substring is found (shouldn't happen unless the list is empty), return an empty string
         return ""
 
-    def extract_non_terminal_values(self, inputs: Set[FandangoInput]) -> Tuple[
-        Dict[NonTerminal, Set[str]], Dict[NonTerminal, Set[float]]]:
+    def extract_non_terminal_values(
+        self, inputs: Set[FandangoInput]
+    ) -> Tuple[Dict[NonTerminal, Set[str]], Dict[NonTerminal, Set[float]]]:
         """Extracts and returns values associated with non-terminals."""
 
         for non_terminal in self.relevant_non_terminals:
@@ -134,7 +135,9 @@ class PatternProcessor:
 
         int_patterns = []
         for pattern in string_patterns:
-            transformer = IntegerValuePlaceholderTransformer(value_maps, positive_inputs)
+            transformer = IntegerValuePlaceholderTransformer(
+                value_maps, positive_inputs
+            )
             pattern.accept(transformer)
             transformed = transformer.results
             int_patterns.extend(transformed)
@@ -317,7 +320,9 @@ class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
         """
         Recursively visit the statement inside a ForallConstraint.
         """
-        assert isinstance(constraint.search, RuleSearch), f"AttributeSearch not yet supported! {constraint}"
+        assert isinstance(
+            constraint.search, RuleSearch
+        ), f"AttributeSearch not yet supported! {constraint}"
 
         self.update_value_map(constraint.bound, constraint.search)
         constraint.statement.accept(self)
@@ -338,7 +343,9 @@ class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
         """
         Recursively visit the statement inside an ExistsConstraint.
         """
-        assert isinstance(constraint.search, RuleSearch), f"AttributeSearch not yet supported! {constraint}"
+        assert isinstance(
+            constraint.search, RuleSearch
+        ), f"AttributeSearch not yet supported! {constraint}"
 
         self.update_value_map(constraint.bound, constraint.search)
         constraint.statement.accept(self)
@@ -408,8 +415,12 @@ class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
         """
         self.results.append(constraint)
 
-    def get_combinations(self,  constraint: Constraint, tree: DerivationTree,
-        scope: Optional[Dict[NonTerminal, DerivationTree]] = None):
+    def get_combinations(
+        self,
+        constraint: Constraint,
+        tree: DerivationTree,
+        scope: Optional[Dict[NonTerminal, DerivationTree]] = None,
+    ):
         nodes: List[List[Tuple[str, DerivationTree]]] = []
         for name, search in constraint.searches.items():
             if search.symbol == NonTerminal("<INTEGER>"):
@@ -507,6 +518,7 @@ class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
 
         return new_patterns
 
+
 class IntegerValuePlaceholderTransformer(ValuePlaceholderTransformer):
 
     def __init__(self, value_maps: ValueMaps, test_inputs: Set[FandangoInput]):
@@ -515,7 +527,9 @@ class IntegerValuePlaceholderTransformer(ValuePlaceholderTransformer):
     def update_value_map(self, bound: NonTerminal, search: RuleSearch):
         """ """
         if search.symbol in self.value_maps._int_values:
-            self.value_maps._int_values[bound] = self.value_maps._int_values[search.symbol]
+            self.value_maps._int_values[bound] = self.value_maps._int_values[
+                search.symbol
+            ]
 
     def remove_value_map(self, bound: NonTerminal):
         if bound in self.value_maps._int_values:
@@ -534,10 +548,11 @@ class IntegerValuePlaceholderTransformer(ValuePlaceholderTransformer):
             instantiated_patterns,
             NonTerminal("<INTEGER>"),
             values=self.value_maps.get_filtered_int_values(),
-            format_value = lambda x: f"{x}",
+            format_value=lambda x: f"{x}",
         )
 
         self.results.extend([pattern for pattern, _ in instantiated_patterns])
+
 
 class StringValuePlaceholderTransformer(ValuePlaceholderTransformer):
 
@@ -547,7 +562,9 @@ class StringValuePlaceholderTransformer(ValuePlaceholderTransformer):
     def update_value_map(self, bound: NonTerminal, search: RuleSearch):
         """ """
         if search.symbol in self.value_maps._string_values:
-            self.value_maps._string_values[bound] = self.value_maps._string_values[search.symbol]
+            self.value_maps._string_values[bound] = self.value_maps._string_values[
+                search.symbol
+            ]
 
     def remove_value_map(self, bound: NonTerminal):
         if bound in self.value_maps._string_values:
@@ -592,7 +609,9 @@ class StringValuePlaceholderTransformer(ValuePlaceholderTransformer):
 
         if matches:
             for non_terminal in non_terminals:
-                values = set(self.value_maps.get_string_values_for_non_terminal(non_terminal))
+                values = set(
+                    self.value_maps.get_string_values_for_non_terminal(non_terminal)
+                )
 
                 for value in values:
                     new_expression = constraint.expression

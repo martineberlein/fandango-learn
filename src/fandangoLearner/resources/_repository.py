@@ -2,7 +2,6 @@ import toml
 from abc import ABC, abstractmethod
 from typing import Dict, List, Set, Iterable, cast, Any
 
-# from avicenna.learning import get_pattern_file_path
 from fandango.constraints.base import Constraint
 
 

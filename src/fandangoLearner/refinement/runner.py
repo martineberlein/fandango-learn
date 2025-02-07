@@ -1,9 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Union, Sequence, Optional, Set, List, Tuple
+from typing import Union, Set
 
-from debugging_framework.input.oracle import OracleResult
-
-from fandangoLearner.data.input import FandangoInput
+from fandangoLearner.data import FandangoInput, OracleResult
 from fandangoLearner.types import OracleType
 
 
