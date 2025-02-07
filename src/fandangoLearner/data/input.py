@@ -12,6 +12,8 @@ from fandango.language.tree import DerivationTree
 from fandango.language.grammar import Grammar
 from debugging_framework.input.oracle import OracleResult
 
+from fandangoLearner.reduction.feature_class import FeatureVector
+
 
 class Input(ABC):
     """
@@ -32,6 +34,7 @@ class Input(ABC):
         ), f"tree must be an instance of DerivationTree, but is {type(tree)}"
         self.__tree: Final[DerivationTree] = tree
         self.__oracle: Optional[OracleResult] = oracle
+        self.__features: Optional[FeatureVector] = None
 
     @property
     def tree(self) -> DerivationTree:
@@ -49,6 +52,14 @@ class Input(ABC):
         """
         return self.__oracle
 
+    @property
+    def features(self) -> FeatureVector:
+        """
+        Retrieves the features associated with the input.
+        :return: The features associated with the input.
+        """
+        return self.__features
+
     @oracle.setter
     def oracle(self, oracle_: OracleResult):
         """
@@ -57,6 +68,14 @@ class Input(ABC):
         """
         self.__oracle = oracle_
 
+    @features.setter
+    def features(self, features_: FeatureVector):
+        """
+        Sets the features for the input.
+        :param FeatureVector features_: The new features to set.
+        """
+        self.__features = features_
+
     def update_oracle(self, oracle_: OracleResult) -> "Input":
         """
         Updates the oracle result for the input and returns the modified input instance.
@@ -64,6 +83,15 @@ class Input(ABC):
         :return Input: The current input instance with the updated oracle.
         """
         self.__oracle = oracle_
+        return self
+
+    def update_features(self, features_: FeatureVector) -> "Input":
+        """
+        Updates the features for the input and returns the modified input instance.
+        :param FeatureVector features_: The new features to set.
+        :return Input: The current input instance with the updated features.
+        """
+        self.__features = features_
         return self
 
     def __repr__(self) -> str:
