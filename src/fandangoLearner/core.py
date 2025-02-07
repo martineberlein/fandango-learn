@@ -1,16 +1,19 @@
 from typing import List, Iterable, Optional, Set, Tuple, Any
 from abc import ABC, abstractmethod
 
-from debugging_framework.input.oracle import OracleResult
 from fandango.language.grammar import Grammar
 from fandango.constraints.base import (
     Constraint,
 )
 
-from .learning.candidate import ConstraintCandidate, FandangoConstraintCandidate, CandidateSet
-from .data.input import Input as TestInput, FandangoInput
+from .learning.candidate import (
+    ConstraintCandidate,
+    FandangoConstraintCandidate,
+    CandidateSet,
+)
+from .data import FandangoInput, OracleResult
 from .learning.metric import FitnessStrategy, RecallPriorityFitness
-from .resources.patterns import Pattern
+from .resources import Pattern
 from .logger import LOGGER
 
 
@@ -24,7 +27,7 @@ class ConstraintCandidateLearner(ABC):
 
     @abstractmethod
     def learn_constraints(
-        self, test_inputs: Iterable[TestInput], **kwargs
+        self, test_inputs: Iterable[FandangoInput], **kwargs
     ) -> Optional[List[ConstraintCandidate]]:
         """
         Learn the candidates based on the test inputs.

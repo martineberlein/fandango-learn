@@ -1,6 +1,5 @@
-from typing import Callable, Tuple, Union, Optional
-from debugging_framework.input.oracle import OracleResult
+from typing import Callable, Union
 
-from fandangoLearner.data.input import FandangoInput
+from fandangoLearner.data import FandangoInput, OracleResult
 
 OracleType = Callable[[Union[FandangoInput, str]], OracleResult]
