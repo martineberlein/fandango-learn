@@ -7,13 +7,13 @@ from fandangoLearner.reduction.feature_class import (
     FeatureFactory,
     FeatureVector,
 )
-from fandangoLearner.reduction.reducer import (
-    FeatureReducer,
-    DecisionTreeRelevanceLearner,
-    SHAPRelevanceLearner,
-)
+# from fandangoLearner.reduction.reducer import (
+#     FeatureReducer,
+#     DecisionTreeRelevanceLearner,
+#     SHAPRelevanceLearner,
+# )
 
-from fandangoLearner.reduction.feature_collector import GrammarFeatureCollector
+#from fandangoLearner.reduction.feature_collector import GrammarFeatureCollector
 
 __all__ = [
     "Feature",
@@ -23,8 +23,8 @@ __all__ = [
     "LengthFeature",
     "FeatureFactory",
     "FeatureVector",
-    "FeatureReducer",
-    "DecisionTreeRelevanceLearner",
-    "SHAPRelevanceLearner",
-    "GrammarFeatureCollector",
+    # "FeatureReducer",
+    # "DecisionTreeRelevanceLearner",
+    # "SHAPRelevanceLearner",
+    # "GrammarFeatureCollector",
 ]

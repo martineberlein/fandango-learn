@@ -11,7 +11,7 @@ from shap import TreeExplainer, summary_plot
 
 from fandango.language.grammar import Grammar, NonTerminal
 
-from fandangoLearner.data.input import FandangoInput, OracleResult
+from fandangoLearner.data import FandangoInput, OracleResult
 from fandangoLearner.reduction.feature_class import get_reachability_map
 from fandangoLearner.reduction.feature_collector import (
     Feature,
