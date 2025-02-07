@@ -21,7 +21,6 @@ classifiers = [
 ]
 dependencies = [
     "fandango-fuzzer @ git+https://github.com/fandango-fuzzer/fandango.git@learner",
-    "debugging-benchmark @ git+https://github.com/martineberlein/debugging-benchmark.git",
     "pandas>=2.2.3",
     "shap>=0.45",
     "lightgbm>=4.3.0",
