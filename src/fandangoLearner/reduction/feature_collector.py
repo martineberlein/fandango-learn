@@ -2,14 +2,11 @@ from functools import lru_cache
 from typing import List, Dict, Optional, Any, Type
 from abc import ABC, abstractmethod
 
-# from debugging_framework.fuzzingbook.grammar import is_nonterminal, Grammar
-# from isla.language import DerivationTree
-
 from fandango.language.grammar import Grammar
 from fandango.language.symbol import NonTerminal, Symbol
 from fandango.language.tree import DerivationTree
 
-from fandangoLearner.data.input import FandangoInput
+from fandangoLearner.data import FandangoInput
 from fandangoLearner.reduction.feature_class import (
     Feature,
     ExistenceFeature,

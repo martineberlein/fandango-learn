@@ -2,13 +2,28 @@ from typing import List, Set, Dict, Optional, Any
 from abc import ABC, abstractmethod
 
 from fandango.language.tree import DerivationTree
-from fandango.language.grammar import Grammar, NonTerminalNode, TerminalNode, Node, NonTerminal, Concatenation, Star, \
-    Alternative
+from fandango.language.grammar import (
+    Grammar,
+    NonTerminalNode,
+    TerminalNode,
+    Node,
+    NonTerminal,
+    Alternative,
+)
 
-from fandangoLearner.reduction.transformer import CleanNameVisitor, DerivableCharsetVisitor, NonTerminalVisitor, ExpansionVisitor
+from fandangoLearner.reduction.transformer import (
+    DerivableCharsetVisitor,
+    NonTerminalVisitor,
+    ExpansionVisitor,
+)
 from fandangoLearner.data.input import OracleResult
 
+
 class Feature(ABC):
+    """
+    A feature is a property of a test input that can be used to learn a candidate.
+    """
+
     def __init__(self, non_terminal: NonTerminal):
         self.non_terminal = non_terminal
 
@@ -55,11 +70,15 @@ class Feature(ABC):
 
     @classmethod
     @abstractmethod
-    def factory_method(cls, grammar):
+    def factory_method(cls, grammar) -> List["Feature"]:
         raise NotImplementedError
 
 
 class ExistenceFeature(Feature):
+    """
+    A feature that describes if a non-terminal exists in a given subtree.
+    """
+
     def __init__(self, non_terminal: NonTerminal):
         super().__init__(non_terminal)
 
@@ -75,18 +94,18 @@ class ExistenceFeature(Feature):
         return int
 
     def evaluate(self, subtree: DerivationTree) -> int:
-        # print(subtree.symbol, type(subtree.symbol))
-        # print(self.non_terminal, type(self.non_terminal))
-        # result = int(self.non_terminal == subtree.symbol)
-        # print(result)
         return int(self.non_terminal == subtree.symbol)
 
     @classmethod
-    def factory_method(cls, grammar) -> List[Feature]:
+    def factory_method(cls, grammar) -> List["ExistenceFeature"]:
         return [cls(non_terminal) for non_terminal in grammar]
 
 
 class DerivationFeature(Feature):
+    """
+    A feature that describes if a derivation for a given non-terminal and expansion exists in a subtree.
+    """
+
     def __init__(self, non_terminal: NonTerminal, expansion: Node, grammar: Grammar):
         super().__init__(non_terminal)
         self.expansion = expansion
@@ -125,7 +144,9 @@ class DerivationFeature(Feature):
 
         # If the expansion of the non-terminal is a terminal or non-terminal, we can compare the subtree with the
         # expansion; ff they match, we can return 1 else 0
-        if isinstance(self.expansion, NonTerminalNode) or isinstance(self.expansion, TerminalNode):
+        if isinstance(self.expansion, NonTerminalNode) or isinstance(
+            self.expansion, TerminalNode
+        ):
             # visitor = ExpansionVisitor()
             children = subtree.children
             expanded_subtree = " ".join([repr(child.symbol) for child in children])
@@ -143,7 +164,6 @@ class DerivationFeature(Feature):
         if parsed:
             return 1
 
-
         # visitor = ExpansionVisitor()
         # children = subtree.children
         # expanded_subtree = " ".join([repr(child.symbol) for child in children])
@@ -154,7 +174,7 @@ class DerivationFeature(Feature):
         return 0
 
     @classmethod
-    def factory_method(cls, grammar: Grammar) -> List[Feature]:
+    def factory_method(cls, grammar: Grammar) -> List["DerivationFeature"]:
         features = []
         visitor = ExpansionVisitor()
 
@@ -166,6 +186,11 @@ class DerivationFeature(Feature):
 
 
 class NumericFeature(Feature):
+    """
+    A feature that describes if all derivable characters for all reachable non-terminals are numeric.
+    If so, it returns the numeric value of the subtree.
+    """
+
     def _repr(self):
         return f"num({self.non_terminal})"
 
@@ -185,24 +210,7 @@ class NumericFeature(Feature):
             return self.default_value
 
     @classmethod
-    def get_reachable_non_terminals(cls, grammar: Grammar, non_terminal: NonTerminal) -> Set[NonTerminal]:
-        reachable = set()
-        non_terminal_visitor = NonTerminalVisitor()
-
-        def _find_reachable_nonterminals(grammar_: Grammar, symbol: NonTerminal):
-            nonlocal reachable
-            reachable.add(symbol)
-            expansion_node = grammar_.rules.get(symbol, [])
-            for exp in non_terminal_visitor.visit(expansion_node):
-                if exp not in reachable:
-                    _find_reachable_nonterminals(grammar_, exp)
-
-        _find_reachable_nonterminals(grammar, non_terminal)
-        return reachable
-
-
-    @classmethod
-    def factory_method(cls, grammar) -> List[Feature]:
+    def factory_method(cls, grammar) -> List["NumericFeature"]:
         """
         Get all derivable chars for all non-terminals in the grammar.
         Get all non-terminals that are reachable for a given non-terminal.
@@ -222,7 +230,7 @@ class NumericFeature(Feature):
 
         # Check if for a non-terminal all derivable chars for all reachable non-terminals are numeric
         for non_terminal, node in grammar.rules.items():
-            reachable_non_terminals = cls.get_reachable_non_terminals(grammar, non_terminal)
+            reachable_non_terminals = get_reachable_non_terminals(grammar, non_terminal)
             reachable_chars = set()
             for reachable_non_terminal in reachable_non_terminals:
                 reachable_chars.update(derivable_chars[reachable_non_terminal])
@@ -244,6 +252,10 @@ class NumericFeature(Feature):
 
 
 class LengthFeature(Feature):
+    """
+    A feature that describes the length of the string representation of a given subtree/non-terminal.
+    """
+
     def _repr(self):
         return f"len({self.non_terminal})"
 
@@ -254,11 +266,11 @@ class LengthFeature(Feature):
     def type(self):
         return int
 
-    def evaluate(self, subtree: DerivationTree) -> Any:
+    def evaluate(self, subtree: DerivationTree) -> int:
         return len(str(subtree))
 
     @classmethod
-    def factory_method(cls, grammar) -> List[Feature]:
+    def factory_method(cls, grammar) -> List["LengthFeature"]:
         features = []
         for non_terminal in grammar:
             features.append(cls(non_terminal))
@@ -266,10 +278,20 @@ class LengthFeature(Feature):
 
 
 class FeatureFactory:
+    """
+    A factory class to build features for a given grammar.
+    """
+
     def __init__(self, grammar):
         self.grammar = grammar
 
     def build(self, feature_types=None) -> List[Feature]:
+        """
+        Build features for a given grammar.
+
+        :param feature_types: The types of features to build.
+        :return: A list of features for the grammar.
+        """
         if feature_types is None:
             feature_types = [
                 ExistenceFeature,
@@ -285,6 +307,10 @@ class FeatureFactory:
 
 
 class FeatureVector:
+    """
+    A feature vector is a set of features that are associated with a test input.
+    """
+
     def __init__(
         self,
         test_input: str,
@@ -295,18 +321,35 @@ class FeatureVector:
         self.features: Dict[Feature, Any] = dict()
 
     def get_feature_value(self, feature: Feature) -> Any:
+        """
+        Get the value of a feature in the feature vector.
+
+        :param feature: The feature to get the value for.
+        :return: The value of the feature.
+        """
         if feature in self.features:
             return self.features[feature]
         else:
             return feature.default_value
 
     def set_feature(self, feature: Feature, value: any):
+        """
+        Set the value of a feature in the feature vector.
+
+        :param feature: The feature to set the value for.
+        :param value: The value to set.
+        """
         if feature in self.features.keys():
             self.features[feature] = max(value, self.features[feature])
         else:
             self.features[feature] = value
 
     def get_features(self) -> Dict[Feature, Any]:
+        """
+        Get all features in the feature vector.
+
+        :return: The features in the feature vector.
+        """
         return self.features
 
     def __repr__(self):
@@ -314,14 +357,31 @@ class FeatureVector:
 
 
 def get_reachability_map(grammar: Grammar) -> dict[NonTerminal, Set[NonTerminal]]:
+    """
+    Get the reachability map for a given grammar.
+
+    :param grammar: The grammar to get the reachability map for.
+    :return: The reachability map.s
+    """
     reachability_map = dict()
     for non_terminal in grammar.rules:
-        reachability_map[non_terminal] = get_reachable_non_terminals(grammar, non_terminal)
+        reachability_map[non_terminal] = get_reachable_non_terminals(
+            grammar, non_terminal
+        )
 
     return reachability_map
 
 
-def get_reachable_non_terminals(grammar: Grammar, non_terminal: NonTerminal) -> Set[NonTerminal]:
+def get_reachable_non_terminals(
+    grammar: Grammar, non_terminal: NonTerminal
+) -> Set[NonTerminal]:
+    """
+    Get all reachable non-terminals for a given non-terminal in a grammar.
+
+    :param grammar: The grammar to search in.
+    :param non_terminal: The non-terminal to search for.
+    :return: A set of reachable non-terminals.
+    """
     reachable = set()
     non_terminal_visitor = NonTerminalVisitor()
 
