@@ -2,11 +2,11 @@ import logging
 import tempfile
 import os
 
+from fandango.constraints.base import Constraint
 from fandango.language.parse import (
     parse as fandango_parse,
     Grammar,
 )
-from fandango.constraints.base import Constraint
 
 
 def parse(
