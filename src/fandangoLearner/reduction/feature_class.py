@@ -311,3 +311,27 @@ class FeatureVector:
 
     def __repr__(self):
         return f"{self.test_input}: {self.features}"
+
+
+def get_reachability_map(grammar: Grammar) -> dict[NonTerminal, Set[NonTerminal]]:
+    reachability_map = dict()
+    for non_terminal in grammar.rules:
+        reachability_map[non_terminal] = get_reachable_non_terminals(grammar, non_terminal)
+
+    return reachability_map
+
+
+def get_reachable_non_terminals(grammar: Grammar, non_terminal: NonTerminal) -> Set[NonTerminal]:
+    reachable = set()
+    non_terminal_visitor = NonTerminalVisitor()
+
+    def _find_reachable_nonterminals(grammar_: Grammar, symbol: NonTerminal):
+        nonlocal reachable
+        reachable.add(symbol)
+        expansion_node = grammar_.rules.get(symbol, [])
+        for exp in non_terminal_visitor.visit(expansion_node):
+            if exp not in reachable:
+                _find_reachable_nonterminals(grammar_, exp)
+
+    _find_reachable_nonterminals(grammar, non_terminal)
+    return reachable
