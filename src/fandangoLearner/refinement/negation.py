@@ -4,7 +4,7 @@ from fandango.constraints.base import ConjunctionConstraint, DisjunctionConstrai
 
 from fandangoLearner.language.constraints import NegationConstraint
 from fandangoLearner.learning.candidate import FandangoConstraintCandidate
-from fandangoLearner.interface.fandango import parse_constraint
+from fandangoLearner.interface import parse_constraint
 
 
 def construct_negations(candidates: list[FandangoConstraintCandidate]):

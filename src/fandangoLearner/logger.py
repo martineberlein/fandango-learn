@@ -16,4 +16,3 @@ class LoggerLevel(enum.Enum):
     WARNING = logging.WARNING
     ERROR = logging.ERROR
     CRITICAL = logging.CRITICAL
-

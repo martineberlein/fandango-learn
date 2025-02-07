@@ -4,12 +4,11 @@ from typing import Generator, Collection, Optional
 import random
 from copy import deepcopy
 
-from debugging_framework.input.oracle import OracleResult
 from fandango.language.grammar import Grammar
 from fandango.language.symbol import NonTerminal
 from fandango.language.tree import DerivationTree
 
-from fandangoLearner.data.input import FandangoInput
+from fandangoLearner.data import FandangoInput, OracleResult
 from fandangoLearner.types import OracleType
 
 

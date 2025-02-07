@@ -1,12 +1,25 @@
 from typing import Dict, List
 
-from fandango.language.grammar import NodeVisitor, Concatenation, Node, TerminalNode, NonTerminalNode, Alternative, \
-    Option, Star, Repetition, Plus, CharSet
+from fandango.language.grammar import (
+    NodeVisitor,
+    Concatenation,
+    Node,
+    TerminalNode,
+    NonTerminalNode,
+    Alternative,
+    Option,
+    Star,
+    Repetition,
+    Plus,
+    CharSet,
+)
 
 
 class ExpansionVisitor(NodeVisitor):
 
-    def __init__(self, ):
+    def __init__(
+        self,
+    ):
         self.rules = {}
 
     def visitTerminalNode(self, node: TerminalNode):
@@ -35,6 +48,9 @@ class ExpansionVisitor(NodeVisitor):
 
 
 class DerivableCharsetVisitor(NodeVisitor):
+    """
+    A visitor that returns the set of all derivable characters/terminals.
+    """
 
     def aggregate_results(self, aggregate, result):
         return aggregate.union(result)
@@ -47,6 +63,9 @@ class DerivableCharsetVisitor(NodeVisitor):
 
 
 class NonTerminalVisitor(NodeVisitor):
+    """
+    A visitor that returns the set of all non-terminals in a production rule.
+    """
 
     def aggregate_results(self, aggregate, result):
         return aggregate.union(result)
@@ -63,6 +82,7 @@ class CleanNameVisitor(NodeVisitor):
     Utility visitor that returns just the string form
     of a Terminal or NonTerminal symbol.
     """
+
     def visitTerminalNode(self, node: TerminalNode):
         return str(node.symbol)
 
@@ -198,10 +218,7 @@ class FuzzingBookGrammarTransformer(NodeVisitor):
 
             # expansions for the star NT
             # "" or <child_wrapper><star_non_terminal>
-            expansions_for_star = [
-                "",
-                child_nt + star_non_terminal  # concatenation
-            ]
+            expansions_for_star = ["", child_nt + star_non_terminal]  # concatenation
             self.grammar_[star_non_terminal] = expansions_for_star
 
         return [star_non_terminal]
@@ -226,10 +243,7 @@ class FuzzingBookGrammarTransformer(NodeVisitor):
 
             # expansions for the plus NT
             # <child_wrapper> or <child_wrapper><child_plus>
-            expansions_for_plus = [
-                child_nt,
-                child_nt + plus_non_terminal
-            ]
+            expansions_for_plus = [child_nt, child_nt + plus_non_terminal]
             self.grammar_[plus_non_terminal] = expansions_for_plus
 
         return [plus_non_terminal]

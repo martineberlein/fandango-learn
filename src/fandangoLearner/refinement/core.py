@@ -15,7 +15,7 @@ from fandangoLearner.learning.metric import FitnessStrategy, RecallPriorityStrin
 from fandangoLearner.logger import LoggerLevel, LOGGER
 from .generator import Generator, FandangoGrammarGenerator, FandangoGenerator
 from .runner import SingleExecutionHandler, ExecutionHandler
-from .engine import Engine, SingleEngine, ParallelEngine
+from .engine import Engine, ParallelEngine
 from .negation import construct_negations
 
 

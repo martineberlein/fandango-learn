@@ -1,14 +1,13 @@
 from typing import Dict, List, Optional
 from abc import ABC, abstractmethod
 
-from debugging_framework.input.oracle import OracleResult
-
 from fandango.constraints.base import (
     Constraint,
     ConjunctionConstraint,
     DisjunctionConstraint,
 )
-from fandangoLearner.data.input import FandangoInput
+
+from fandangoLearner.data import FandangoInput, OracleResult
 from fandangoLearner.language.constraints import NegationConstraint
 
 
@@ -108,7 +107,9 @@ class FandangoConstraintCandidate(ConstraintCandidate):
         """
         Return whether two candidates are equal.
         """
-        return isinstance(other, FandangoConstraintCandidate) and str(self.constraint) == str(other.constraint)
+        return isinstance(other, FandangoConstraintCandidate) and str(
+            self.constraint
+        ) == str(other.constraint)
 
     def __hash__(self):
         return self.__hash
@@ -134,10 +135,14 @@ class FandangoConstraintCandidate(ConstraintCandidate):
 
         for inp, value_self in self.cache.items():
             value_other = other.cache[inp]
-            r = value_self and value_other  # or `value_self or value_other` for `__or__`
+            r = (
+                value_self and value_other
+            )  # or `value_self or value_other` for `__or__`
             new_cache[inp] = r
 
-            (new_failing if inp.oracle == OracleResult.FAILING else new_passing).append(r)
+            (new_failing if inp.oracle == OracleResult.FAILING else new_passing).append(
+                r
+            )
 
         return FandangoConstraintCandidate(
             constraint=ConjunctionConstraint(
@@ -194,8 +199,12 @@ class FandangoConstraintCandidate(ConstraintCandidate):
         for inp in self.cache.keys():
             cache[inp] = not self.cache[inp]
 
-        failing_inputs_eval_results = [not eval_result for eval_result in self.failing_inputs_eval_results]
-        passing_inputs_eval_results = [not eval_result for eval_result in self.passing_inputs_eval_results]
+        failing_inputs_eval_results = [
+            not eval_result for eval_result in self.failing_inputs_eval_results
+        ]
+        passing_inputs_eval_results = [
+            not eval_result for eval_result in self.passing_inputs_eval_results
+        ]
 
         return FandangoConstraintCandidate(
             constraint=NegationConstraint(self.constraint),

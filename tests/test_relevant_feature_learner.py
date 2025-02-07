@@ -2,13 +2,14 @@ import unittest
 from typing import Set
 import os
 import math
+import random
 
 from fandango.language.grammar import TerminalNode
 from fandango.language.symbol import NonTerminal, Terminal
 
 import fandangoLearner.reduction.reducer as feature_extractor
 from fandangoLearner.interface.fandango import parse
-from fandangoLearner.data.input import OracleResult, FandangoInput
+from fandangoLearner.data import OracleResult, FandangoInput
 from fandangoLearner.reduction.feature_collector import GrammarFeatureCollector
 from fandangoLearner.reduction.feature_class import (
     NumericFeature,
@@ -26,8 +27,6 @@ def calculator_oracle(inp):
     except ValueError:
         return OracleResult.FAILING
     return OracleResult.PASSING
-
-
 
 
 class TestRelevantFeatureLearner(unittest.TestCase):
@@ -54,7 +53,8 @@ class TestRelevantFeatureLearner(unittest.TestCase):
             for inp_, orc_ in inputs
         }
         self.test_inputs = {
-            inp_.update_features(self.collector.collect_features(inp_)) for inp_ in parsed_inputs
+            inp_.update_features(self.collector.collect_features(inp_))
+            for inp_ in parsed_inputs
         }
 
     def test_reachability_map(self):
@@ -122,7 +122,6 @@ class TestRelevantFeatureLearner(unittest.TestCase):
 
         self.assertEqual(reachability_map, expected_reachability_map)
 
-
     def test_relevant_feature_learner(self):
         feature_learner = feature_extractor.DecisionTreeRelevanceLearner(
             self.grammar, prune_parent_correlation=False
@@ -132,22 +131,21 @@ class TestRelevantFeatureLearner(unittest.TestCase):
 
         expected_relevant_features = {
             NumericFeature(NonTerminal("<number>")),
-            DerivationFeature(NonTerminal("<function>"), TerminalNode(Terminal("sqrt")), self.grammar),
-            DerivationFeature(NonTerminal("<maybeminus>"), TerminalNode(Terminal("-")), self.grammar),
+            DerivationFeature(
+                NonTerminal("<function>"), TerminalNode(Terminal("sqrt")), self.grammar
+            ),
+            DerivationFeature(
+                NonTerminal("<maybeminus>"), TerminalNode(Terminal("-")), self.grammar
+            ),
         }
 
         # Check that all expected features are identified as either relevant or correlating.
         self.assertTrue(
-            all(
-                feature in relevant_features
-                for feature in expected_relevant_features
-            )
+            all(feature in relevant_features for feature in expected_relevant_features)
         )
 
     def test_empty_input_set(self):
-        feature_learner = feature_extractor.DecisionTreeRelevanceLearner(
-            self.grammar
-        )
+        feature_learner = feature_extractor.DecisionTreeRelevanceLearner(self.grammar)
         test_inputs: Set[FandangoInput] = set()
         with self.assertRaises(ValueError):
             _ = feature_learner.learn(test_inputs)
@@ -158,12 +156,18 @@ class TestRelevantFeatureLearner(unittest.TestCase):
         )
 
         relevant_features = feature_learner.learn(self.test_inputs)
-        relevant_features_non_terminals = {feature.non_terminal for feature in relevant_features}
-        excluded_non_terminal_strings = set(self.grammar.rules.keys()).difference(relevant_features_non_terminals)
+        relevant_features_non_terminals = {
+            feature.non_terminal for feature in relevant_features
+        }
+        excluded_non_terminal_strings = set(self.grammar.rules.keys()).difference(
+            relevant_features_non_terminals
+        )
 
         expected_relevant_features = {
             NumericFeature(NonTerminal("<number>")),
-            DerivationFeature(NonTerminal("<function>"), TerminalNode(Terminal("sqrt")), self.grammar),
+            DerivationFeature(
+                NonTerminal("<function>"), TerminalNode(Terminal("sqrt")), self.grammar
+            ),
             # DerivationFeature(NonTerminal("<maybeminus>"), TerminalNode(Terminal("-")), self.grammar),
         }
 
@@ -177,28 +181,42 @@ class TestRelevantFeatureLearner(unittest.TestCase):
             all(
                 feature.non_terminal not in excluded_non_terminal_strings
                 for feature in expected_relevant_features
-            ), f"Expected relevant features: {expected_relevant_features}, but got: {relevant_features}"
+            ),
+            f"Expected relevant features: {expected_relevant_features}, but got: {relevant_features}",
         )
 
     def test_learner_identifies_expected_features_with_large_data(self):
+        random.seed(0)
         feature_learner = feature_extractor.DecisionTreeRelevanceLearner(
             self.grammar, prune_parent_correlation=False
         )
 
         test_inputs = {self.grammar.fuzz() for _ in range(100)}
-        parsed_inputs = {FandangoInput(tree=inp, oracle=calculator_oracle(str(inp))) for inp in test_inputs}
+        parsed_inputs = {
+            FandangoInput(tree=inp, oracle=calculator_oracle(str(inp)))
+            for inp in test_inputs
+        }
         feature_inputs = {
-            inp_.update_features(self.collector.collect_features(inp_)) for inp_ in parsed_inputs
+            inp_.update_features(self.collector.collect_features(inp_))
+            for inp_ in parsed_inputs
         }
 
         relevant_features = feature_learner.learn(feature_inputs)
-        relevant_features_non_terminals = {feature.non_terminal for feature in relevant_features}
-        excluded_non_terminal_strings = set(self.grammar.rules.keys()).difference(relevant_features_non_terminals)
+        relevant_features_non_terminals = {
+            feature.non_terminal for feature in relevant_features
+        }
+        excluded_non_terminal_strings = set(self.grammar.rules.keys()).difference(
+            relevant_features_non_terminals
+        )
 
         expected_relevant_features = {
             NumericFeature(NonTerminal("<number>")),
-            DerivationFeature(NonTerminal("<function>"), TerminalNode(Terminal("sqrt")), self.grammar),
-            DerivationFeature(NonTerminal("<maybeminus>"), TerminalNode(Terminal("-")), self.grammar),
+            DerivationFeature(
+                NonTerminal("<function>"), TerminalNode(Terminal("sqrt")), self.grammar
+            ),
+            DerivationFeature(
+                NonTerminal("<maybeminus>"), TerminalNode(Terminal("-")), self.grammar
+            ),
         }
 
         self.assertNotEqual(
@@ -211,7 +229,8 @@ class TestRelevantFeatureLearner(unittest.TestCase):
             all(
                 feature.non_terminal not in excluded_non_terminal_strings
                 for feature in expected_relevant_features
-            ), f"Expected relevant features: {expected_relevant_features}, but got: {relevant_features}"
+            ),
+            f"Expected relevant features: {expected_relevant_features}, but got: {relevant_features}",
         )
 
     # def test_relevant_feature_learner_middle(self):

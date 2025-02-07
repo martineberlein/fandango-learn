@@ -8,7 +8,6 @@ from fandangoLearner.refinement.generator import FandangoGenerator
 from fandangoLearner.refinement.engine import (
     SingleEngine,
     ParallelEngine,
-    ProcessBasedParallelEngine,
 )
 
 

@@ -2,15 +2,18 @@ import unittest
 import os
 import random
 
-from debugging_framework.input.oracle import OracleResult
 from fandango.language.symbol import NonTerminal
 from fandango.language.tree import DerivationTree
 
-from fandangoLearner.data.input import FandangoInput
+from fandangoLearner.data import FandangoInput, OracleResult
 from fandangoLearner.interface.fandango import parse_file
 from fandangoLearner.refinement.mutation import (
-    get_paths, get_subtree, MutationFuzzer, replace_subtree,
-    ReplaceRandomSubtreeOperator, SwapSubtreeOperator
+    get_paths,
+    get_subtree,
+    MutationFuzzer,
+    replace_subtree,
+    ReplaceRandomSubtreeOperator,
+    SwapSubtreeOperator,
 )
 
 
@@ -41,14 +44,22 @@ class TestMutationFuzzer(unittest.TestCase):
         inp = self.test_inputs[-1]
 
         result = get_paths(inp.tree)
-        self.assertGreater(len(result), 0, "get_paths() should return at least one path.")
+        self.assertGreater(
+            len(result), 0, "get_paths() should return at least one path."
+        )
 
-        ps = [path for path, subtree in result if isinstance(subtree.symbol, NonTerminal)]
-        self.assertGreater(len(ps), 0, "There should be at least one non-terminal path.")
+        ps = [
+            path for path, subtree in result if isinstance(subtree.symbol, NonTerminal)
+        ]
+        self.assertGreater(
+            len(ps), 0, "There should be at least one non-terminal path."
+        )
 
         subtree = get_subtree(inp.tree, ps[0])
         self.assertIsNotNone(subtree, "Subtree should not be None.")
-        self.assertIsInstance(subtree, DerivationTree, "Expected subtree to be a DerivationTree.")
+        self.assertIsInstance(
+            subtree, DerivationTree, "Expected subtree to be a DerivationTree."
+        )
 
     def test_mutation_fuzzer_instantiation(self):
         mutation_fuzzer = MutationFuzzer(self.grammar, self.test_inputs, None)
@@ -57,7 +68,11 @@ class TestMutationFuzzer(unittest.TestCase):
 
     def test_replace_sub_tree(self):
         inp = self.test_inputs[-1]
-        ps = [path for path, subtree in get_paths(inp.tree) if isinstance(subtree.symbol, NonTerminal)]
+        ps = [
+            path
+            for path, subtree in get_paths(inp.tree)
+            if isinstance(subtree.symbol, NonTerminal)
+        ]
         self.assertGreater(len(ps), 0, "No valid non-terminal paths found.")
 
         inp_ = self.test_inputs[-2]
@@ -69,14 +84,20 @@ class TestMutationFuzzer(unittest.TestCase):
 
     def test_subtree_fuzzer(self):
         test_inputs = [self.grammar.fuzz("<number>") for _ in range(10)]
-        self.assertGreater(len(test_inputs), 0, "Fuzzer should generate non-empty inputs.")
+        self.assertGreater(
+            len(test_inputs), 0, "Fuzzer should generate non-empty inputs."
+        )
         for inp in test_inputs:
             self.assertIsInstance(inp, DerivationTree)
 
     def test_random_subtree_mutator(self):
         mutator = ReplaceRandomSubtreeOperator(self.grammar)
         inp = self.test_inputs[0]
-        all_paths = [path for path, subtree in get_paths(inp.tree) if isinstance(subtree.symbol, NonTerminal)]
+        all_paths = [
+            path
+            for path, subtree in get_paths(inp.tree)
+            if isinstance(subtree.symbol, NonTerminal)
+        ]
         self.assertGreater(len(all_paths), 0, "No valid non-terminal paths found.")
 
         new_tree = mutator.replace(inp.tree, all_paths[3])
@@ -86,7 +107,11 @@ class TestMutationFuzzer(unittest.TestCase):
     def test_swap_subtree_mutator(self):
         mutator = SwapSubtreeOperator()
         inp = FandangoInput.from_str(self.grammar, "sqrt(123)")
-        all_paths = [path for path, subtree in get_paths(inp.tree) if isinstance(subtree.symbol, NonTerminal)]
+        all_paths = [
+            path
+            for path, subtree in get_paths(inp.tree)
+            if isinstance(subtree.symbol, NonTerminal)
+        ]
         self.assertGreater(len(all_paths), 0, "No valid non-terminal paths found.")
 
         new_tree = mutator.replace(inp.tree, all_paths[9])
@@ -106,7 +131,11 @@ class TestMutationFuzzer(unittest.TestCase):
         def oracle(inp_: FandangoInput):
             t = inp_.tree
             num_t = t.find_all_trees(NonTerminal("<number>"))[0]
-            return OracleResult.FAILING if -20 < int(str(num_t)) <= -1 else OracleResult.PASSING
+            return (
+                OracleResult.FAILING
+                if -20 < int(str(num_t)) <= -1
+                else OracleResult.PASSING
+            )
 
         mutation_fuzzer = MutationFuzzer(self.grammar, [positive_input], oracle)
         generator = mutation_fuzzer.run()
@@ -115,9 +144,13 @@ class TestMutationFuzzer(unittest.TestCase):
         for inp in list(generator):
             print(inp)
             results.append(inp)
-        self.assertGreater(len(results), 0, "Mutation fuzzer should generate at least one output.")
-        self.assertTrue(all(isinstance(inp, FandangoInput) for inp in results),
-                        "All outputs should be FandangoInput instances.")
+        self.assertGreater(
+            len(results), 0, "Mutation fuzzer should generate at least one output."
+        )
+        self.assertTrue(
+            all(isinstance(inp, FandangoInput) for inp in results),
+            "All outputs should be FandangoInput instances.",
+        )
 
 
 if __name__ == "__main__":

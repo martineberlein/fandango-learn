@@ -1,10 +1,10 @@
-from typing import Tuple, Union, List, Set
 from abc import ABC, abstractmethod
+from typing import Tuple, Union, List, Set
 import itertools
 
 from fandango.constraints.base import ConjunctionConstraint, DisjunctionConstraint
-from fandangoLearner.learning.candidate import FandangoConstraintCandidate, CandidateSet
 
+from fandangoLearner.learning.candidate import FandangoConstraintCandidate, CandidateSet
 from fandangoLearner.logger import LOGGER
 
 
@@ -38,9 +38,7 @@ class ConjunctionProcessor(CombinationProcessor):
         super().__init__(min_precision, min_recall)
         self.max_conjunction_size = max_conjunction_size
 
-    def process(
-        self, candidates: CandidateSet
-    ) -> Set[FandangoConstraintCandidate]:
+    def process(self, candidates: CandidateSet) -> Set[FandangoConstraintCandidate]:
         """
         Iterates of all candidates to find the best conjunctions.
         :param candidates:
@@ -127,9 +125,7 @@ class DisjunctionProcessor(CombinationProcessor):
             RecallThresholdValidation(min_recall=min_recall)
         )
 
-    def process(
-        self, candidates: CandidateSet
-    ) -> Set[FandangoConstraintCandidate]:
+    def process(self, candidates: CandidateSet) -> Set[FandangoConstraintCandidate]:
         """
         Iterates over all candidates to find the best disjunctions.
         :param candidates:
@@ -153,7 +149,12 @@ class DisjunctionProcessor(CombinationProcessor):
 
             if self.is_new_disjunction_valid(disjunction, combination):
                 print("Before:", [str(c) for c in combination])
-                print("Adding disjunction: ", disjunction, " with precision: ", disjunction.precision())
+                print(
+                    "Adding disjunction: ",
+                    disjunction,
+                    " with precision: ",
+                    disjunction.precision(),
+                )
                 disjunction_candidates.add(disjunction)
 
         LOGGER.info("Found %s valid disjunctions", len(disjunction_candidates))

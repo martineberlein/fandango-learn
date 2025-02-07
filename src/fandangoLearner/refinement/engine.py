@@ -1,6 +1,5 @@
-import logging
-from typing import List, Set, Type
-from queue import Queue, Empty
+from typing import List
+from queue import Queue
 from threading import Thread
 from multiprocessing import Process, Queue as ProcessQueue, Manager
 

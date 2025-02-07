@@ -3,11 +3,11 @@ import time
 import random
 import os
 
-from debugging_framework.input.oracle import OracleResult
 from fandango.language.symbol import NonTerminal
 
+from fandangoLearner.data import OracleResult
 from fandangoLearner.logger import LoggerLevel
-from fandangoLearner.interface.fandango import parse_file
+from fandangoLearner.interface import parse
 from fandangoLearner.refinement.core import FandangoRefinement
 from evaluation.evaluation_helper import format_results
 
@@ -26,7 +26,7 @@ def evaluate_calculator_refinement(logger_level=LoggerLevel.CRITICAL, random_see
     random.seed(random_seed)
     dirname = os.path.dirname(__file__)
     filename = os.path.join(dirname, "calculator.fan")
-    grammar, _ = parse_file(filename)
+    grammar, _ = parse(filename)
 
     initial_inputs_strings = {
         ("sqrt(-900)", True),
