@@ -11,19 +11,22 @@ from fandango.language.parse import (
 
 def parse(
     file_path, disable_logging=True, use_cache=True, **kwargs
-) -> tuple[Grammar | None, list[str]]:
+) -> tuple[Grammar | None, list[Constraint]]:
     """
     Wrapper for the parse function from fandango.language.parse
     """
     if disable_logging:
         logging.getLogger("fandango").disabled = True
     file = open(file_path, "r")
-    return fandango_parse(file, use_stdlib=False, use_cache=use_cache, **kwargs)
+    grammar, constraints = fandango_parse(file, use_stdlib=False, use_cache=use_cache, **kwargs)
+    assert isinstance(constraints, list), "Expected a list of constraints"
+    assert all(isinstance(constraint, Constraint) for constraint in constraints), "Expected a list of constraints"
+    return grammar, constraints
 
 
 def parse_file(
     *args, disable_logging=True, **kwargs
-) -> tuple[Grammar | None, list[str]]:
+) -> tuple[Grammar | None, list[Constraint]]:
     """
     Wrapper for the parse_file function from fandango.language.parse
     """
@@ -45,7 +48,7 @@ def parse_constraint(constraint: str, disable_logging=True) -> Constraint:
 
 def parse_contents(
     content: str, *args, disable_logging=True, **kwargs
-) -> tuple[Grammar | None, list[str]]:
+) -> tuple[Grammar | None, list[Constraint]]:
     """
     Wrapper for the parse_contents function from fandango.language.parse
     """
