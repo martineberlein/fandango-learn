@@ -11,14 +11,12 @@ class TestConjunctionProcessor(unittest.TestCase):
         filename = os.path.join(dirname, "resources", "calculator.fan")
         self.grammar, self.constraints = parse(filename)
 
-
     def test_grammar_parsing(self):
         visitor = FuzzingBookGrammarTransformer()
 
         for non_term, node in self.grammar.rules.items():
             expansions = visitor.visit(node)
             visitor.grammar_[str(non_term)] = expansions
-
 
         for rule in visitor.grammar_:
             print(rule, visitor.grammar_[rule])

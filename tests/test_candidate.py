@@ -1,10 +1,9 @@
 import unittest
 
-from debugging_framework.input.oracle import OracleResult
 from fandango.constraints.base import ConjunctionConstraint
 from fandango.evolution.algorithm import Fandango
 
-from fandangoLearner.data.input import FandangoInput
+from fandangoLearner.data import FandangoInput, OracleResult
 from fandangoLearner.language.constraints import NegationConstraint
 from fandangoLearner.learning.candidate import FandangoConstraintCandidate, CandidateSet
 from fandangoLearner.interface.fandango import parse_contents, parse_constraint
@@ -241,9 +240,13 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
         self.assertEqual(candidate.cache[self.passing_input], False)
 
         negated_candidate = NegationConstraint(candidate.constraint)
-        candidate2 = FandangoConstraintCandidate(parse_constraint("str(<function>) == 'sqrt';"))
-        test_constraint = ConjunctionConstraint([negated_candidate, candidate2.constraint])
-        #print(negated_candidate.check(self.failing_input.tree))
+        candidate2 = FandangoConstraintCandidate(
+            parse_constraint("str(<function>) == 'sqrt';")
+        )
+        test_constraint = ConjunctionConstraint(
+            [negated_candidate, candidate2.constraint]
+        )
+        # print(negated_candidate.check(self.failing_input.tree))
         print(test_constraint)
 
         # initial = []
@@ -254,7 +257,7 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
             constraints=[negated_candidate],
             desired_solutions=100,
             random_seed=1,
-            #initial_population=initial,
+            # initial_population=initial,
         )
         results = fandango.evolve()
         solutions = set()
@@ -262,6 +265,7 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
             solutions.add(FandangoInput(inp))
 
         print(solutions)
+
 
 if __name__ == "__main__":
     unittest.main()

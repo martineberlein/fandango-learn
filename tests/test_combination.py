@@ -1,13 +1,15 @@
 import unittest
-from pathlib import Path
 import os
 
 from fandango.constraints.base import DisjunctionConstraint
 
 from fandangoLearner.data.input import FandangoInput
-from fandangoLearner.interface.fandango import parse_file, parse_constraint, parse
+from fandangoLearner.interface.fandango import parse_constraint, parse
 from fandangoLearner.learning.candidate import FandangoConstraintCandidate
-from fandangoLearner.learning.combination import ConjunctionProcessor, DisjunctionProcessor
+from fandangoLearner.learning.combination import (
+    ConjunctionProcessor,
+    DisjunctionProcessor,
+)
 from fandangoLearner.learning.candidate import CandidateSet
 
 
@@ -81,7 +83,6 @@ class TestConjunctionProcessor(unittest.TestCase):
         self.assertEqual(len(result), 1)
         for cand in result:
             self.assertTrue(isinstance(cand.constraint, DisjunctionConstraint))
-
 
 
 if __name__ == "__main__":

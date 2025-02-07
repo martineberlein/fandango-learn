@@ -14,7 +14,8 @@ from fandangoLearner.reduction.feature_class import (
     ExistenceFeature,
     DerivationFeature,
     NumericFeature,
-    LengthFeature, FeatureVector,
+    LengthFeature,
+    FeatureVector,
 )
 
 
@@ -439,9 +440,7 @@ class FeatureExtraction(unittest.TestCase):
             self.assertEqual(feature_vector.features, expected_feature_vectors)
 
     def test_features_calculator(self):
-        grammar, _ = parse(
-            os.path.join(self.dirname, "resources", "calculator.fan")
-        )
+        grammar, _ = parse(os.path.join(self.dirname, "resources", "calculator.fan"))
 
         factory = FeatureFactory(grammar)
         features = factory.build()
