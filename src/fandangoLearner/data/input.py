@@ -10,8 +10,8 @@ from typing import Generator, Optional, Final
 
 from fandango.language.tree import DerivationTree
 from fandango.language.grammar import Grammar
-from debugging_framework.input.oracle import OracleResult
 
+from fandangoLearner.data.oracle import OracleResult
 from fandangoLearner.reduction.feature_class import FeatureVector
 
 
