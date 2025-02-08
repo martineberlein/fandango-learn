@@ -1,9 +1,5 @@
-import importlib.resources as pkg_resources
+from learner import FandangoLearner
 
+__version__ = "0.1.0"
 
-def get_pattern_file_path():
-    return pkg_resources.files("fandango-learn.resources") / "patterns.toml"
-
-
-def get_islearn_pattern_file_path():
-    return pkg_resources.files("fandango-learn.resources") / "patterns_islearn.toml"
+__all__ = ["FandangoLearner"]
