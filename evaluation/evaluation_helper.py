@@ -2,10 +2,9 @@ import random
 from typing import List, Callable, Set
 import time
 
-from debugging_framework.input.oracle import OracleResult
 
 from fandangoLearner.learning.candidate import FandangoConstraintCandidate
-from fandangoLearner.data.input import FandangoInput
+from fandangoLearner.data import FandangoInput, OracleResult
 from fandangoLearner.learning.metric import RecallPriorityFitness
 
 
