@@ -131,19 +131,53 @@ We will use **Avicenna** to provide this feedback loop.
 
 ## Install, Development, Testing
 
-### Install
+### Installation
 
-We recommend installing **FandangoLeaner** inside a virtual environment (virtualenv):
+To use **FandangoLearn**, you need to install both **FandangoFuzzer** (from its `learner` branch) and **FandangoLearn**. We recommend using a dedicated virtual environment:
 
-```shell
+```bash
 python3.12 -m venv venv
 source venv/bin/activate
+pip install --upgrade pip
 ```
 
-```shell
+Now, install **FandangoFuzzer** from the `learner` branch followed by **FandangoLearn**:
+
+```bash
+pip install git+https://github.com/fandango-fuzzer/fandango.git@learner
+pip install fandangolearn
+```
+
+### Development
+
+If you plan to extend or evaluate **FandangoLearn** locally, clone this repository:
+
+```bash
+git clone https://github.com/fandango-fuzzer/fandango-learn.git
+cd fandango-learn
+```
+
+Create and activate a virtual environment (recommended):
+
+```bash
+python3.12 -m venv venv
+source venv/bin/activate
+
 pip install --upgrade pip
+pip install -r requirements.txt
 pip install -e .
 ```
+
+### Testing
+
+To install the test dependencies and run the tests:
+
+```bash
+make install-tests
+make tests
+```
+
+That’s it! You’re now set up to use, develop, and test **FandangoLearn**. If you encounter any issues or have suggestions, feel free to open an issue or submit a pull request.
 
 ## Notebooks
 
