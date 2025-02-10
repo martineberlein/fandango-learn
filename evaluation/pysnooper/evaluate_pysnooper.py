@@ -5,10 +5,10 @@ import time
 
 from fandango.language.symbol import NonTerminal
 
-from fandangoLearner.data.input import FandangoInput
-from fandangoLearner.logger import LoggerLevel
-from fandangoLearner.learner import FandangoLearner
-from fandangoLearner.interface.fandango import parse_file
+from fdlearn.data.input import FandangoInput
+from fdlearn.logger import LoggerLevel
+from fdlearn.learner import FandangoLearner
+from fdlearn.interface.fandango import parse_file
 from evaluation.evaluation_helper import format_results
 
 logging.getLogger("tests4py").setLevel(logging.CRITICAL)

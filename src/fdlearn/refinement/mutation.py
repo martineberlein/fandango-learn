@@ -8,8 +8,8 @@ from fandango.language.grammar import Grammar
 from fandango.language.symbol import NonTerminal
 from fandango.language.tree import DerivationTree
 
-from fandangoLearner.data import FandangoInput, OracleResult
-from fandangoLearner.types import OracleType
+from fdlearn.data import FandangoInput, OracleResult
+from fdlearn.types import OracleType
 
 
 LOGGER = logging.getLogger("fandango-mutation-fuzzer")

@@ -3,10 +3,10 @@ import unittest
 from fandango.constraints.base import ConjunctionConstraint
 from fandango.evolution.algorithm import Fandango
 
-from fandangoLearner.data import FandangoInput, OracleResult
-from fandangoLearner.language.constraints import NegationConstraint
-from fandangoLearner.learning.candidate import FandangoConstraintCandidate, CandidateSet
-from fandangoLearner.interface.fandango import parse_contents, parse_constraint
+from fdlearn.data import FandangoInput, OracleResult
+from fdlearn.language.constraints import NegationConstraint
+from fdlearn.learning.candidate import FandangoConstraintCandidate, CandidateSet
+from fdlearn.interface.fandango import parse_contents, parse_constraint
 
 
 class TestFandangoConstraintCandidate(unittest.TestCase):

@@ -7,8 +7,8 @@ from fandango.constraints.base import (
     DisjunctionConstraint,
 )
 
-from fandangoLearner.data import FandangoInput, OracleResult
-from fandangoLearner.language.constraints import NegationConstraint
+from fdlearn.data import FandangoInput, OracleResult
+from fdlearn.language.constraints import NegationConstraint
 
 
 class ConstraintCandidate(ABC):

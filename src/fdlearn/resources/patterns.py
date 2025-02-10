@@ -5,8 +5,8 @@ from fandango.constraints import predicates
 from fandango.language.search import RuleSearch
 from fandango.language.symbol import NonTerminal
 
-from fandangoLearner.interface.fandango import parse_file, parse_constraint
-from fandangoLearner.data import FandangoInput
+from fdlearn.interface.fandango import parse_file, parse_constraint
+from fdlearn.data import FandangoInput
 
 
 class Pattern:

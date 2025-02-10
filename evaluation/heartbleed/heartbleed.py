@@ -3,10 +3,10 @@ import os
 import random
 
 from fandango.language.symbol import NonTerminal
-from fandangoLearner.learner import FandangoLearner
-from fandangoLearner.data.input import FandangoInput
-from fandangoLearner.logger import LoggerLevel
-from fandangoLearner.interface.fandango import parse_file
+from fdlearn.learner import FandangoLearner
+from fdlearn.data.input import FandangoInput
+from fdlearn.logger import LoggerLevel
+from fdlearn.interface.fandango import parse_file
 
 from evaluation.heartbleed.heartbeat import (
     initial_inputs as heartbleed_inputs,

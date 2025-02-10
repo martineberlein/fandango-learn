@@ -1,6 +1,6 @@
 from fandango.constraints.base import *
 
-from fandangoLearner.language.constraints import NegationConstraint
+from fdlearn.language.constraints import NegationConstraint
 
 
 class NormalizationTransformer(ConstraintTransformer):

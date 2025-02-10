@@ -11,9 +11,9 @@ from shap import TreeExplainer, summary_plot
 
 from fandango.language.grammar import Grammar, NonTerminal
 
-from fandangoLearner.data import FandangoInput, OracleResult
-from fandangoLearner.reduction.feature_class import get_reachability_map
-from fandangoLearner.reduction.feature_collector import (
+from fdlearn.data import FandangoInput, OracleResult
+from fdlearn.reduction.feature_class import get_reachability_map
+from fdlearn.reduction.feature_collector import (
     Feature,
     FeatureFactory,
     DEFAULT_FEATURE_TYPES,

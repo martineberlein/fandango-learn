@@ -11,8 +11,8 @@ from typing import Generator, Optional, Final
 from fandango.language.tree import DerivationTree
 from fandango.language.grammar import Grammar
 
-from fandangoLearner.data.oracle import OracleResult
-from fandangoLearner.reduction.feature_class import FeatureVector
+from fdlearn.data.oracle import OracleResult
+from fdlearn.reduction.feature_class import FeatureVector
 
 
 class Input(ABC):

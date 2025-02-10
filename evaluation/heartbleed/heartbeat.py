@@ -4,7 +4,7 @@ import random
 import string
 from typing import Union
 
-from fandangoLearner.data import FandangoInput as Input, OracleResult
+from fdlearn.data import FandangoInput as Input, OracleResult
 
 
 

@@ -2,10 +2,10 @@ import time
 import os
 import random
 
-from fandangoLearner.interface.fandango import parse_file
+from fdlearn.interface.fandango import parse_file
 from fandango.language.symbol import NonTerminal
-from fandangoLearner.refinement.core import FandangoRefinement
-from fandangoLearner.logger import LoggerLevel
+from fdlearn.refinement.core import FandangoRefinement
+from fdlearn.logger import LoggerLevel
 
 from debugging_benchmark.middle.middle import MiddleBenchmarkRepository
 from evaluation.evaluation_helper import format_results

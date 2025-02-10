@@ -11,7 +11,7 @@ from fandango.language.grammar import (
     Alternative,
 )
 
-from fandangoLearner.reduction.transformer import (
+from fdlearn.reduction.transformer import (
     DerivableCharsetVisitor,
     NonTerminalVisitor,
     ExpansionVisitor,

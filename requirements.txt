@@ -1,0 +1,1 @@
+fandango-fuzzer @ git+https://github.com/fandango-fuzzer/fandango.git@learner

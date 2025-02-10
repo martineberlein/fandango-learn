@@ -6,8 +6,8 @@ from fandango.language.grammar import Grammar
 from fandango.language.symbol import NonTerminal, Symbol
 from fandango.language.tree import DerivationTree
 
-from fandangoLearner.data import FandangoInput
-from fandangoLearner.reduction.feature_class import (
+from fdlearn.data import FandangoInput
+from fdlearn.reduction.feature_class import (
     Feature,
     ExistenceFeature,
     DerivationFeature,

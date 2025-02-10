@@ -1,5 +1,5 @@
-from fandangoLearner.learner import FandangoLearner, NonTerminal, FandangoInput
-from fandangoLearner.interface.fandango import parse_contents
+from fdlearn.learner import FandangoLearner, NonTerminal, FandangoInput
+from fdlearn.interface.fandango import parse_contents
 
 
 grammar = """

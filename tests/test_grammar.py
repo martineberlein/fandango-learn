@@ -1,8 +1,8 @@
 import unittest
 import os
 
-from fandangoLearner.interface.fandango import parse
-from fandangoLearner.reduction.transformer import FuzzingBookGrammarTransformer
+from fdlearn.interface.fandango import parse
+from fdlearn.reduction.transformer import FuzzingBookGrammarTransformer
 
 
 class TestConjunctionProcessor(unittest.TestCase):

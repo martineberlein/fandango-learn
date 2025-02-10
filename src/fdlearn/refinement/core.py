@@ -6,13 +6,13 @@ import logging
 from fandango.language.grammar import Grammar
 from fandango.language.symbol import NonTerminal
 
-from fandangoLearner.types import OracleType
-from fandangoLearner.data.input import FandangoInput
-from fandangoLearner.core import ConstraintCandidateLearner
-from fandangoLearner.learner import FandangoLearner
-from fandangoLearner.learning.candidate import FandangoConstraintCandidate
-from fandangoLearner.learning.metric import FitnessStrategy, RecallPriorityStringLengthFitness
-from fandangoLearner.logger import LoggerLevel, LOGGER
+from fdlearn.types import OracleType
+from fdlearn.data.input import FandangoInput
+from fdlearn.core import ConstraintCandidateLearner
+from fdlearn.learner import FandangoLearner
+from fdlearn.learning.candidate import FandangoConstraintCandidate
+from fdlearn.learning.metric import FitnessStrategy, RecallPriorityStringLengthFitness
+from fdlearn.logger import LoggerLevel, LOGGER
 from .generator import Generator, FandangoGrammarGenerator, FandangoGenerator
 from .runner import SingleExecutionHandler, ExecutionHandler
 from .engine import Engine, ParallelEngine

@@ -6,8 +6,8 @@ from typing import Set, Union, List
 from fandango.language.grammar import Grammar
 from fandango.evolution.algorithm import Fandango
 
-from fandangoLearner.data.input import FandangoInput
-from fandangoLearner.learning.candidate import FandangoConstraintCandidate
+from fdlearn.data.input import FandangoInput
+from fdlearn.learning.candidate import FandangoConstraintCandidate
 
 
 class Generator(ABC):

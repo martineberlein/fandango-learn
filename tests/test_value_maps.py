@@ -3,9 +3,9 @@ import os
 
 from fandango.language.symbol import NonTerminal
 
-from fandangoLearner.data.input import FandangoInput
-from fandangoLearner.interface.fandango import parse_file
-from fandangoLearner.learning.instantiation import ValueMaps
+from fdlearn.data.input import FandangoInput
+from fdlearn.interface.fandango import parse_file
+from fdlearn.learning.instantiation import ValueMaps
 
 
 class TestConjunctionProcessor(unittest.TestCase):
