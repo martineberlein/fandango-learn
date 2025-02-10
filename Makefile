@@ -90,3 +90,9 @@ experiment experiments:
 
 clean-pip:
 	$(PIP) freeze | xargs $(PIP) uninstall -y
+
+build-docker:
+	docker build -t fandango-learn .
+
+run-docker:
+	docker run -it fandango-learn /bin/bash
