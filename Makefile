@@ -87,3 +87,6 @@ evaluate evaluation:
 
 experiment experiments:
 	$(PYTHON) -m evaluation.experiments.run_experiments
+
+clean-pip:
+	$(PIP) freeze | xargs $(PIP) uninstall -y
