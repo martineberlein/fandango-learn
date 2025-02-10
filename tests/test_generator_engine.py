@@ -1,11 +1,11 @@
 import unittest
 import os
 
-from fandangoLearner.data.input import FandangoInput
-from fandangoLearner.interface.fandango import parse, parse_constraint
-from fandangoLearner.learning.candidate import FandangoConstraintCandidate
-from fandangoLearner.refinement.generator import FandangoGenerator
-from fandangoLearner.refinement.engine import (
+from fdlearn.data.input import FandangoInput
+from fdlearn.interface.fandango import parse, parse_constraint
+from fdlearn.learning.candidate import FandangoConstraintCandidate
+from fdlearn.refinement.generator import FandangoGenerator
+from fdlearn.refinement.engine import (
     SingleEngine,
     ParallelEngine,
 )
