@@ -32,7 +32,7 @@ We start by defining the grammar for our input language.
 This example focuses on arithmetic expressions using trigonometric and square root functions.
 
 ```python
-from fandangoLearner.interface.fandango import parse_contents
+from fdlearn.interface.fandango import parse_contents
 
 grammar = """
 <start> ::= <arithexp>;
@@ -66,7 +66,7 @@ initial_inputs = {
 Convert inputs to FandangoInput objects
 
 ```python
-from fandangoLearner.learner import FandangoInput
+from fdlearn.learner import FandangoInput
 
 initial_inputs = {
   FandangoInput.from_str(grammar, inp, oracle)
@@ -78,15 +78,15 @@ initial_inputs = {
 
 We specify the non-terminals in the grammar that are likely related to the program's failure behavior.
 This step is optional but can help focus the learning process on specific parts of the grammar.
-Later, we will see that **Avicenna** can automatically learn relevant non-terminals. 
+Later, we will see that **Avicenna** can automatically learn relevant non-terminals.
 
 ```python
-from fandangoLearner.learner import NonTerminal
+from fdlearn.learner import NonTerminal
 
 relevant_non_terminals = {
-    NonTerminal("<number>"),
-    NonTerminal("<maybeminus>"),
-    NonTerminal("<function>"),
+  NonTerminal("<number>"),
+  NonTerminal("<maybeminus>"),
+  NonTerminal("<function>"),
 }
 ```
 
@@ -95,13 +95,13 @@ relevant_non_terminals = {
 Using the `FandangoLearner`, we learn constraints that explain why certain inputs fail.
 
 ```python
-from fandangoLearner.learner import FandangoLearner
+from fdlearn.learner import FandangoLearner
 
 learner = FandangoLearner(grammar)
 
 learned_constraints = learner.learn_constraints(
-    initial_inputs,
-    relevant_non_terminals=relevant_non_terminals
+  initial_inputs,
+  relevant_non_terminals=relevant_non_terminals
 )
 ```
 
