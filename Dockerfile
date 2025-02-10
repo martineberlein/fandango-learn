@@ -1,9 +1,9 @@
 # --------------------------------------------------
-# Stage 1: Build Stage
+# Stage 1: Builder
 # --------------------------------------------------
 FROM python:3.11-slim AS builder
 
-WORKDIR /app
+WORKDIR /builder
 
 # Installing system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -15,38 +15,40 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel build
 
-COPY pyproject.toml .
-COPY README.md .
+# --------------------------------------------------
+# BUILD your Python project
+# --------------------------------------------------
 
-COPY . /app
+WORKDIR /builder/fandango-learn
 
-RUN python -m build
+COPY . /builder/fandango-learn
+
+RUN python -m build --wheel --outdir /builder/dist
 
 # --------------------------------------------------
-# Stage 2: Final Runtime Stage
+# Stage 2: Final Runtime
 # --------------------------------------------------
 FROM python:3.11-slim
 
 WORKDIR /app
 
+# (Optional) Install minimal system libs at runtime (e.g. libgomp1 for LightGBM, etc.)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
     git \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/dist/*.whl /tmp/
+COPY --from=builder /builder/dist /tmp/dist
 
 COPY requirements.txt /tmp/requirements.txt
 
 # Installing package wheel + the runtime dependencies
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir /tmp/*.whl \
+    && pip install --no-cache-dir /tmp/dist/*.whl \
     && pip install --no-cache-dir -r /tmp/requirements.txt \
     && rm -rf /tmp/*.whl /tmp/requirements.txt
 
 COPY ./doc/demo.py /app/demo.py
-
-COPY ./evaluation /app/evaluation
 
 CMD ["tail", "-f", "/dev/null"]
