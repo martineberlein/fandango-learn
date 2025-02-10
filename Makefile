@@ -82,7 +82,7 @@ uninstall:
 # python -m evaluation.vs_isla.run_evaluation
 .PHONY: evaluation evaluate experiment experiments
 
-evaluate evaluation:
+evaluation evaluate:
 	$(PYTHON) -m evaluation.run_evaluation
 
 experiment experiments:
@@ -96,3 +96,6 @@ build-docker:
 
 run-docker:
 	docker run -it fandango-learn /bin/bash
+
+run-docker-eval:
+	docker run -it fandango-learn-eval /bin/bash
