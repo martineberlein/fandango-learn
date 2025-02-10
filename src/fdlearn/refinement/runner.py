@@ -33,7 +33,7 @@ class BatchExecutionHandler(ExecutionHandler):
         results = self.oracle(test_inputs)
 
         return [
-            (inp, results[str(inp)]) for inp in test_inputs
+            (inp, results[inp]) for inp in test_inputs
         ]
 
     def label(self, test_inputs: Set[FandangoInput], **kwargs):
