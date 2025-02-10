@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Union, Set
 
-from fandangoLearner.data import FandangoInput, OracleResult
-from fandangoLearner.types import OracleType
+from fdlearn.data import FandangoInput, OracleResult
+from fdlearn.types import OracleType
 
 
 class ExecutionHandler(ABC):

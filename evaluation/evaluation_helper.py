@@ -4,9 +4,9 @@ import time
 
 from debugging_framework.input.oracle import OracleResult
 
-from fandangoLearner.learning.candidate import FandangoConstraintCandidate
-from fandangoLearner.data.input import FandangoInput
-from fandangoLearner.learning.metric import RecallPriorityFitness
+from fdlearn.learning.candidate import FandangoConstraintCandidate
+from fdlearn.data.input import FandangoInput
+from fdlearn.learning.metric import RecallPriorityFitness
 
 
 def print_constraints(

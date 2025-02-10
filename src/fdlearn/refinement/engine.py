@@ -3,8 +3,8 @@ from queue import Queue
 from threading import Thread
 from multiprocessing import Process, Queue as ProcessQueue, Manager
 
-from fandangoLearner.logger import LOGGER
-from fandangoLearner.learning.candidate import FandangoConstraintCandidate
+from fdlearn.logger import LOGGER
+from fdlearn.learning.candidate import FandangoConstraintCandidate
 from .generator import Generator
 
 

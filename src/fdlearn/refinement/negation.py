@@ -2,9 +2,9 @@ from itertools import product
 
 from fandango.constraints.base import ConjunctionConstraint, DisjunctionConstraint, ComparisonConstraint, Comparison
 
-from fandangoLearner.language.constraints import NegationConstraint
-from fandangoLearner.learning.candidate import FandangoConstraintCandidate
-from fandangoLearner.interface import parse_constraint
+from fdlearn.language.constraints import NegationConstraint
+from fdlearn.learning.candidate import FandangoConstraintCandidate
+from fdlearn.interface import parse_constraint
 
 
 def construct_negations(candidates: list[FandangoConstraintCandidate]):

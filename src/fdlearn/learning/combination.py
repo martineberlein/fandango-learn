@@ -4,8 +4,8 @@ import itertools
 
 from fandango.constraints.base import ConjunctionConstraint, DisjunctionConstraint
 
-from fandangoLearner.learning.candidate import FandangoConstraintCandidate, CandidateSet
-from fandangoLearner.logger import LOGGER
+from fdlearn.learning.candidate import FandangoConstraintCandidate, CandidateSet
+from fdlearn.logger import LOGGER
 
 
 class CombinationProcessor(ABC):

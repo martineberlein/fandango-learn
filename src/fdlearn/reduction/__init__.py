@@ -1,4 +1,4 @@
-from fandangoLearner.reduction.feature_class import (
+from fdlearn.reduction.feature_class import (
     Feature,
     ExistenceFeature,
     DerivationFeature,

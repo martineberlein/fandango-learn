@@ -6,9 +6,9 @@ from fandango.constraints.base import *
 from fandango.language.search import RuleSearch
 from fandango.language.symbol import NonTerminal
 
-from fandangoLearner.data import FandangoInput
-from fandangoLearner.learning.candidate import FandangoConstraintCandidate
-from fandangoLearner.logger import LOGGER
+from fdlearn.data import FandangoInput
+from fdlearn.learning.candidate import FandangoConstraintCandidate
+from fdlearn.logger import LOGGER
 
 
 class ValueMaps:
