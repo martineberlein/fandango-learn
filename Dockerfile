@@ -47,4 +47,6 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 COPY ./doc/demo.py /app/demo.py
 
+COPY ./evaluation /app/evaluation
+
 CMD ["tail", "-f", "/dev/null"]
