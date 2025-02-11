@@ -159,7 +159,7 @@ class Input(ABC):
 
 class FandangoInput(Input):
 
-    def __init__(self, tree: DerivationTree, oracle: OracleResult = None):
+    def __init__(self, tree: DerivationTree, oracle: Optional[OracleResult] = None):
         super().__init__(tree, oracle)
         self.hash = hash(self.tree)
 
