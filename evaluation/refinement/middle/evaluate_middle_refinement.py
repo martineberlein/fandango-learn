@@ -2,8 +2,10 @@ import time
 import os
 import random
 
-from fdlearn.interface.fandango import parse_file
 from fandango.language.symbol import NonTerminal
+
+from fdlearn.data import OracleResult
+from fdlearn.interface.fandango import parse_file
 from fdlearn.refinement.core import FandangoRefinement
 from fdlearn.logger import LoggerLevel
 
@@ -20,10 +22,12 @@ def evaluate_middle_refinement(logger_level=LoggerLevel.INFO, random_seed=1):
     programs = MiddleBenchmarkRepository().build()
     program = programs[0]  # Middle.1
 
-    # initial_inputs_failing, initial_inputs_passing = get_inputs(
-    #     grammar,
-    #     lambda x: program.oracle(x)[0],
-    # )
+    def oracle(x):
+        result = program.oracle(x)[0]
+        if result.is_failing():
+            return OracleResult.FAILING
+        return OracleResult.PASSING
+
     initial_inputs = set(program.get_initial_inputs())
 
     relevant_non_terminals = {
@@ -35,7 +39,7 @@ def evaluate_middle_refinement(logger_level=LoggerLevel.INFO, random_seed=1):
 
     fandango_re = FandangoRefinement(
         grammar=grammar,
-        oracle=lambda x: program.oracle(x)[0],
+        oracle=oracle,
         initial_inputs=initial_inputs,
         relevant_non_terminals=relevant_non_terminals,
         logger_level=logger_level,
@@ -48,7 +52,7 @@ def evaluate_middle_refinement(logger_level=LoggerLevel.INFO, random_seed=1):
     # round time
     time_in_seconds = round(end_time_learning - start_time_learning, 4)
     return format_results(
-        "MiddleRE", grammar, lambda x: program.oracle(x)[0], candidates, time_in_seconds
+        "MiddleRE", grammar, oracle, candidates, time_in_seconds
     )
 
 

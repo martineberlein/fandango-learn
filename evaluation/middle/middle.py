@@ -2,13 +2,14 @@ import time
 import os
 import random
 
+from fdlearn.data import OracleResult
 from fdlearn.interface.fandango import parse_file
 from fandango.language.symbol import NonTerminal
 from fdlearn.learner import FandangoLearner
 from fdlearn.logger import LoggerLevel
 
 from debugging_benchmark.middle.middle import MiddleBenchmarkRepository
-from evaluation.evaluation_helper import get_inputs, format_results
+from evaluation.evaluation_helper import format_results
 
 
 def evaluate_middle(logger_level=LoggerLevel.INFO, random_seed=1):
@@ -20,10 +21,12 @@ def evaluate_middle(logger_level=LoggerLevel.INFO, random_seed=1):
     programs = MiddleBenchmarkRepository().build()
     program = programs[0]  # Middle.1
 
-    # initial_inputs_failing, initial_inputs_passing = get_inputs(
-    #     grammar,
-    #     lambda x: program.oracle(x)[0],
-    # )
+    def oracle(x):
+        result = program.oracle(x)[0]
+        if result.is_failing():
+            return OracleResult.FAILING
+        return OracleResult.PASSING
+
     initial_inputs = set(program.get_initial_inputs())
 
     relevant_non_terminals = {
@@ -38,7 +41,7 @@ def evaluate_middle(logger_level=LoggerLevel.INFO, random_seed=1):
     candidates = learner.learn_constraints(
         initial_inputs,
         relevant_non_terminals,
-        oracle=lambda x: program.oracle(x)[0],
+        oracle=oracle,
     )
 
     end_time_learning = time.time()
@@ -46,13 +49,13 @@ def evaluate_middle(logger_level=LoggerLevel.INFO, random_seed=1):
     # round time
     time_in_seconds = round(end_time_learning - start_time_learning, 4)
     return format_results(
-        "Middle", grammar, lambda x: program.oracle(x)[0], candidates, time_in_seconds
+        "Middle", grammar, oracle, candidates, time_in_seconds
     )
 
 
 if __name__ == "__main__":
     random.seed(1)
-    results = evaluate_middle()
+    results = evaluate_middle(LoggerLevel.INFO)
     print("Required Time: ", results["time_in_seconds"], " seconds")
     constraints = results["candidates"]
     for constraint in constraints:
