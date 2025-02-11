@@ -1,5 +1,7 @@
 # fandango-learn
 
+[![Python Tests](https://github.com/fandango-fuzzer/fandango-learn/actions/workflows/python-tests.yml/badge.svg)](https://github.com/fandango-fuzzer/fandango-learn/actions/workflows/python-tests.yml)
+
 This repository contains the code for the Fandango Learn project.
 The goal is to automatically learn _fandango_ constraints form a set of inputs.
 
