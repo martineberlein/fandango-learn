@@ -629,5 +629,6 @@ class StringValuePlaceholderTransformer(ValuePlaceholderTransformer):
                         global_variables=constraint.global_variables,
                     )
                     new_patterns.append(new_pattern)
-
+        else:
+            new_patterns.append(constraint)
         self.results.extend(new_patterns)

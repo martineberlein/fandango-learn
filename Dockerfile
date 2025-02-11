@@ -15,14 +15,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel build
 
-# --------------------------------------------------
-# BUILD your Python project
-# --------------------------------------------------
-
 WORKDIR /builder/fandango-learn
-
 COPY . /builder/fandango-learn
-
 RUN python -m build --wheel --outdir /builder/dist
 
 # --------------------------------------------------
@@ -32,7 +26,6 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# (Optional) Install minimal system libs at runtime (e.g. libgomp1 for LightGBM, etc.)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
     git \
