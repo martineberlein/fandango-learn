@@ -5,10 +5,10 @@ import os
 
 from fandango.language.symbol import NonTerminal
 
-from fandangoLearner.data import OracleResult
-from fandangoLearner.logger import LoggerLevel
-from fandangoLearner.interface import parse
-from fandangoLearner.refinement.core import FandangoRefinement
+from fdlearn.data import OracleResult
+from fdlearn.logger import LoggerLevel
+from fdlearn.interface import parse
+from fdlearn.refinement.core import FandangoRefinement
 from evaluation.evaluation_helper import format_results
 
 def calculator_oracle(inp):

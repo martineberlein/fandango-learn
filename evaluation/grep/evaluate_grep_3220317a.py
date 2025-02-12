@@ -6,12 +6,12 @@ from dbgbench.resources import get_grep_grammar_path, get_grep_samples
 from dbgbench.framework.util import escape_non_ascii_utf8
 from dbgbench.subjects import Grep3220317a
 
-from fandangoLearner.interface.fandango import parse
-from fandangoLearner.data.input import FandangoInput
-from fandangoLearner.learner import FandangoLearner
-from fandangoLearner.logger import LoggerLevel
-from fandangoLearner.resources.patterns import Pattern
-from fandangoLearner.refinement.mutation import MutationFuzzer
+from fdlearn.interface.fandango import parse
+from fdlearn.data.input import FandangoInput
+from fdlearn.learner import FandangoLearner
+from fdlearn.logger import LoggerLevel
+from fdlearn.resources.patterns import Pattern
+from fdlearn.refinement.mutation import MutationFuzzer
 
 
 def generate_more_failing(bug_type_, grammar_, samples_: Collection[FandangoInput]) -> tuple[list[FandangoInput], list[FandangoInput]]:

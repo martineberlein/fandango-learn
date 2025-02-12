@@ -4,10 +4,10 @@ import math
 import random
 
 from evaluation.evaluation_helper import format_results
-from fandangoLearner.learner import FandangoLearner, NonTerminal, FandangoInput
-from fandangoLearner.logger import LoggerLevel
-from fandangoLearner.interface.fandango import parse
-from fandangoLearner.data import OracleResult
+from fdlearn.learner import FandangoLearner, NonTerminal, FandangoInput
+from fdlearn.logger import LoggerLevel
+from fdlearn.interface.fandango import parse
+from fdlearn.data import OracleResult
 
 
 def calculator_oracle(inp):

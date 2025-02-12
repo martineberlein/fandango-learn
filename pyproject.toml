@@ -3,8 +3,8 @@ requires = ["setuptools >= 68.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "fandangoLearner"
-version = "0.0.2"
+name = "fandango-learn"
+version = "0.9.1"
 authors = [
     { name = "Martin Eberlein", email = "martin.eberlein@hu-berlin.de" },
 ]
@@ -20,11 +20,9 @@ classifiers = [
     "Topic :: Software Development :: Testing"
 ]
 dependencies = [
-    "fandango-fuzzer @ git+https://github.com/fandango-fuzzer/fandango.git@learner",
     "pandas>=2.2.3",
     "shap>=0.45",
     "lightgbm>=4.3.0",
-    "pandas>=2.1.0",
     "numpy>=1.23.2",
     "scikit-learn>=1.1.2",
 ]

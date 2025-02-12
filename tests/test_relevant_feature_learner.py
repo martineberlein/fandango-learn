@@ -7,11 +7,11 @@ import random
 from fandango.language.grammar import TerminalNode
 from fandango.language.symbol import NonTerminal, Terminal
 
-import fandangoLearner.reduction.reducer as feature_extractor
-from fandangoLearner.interface.fandango import parse
-from fandangoLearner.data import OracleResult, FandangoInput
-from fandangoLearner.reduction.feature_collector import GrammarFeatureCollector
-from fandangoLearner.reduction.feature_class import (
+import fdlearn.reduction.reducer as feature_extractor
+from fdlearn.interface.fandango import parse
+from fdlearn.data import OracleResult, FandangoInput
+from fdlearn.reduction.feature_collector import GrammarFeatureCollector
+from fdlearn.reduction.feature_class import (
     NumericFeature,
     DerivationFeature,
     get_reachability_map,

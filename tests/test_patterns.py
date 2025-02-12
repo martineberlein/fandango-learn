@@ -1,7 +1,7 @@
 import unittest
 
-from fandangoLearner.interface import parse, parse_contents, parse_constraint
-from fandangoLearner.resources import Pattern
+from fdlearn.interface import parse, parse_contents, parse_constraint
+from fdlearn.resources import Pattern
 
 
 class TestPatternsWithPlaceholders(unittest.TestCase):

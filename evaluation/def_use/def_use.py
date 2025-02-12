@@ -7,9 +7,9 @@ from fandango.language.symbol import NonTerminal
 from fandango.evolution.algorithm import Fandango
 
 from evaluation.heartbleed.heartbeat import oracle
-from fandangoLearner.data.input import FandangoInput
-from fandangoLearner.interface.fandango import parse
-from fandangoLearner.learner import FandangoLearner
+from fdlearn.data.input import FandangoInput
+from fdlearn.interface.fandango import parse
+from fdlearn.learner import FandangoLearner
 
 
 def dfs(tree, action):
