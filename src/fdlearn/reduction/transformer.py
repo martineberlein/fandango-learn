@@ -59,7 +59,7 @@ class DerivableCharsetVisitor(NodeVisitor):
         return set()
 
     def visitTerminalNode(self, node: TerminalNode):
-        return str(node.symbol)
+        return node.symbol.symbol
 
 
 class NonTerminalVisitor(NodeVisitor):
