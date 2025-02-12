@@ -6,10 +6,10 @@ from numpy import inf
 
 from fandango.language.symbol import NonTerminal, Terminal
 
-from fandangoLearner.interface.fandango import parse
-from fandangoLearner.data.input import FandangoInput
-from fandangoLearner.reduction.feature_collector import GrammarFeatureCollector
-from fandangoLearner.reduction.feature_class import (
+from fdlearn.interface.fandango import parse
+from fdlearn.data.input import FandangoInput
+from fdlearn.reduction.feature_collector import GrammarFeatureCollector
+from fdlearn.reduction.feature_class import (
     FeatureFactory,
     ExistenceFeature,
     DerivationFeature,

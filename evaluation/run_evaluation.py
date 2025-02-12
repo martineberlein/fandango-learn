@@ -4,7 +4,7 @@ import subprocess
 import datetime
 import math
 
-from fandangoLearner.logger import LoggerLevel
+from fdlearn.logger import LoggerLevel
 
 from evaluation.calculator.evaluate_calculator import evaluate_calculator
 from evaluation.heartbleed.heartbleed import evaluate_heartbleed

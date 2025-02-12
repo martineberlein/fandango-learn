@@ -3,11 +3,11 @@ import os
 
 from fandango.constraints.base import ConjunctionConstraint
 
-from fandangoLearner.data.input import FandangoInput
-from fandangoLearner.interface.fandango import parse, parse_constraint
-from fandangoLearner.learning.candidate import FandangoConstraintCandidate
-from fandangoLearner.refinement.negation import construct_negations
-from fandangoLearner.refinement.generator import (
+from fdlearn.data.input import FandangoInput
+from fdlearn.interface.fandango import parse, parse_constraint
+from fdlearn.learning.candidate import FandangoConstraintCandidate
+from fdlearn.refinement.negation import construct_negations
+from fdlearn.refinement.generator import (
     FandangoGenerator,
     FandangoGrammarGenerator,
 )

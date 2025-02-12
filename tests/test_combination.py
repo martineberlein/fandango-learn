@@ -3,14 +3,14 @@ import os
 
 from fandango.constraints.base import DisjunctionConstraint
 
-from fandangoLearner.data.input import FandangoInput
-from fandangoLearner.interface.fandango import parse_constraint, parse
-from fandangoLearner.learning.candidate import FandangoConstraintCandidate
-from fandangoLearner.learning.combination import (
+from fdlearn.data.input import FandangoInput
+from fdlearn.interface.fandango import parse_constraint, parse
+from fdlearn.learning.candidate import FandangoConstraintCandidate
+from fdlearn.learning.combination import (
     ConjunctionProcessor,
     DisjunctionProcessor,
 )
-from fandangoLearner.learning.candidate import CandidateSet
+from fdlearn.learning.candidate import CandidateSet
 
 
 class TestConjunctionProcessor(unittest.TestCase):

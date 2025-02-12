@@ -4,7 +4,7 @@ import os
 from fandango.language.grammar import Grammar
 from fandango.constraints.base import Constraint
 
-from fandangoLearner.interface.fandango import parse, parse_constraint, parse_contents
+from fdlearn.interface.fandango import parse, parse_constraint, parse_contents
 
 
 class InterfaceTest(unittest.TestCase):

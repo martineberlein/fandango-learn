@@ -2,6 +2,9 @@ import logging
 import os
 import re
 import urllib.request
+import sys
+import tempfile
+import graphviz
 from pathlib import Path
 
 import dill as pickle
@@ -12,9 +15,11 @@ from isla.evaluator import evaluate
 from isla.language import ISLaUnparser, DerivationTree
 from isla.parser import PEGParser
 
+from islearn.helpers import tree_in
 from islearn.learner import InvariantLearner
-
-from islearn_example_languages import render_dot, DOT_GRAMMAR
+from islearn.mutation import MutationFuzzer
+from islearn.reducer import InputReducer
+from islearn_example_languages import DOT_GRAMMAR
 
 
 def setup_directories(base_dir):
@@ -47,3 +52,106 @@ def parse_and_reduce(parser, reducer, dot_code):
     return sample_tree, reduced_tree
 
 
+def load_or_generate_trees(urls, input_dir, parser, reducer):
+    positive_trees = []
+    reduced_trees = []
+
+    for url in urls:
+        file_name = url.split("/")[-1]
+        tree_file = input_dir / f"{file_name}.txt"
+        reduced_tree_file = input_dir / f"{file_name}.reduced.txt"
+
+        if tree_file.exists() and reduced_tree_file.exists():
+            with open(tree_file, "r") as file:
+                positive_trees.append(file.read())
+
+            with open(reduced_tree_file, "r") as file:
+                reduced_trees.append(file.read())
+            continue
+
+        dot_code = download_and_clean_dot_file(url)
+        sample_tree, reduced_tree = parse_and_reduce(parser, reducer, dot_code)
+
+        with open(tree_file, "w") as sample_file:
+            sample_file.write(str(sample_tree))
+        with open(reduced_tree_file, "w") as reduced_file:
+            reduced_file.write(str(reduced_tree))
+
+        positive_trees.append(sample_tree)
+        reduced_trees.append(reduced_tree)
+
+    return positive_trees, reduced_trees
+
+
+def main():
+    dirname = os.path.abspath(os.path.dirname(__file__))
+    input_dir = setup_directories(dirname)
+
+    parser = PEGParser(DOT_GRAMMAR)
+    reducer = InputReducer(DOT_GRAMMAR, render_dot, k=3)
+    graph = gg.GrammarGraph.from_grammar(DOT_GRAMMAR)
+
+    urls = [
+        "https://raw.githubusercontent.com/ecliptik/qmk_firmware-germ/56ea98a6e5451e102d943a539a6920eb9cba1919/users/dennytom/chording_engine/state_machine.dot",
+        "https://raw.githubusercontent.com/Ranjith32/linux-socfpga/30f69d2abfa285ad9138d24d55b82bf4838f56c7/Documentation/blockdev/drbd/disk-states-8.dot",
+        "https://raw.githubusercontent.com/gmj93/hostap/d0deb2a2edf11acd6eb6440336406228eeeab96e/doc/p2p_sm.dot",
+        "https://raw.githubusercontent.com/nathanaelle/wireguard-topology/f0e42d240624ca0aa801d890c1a4d03d5901dbab/examples/3-networks/topology.dot",
+        "https://raw.githubusercontent.com/210296kaczmarek/student-forum-poprawione/55790569976d4e92a32d9471d3549943011fcb70/vendor/bundle/ruby/2.4.0/gems/ruby-graphviz-1.2.3/examples/dot/genetic.dot",
+        "https://raw.githubusercontent.com/Cloudofyou/tt-demo/5504ac17790d3863bf036f6ce8d651a862fa6b0f/tt-demo.dot",
+    ]
+
+    positive_trees, reduced_trees = load_or_generate_trees(
+        urls, input_dir, parser, reducer
+    )
+    learning_inputs = reduced_trees
+    validation_inputs = positive_trees
+
+    # for learning_input in learning_inputs:
+    #     print(learning_input)
+    #
+    # for validation_input in validation_inputs:
+    #     print(validation_input)
+
+    return learning_inputs, validation_inputs
+
+
+def render_dot(inp: str) -> bool | str:
+    logging.getLogger("graphviz.backend").propagate = False
+    logging.getLogger("graphviz.files").propagate = False
+
+    with tempfile.NamedTemporaryFile(suffix=".pdf") as outfile:
+        devnull = open(os.devnull, 'w')
+        orig_stderr = sys.stderr
+        sys.stderr = devnull
+
+        err_message = ""
+        try:
+            graphviz.Source(inp).render(outfile.name)
+        except Exception as exc:
+            err_message = str(exc)
+
+        sys.stderr = orig_stderr
+        return True if not err_message else err_message
+
+
+if __name__ == "__main__":
+    learning_inputs, validation_inputs = main()
+    import string
+    import random
+    random.seed(2)
+
+    from fandango.language.grammar import Grammar
+    from fdlearn.interface.fandango import parse
+
+    file = "dot.fan"
+    grammar, _ = parse(file)
+    # print(grammar)
+    for inp in learning_inputs:
+        # print(inp)
+        print(grammar.parse(inp), render_dot(inp))
+
+
+    for _ in range(10):
+         inp = grammar.fuzz()
+         print(inp)
+         print(render_dot(str(inp)))

@@ -2,10 +2,10 @@ import math
 
 from debugging_framework.input.oracle import OracleResult
 
-from fandangoLearner.interface.fandango import parse
-from fandangoLearner.learner import FandangoLearner, FandangoInput
-from fandangoLearner.refinement.generator import Generator
-from fandangoLearner.refinement.core import HypothesisInputFeatureDebugger
+from fdlearn.interface.fandango import parse
+from fdlearn.learner import FandangoLearner, FandangoInput
+from fdlearn.refinement.generator import Generator
+from fdlearn.refinement.core import HypothesisInputFeatureDebugger
 
 
 def calculator_oracle(inp):

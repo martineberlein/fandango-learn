@@ -5,9 +5,9 @@ import random
 from fandango.language.symbol import NonTerminal
 from fandango.language.tree import DerivationTree
 
-from fandangoLearner.data import FandangoInput, OracleResult
-from fandangoLearner.interface.fandango import parse_file
-from fandangoLearner.refinement.mutation import (
+from fdlearn.data import FandangoInput, OracleResult
+from fdlearn.interface.fandango import parse_file
+from fdlearn.refinement.mutation import (
     get_paths,
     get_subtree,
     MutationFuzzer,

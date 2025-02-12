@@ -2,12 +2,12 @@ import os
 import time
 import random
 
-from fandangoLearner.interface.fandango import parse_file
+from fdlearn.interface.fandango import parse_file
 from islearn.learner import InvariantLearner
 from evaluation.heartbleed.heartbeat import initial_inputs
-from fandangoLearner.learner import FandangoLearner, NonTerminal, FandangoInput
-from fandangoLearner.logger import LoggerLevel
-from fandangoLearner.resources.patterns import Pattern
+from fdlearn.learner import FandangoLearner, NonTerminal, FandangoInput
+from fdlearn.logger import LoggerLevel
+from fdlearn.resources.patterns import Pattern
 
 from debugging_benchmark.expression.expression import ExpressionBenchmarkRepository
 from evaluation.evaluation_helper import (

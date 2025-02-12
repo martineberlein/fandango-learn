@@ -1,5 +1,7 @@
 # fandango-learn
 
+[![Python Tests](https://github.com/fandango-fuzzer/fandango-learn/actions/workflows/python-tests.yml/badge.svg)](https://github.com/fandango-fuzzer/fandango-learn/actions/workflows/python-tests.yml)
+
 This repository contains the code for the Fandango Learn project.
 The goal is to automatically learn _fandango_ constraints form a set of inputs.
 
@@ -32,7 +34,7 @@ We start by defining the grammar for our input language.
 This example focuses on arithmetic expressions using trigonometric and square root functions.
 
 ```python
-from fandangoLearner.interface.fandango import parse_contents
+from fdlearn.interface.fandango import parse_contents
 
 grammar = """
 <start> ::= <arithexp>;
@@ -66,7 +68,7 @@ initial_inputs = {
 Convert inputs to FandangoInput objects
 
 ```python
-from fandangoLearner.learner import FandangoInput
+from fdlearn.learner import FandangoInput
 
 initial_inputs = {
   FandangoInput.from_str(grammar, inp, oracle)
@@ -78,15 +80,15 @@ initial_inputs = {
 
 We specify the non-terminals in the grammar that are likely related to the program's failure behavior.
 This step is optional but can help focus the learning process on specific parts of the grammar.
-Later, we will see that **Avicenna** can automatically learn relevant non-terminals. 
+Later, we will see that **Avicenna** can automatically learn relevant non-terminals.
 
 ```python
-from fandangoLearner.learner import NonTerminal
+from fdlearn.learner import NonTerminal
 
 relevant_non_terminals = {
-    NonTerminal("<number>"),
-    NonTerminal("<maybeminus>"),
-    NonTerminal("<function>"),
+  NonTerminal("<number>"),
+  NonTerminal("<maybeminus>"),
+  NonTerminal("<function>"),
 }
 ```
 
@@ -95,13 +97,13 @@ relevant_non_terminals = {
 Using the `FandangoLearner`, we learn constraints that explain why certain inputs fail.
 
 ```python
-from fandangoLearner.learner import FandangoLearner
+from fdlearn.learner import FandangoLearner
 
 learner = FandangoLearner(grammar)
 
 learned_constraints = learner.learn_constraints(
-    initial_inputs,
-    relevant_non_terminals=relevant_non_terminals
+  initial_inputs,
+  relevant_non_terminals=relevant_non_terminals
 )
 ```
 
@@ -131,19 +133,53 @@ We will use **Avicenna** to provide this feedback loop.
 
 ## Install, Development, Testing
 
-### Install
+### Installation
 
-We recommend installing **FandangoLeaner** inside a virtual environment (virtualenv):
+To use **FandangoLearn**, you need to install both **FandangoFuzzer** (from its `learner` branch) and **FandangoLearn**. We recommend using a dedicated virtual environment:
 
-```shell
+```bash
 python3.12 -m venv venv
 source venv/bin/activate
+pip install --upgrade pip
 ```
 
-```shell
+Now, install **FandangoFuzzer** from the `learner` branch followed by **FandangoLearn**:
+
+```bash
+pip install git+https://github.com/fandango-fuzzer/fandango.git@learner
+pip install fandangolearn
+```
+
+### Development
+
+If you plan to extend or evaluate **FandangoLearn** locally, clone this repository:
+
+```bash
+git clone https://github.com/fandango-fuzzer/fandango-learn.git
+cd fandango-learn
+```
+
+Create and activate a virtual environment (recommended):
+
+```bash
+python3.12 -m venv venv
+source venv/bin/activate
+
 pip install --upgrade pip
+pip install -r requirements.txt
 pip install -e .
 ```
+
+### Testing
+
+To install the test dependencies and run the tests:
+
+```bash
+make install-tests
+make tests
+```
+
+That’s it! You’re now set up to use, develop, and test **FandangoLearn**. If you encounter any issues or have suggestions, feel free to open an issue or submit a pull request.
 
 ## Notebooks
 
