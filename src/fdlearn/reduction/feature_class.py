@@ -1,4 +1,4 @@
-from typing import List, Set, Dict, Optional, Any
+from typing import List, Set, Dict, Any
 from abc import ABC, abstractmethod
 
 from fandango.language.tree import DerivationTree
@@ -16,7 +16,6 @@ from fdlearn.reduction.transformer import (
     NonTerminalVisitor,
     ExpansionVisitor,
 )
-# from fandangoLearner.data import OracleResult
 
 
 class Feature(ABC):
@@ -313,11 +312,7 @@ class FeatureVector:
 
     def __init__(
         self,
-        test_input: str,
-        #result: Optional[OracleResult] = None,
     ):
-        self.test_input = test_input
-        #self.result = result
         self.features: Dict[Feature, Any] = dict()
 
     def get_feature_value(self, feature: Feature) -> Any:
@@ -353,7 +348,7 @@ class FeatureVector:
         return self.features
 
     def __repr__(self):
-        return f"{self.test_input}: {self.features}"
+        return f"{self.features}"
 
 
 def get_reachability_map(grammar: Grammar) -> dict[NonTerminal, Set[NonTerminal]]:
