@@ -39,3 +39,6 @@ test = [
 [tool.black]
 line-length = 88
 target-version = ['py311']
+
+[project.scripts]
+fdlearn = "fdlearn.cli:main"
