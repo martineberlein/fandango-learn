@@ -3,11 +3,10 @@ import time
 import random
 
 from fdlearn.interface.fandango import parse_file
-from islearn.learner import InvariantLearner
-from evaluation.heartbleed.heartbeat import initial_inputs
 from fdlearn.learner import FandangoLearner, NonTerminal, FandangoInput
 from fdlearn.logger import LoggerLevel
 from fdlearn.resources.patterns import Pattern
+from fdlearn.data.oracle import OracleResult
 
 from debugging_benchmark.expression.expression import ExpressionBenchmarkRepository
 from evaluation.evaluation_helper import (
@@ -24,11 +23,15 @@ def evaluate_expression(logger_level=LoggerLevel.INFO, random_seed=1):
     benchmark = ExpressionBenchmarkRepository().build()
     expression = benchmark[0]
 
-    # initial_inputs_failing, initial_inputs_passing = get_inputs(
-    #     grammar,
-    #     lambda x: expression.oracle(x)[0],
-    # )
-    # initial_inputs = initial_inputs_failing.union(initial_inputs_passing)
+    def oracle(x):
+        result_ = expression.oracle(x)
+        result = result_[0] if isinstance(result_, (list, tuple)) else result_
+        if result.is_failing():
+            return OracleResult.FAILING
+        if str(result) == "UNDEFINED":
+            return OracleResult.UNDEFINED
+        return OracleResult.PASSING
+
     initial_inputs = [
         "1 / (1 - 1)",
         "9 / 0",
@@ -38,16 +41,15 @@ def evaluate_expression(logger_level=LoggerLevel.INFO, random_seed=1):
         "5 * (1 - 1)",
     ]
 
-    # initial_inputs = expression.get_initial_inputs()
+    initial_inputs = expression.get_initial_inputs()
     inps = []
     for inp in initial_inputs:
-        oracle = expression.oracle(inp)[0]
-        inps.append((inp, oracle))
-        # print(inp, oracle)
+        inps.append((inp, oracle(inp)))
+        print(inp, oracle(inp))
 
     patterns = [
         Pattern(
-            string_pattern="str(<NON_TERMINAL>) == <STRING>;",
+            string_pattern="exists <elem> in <NON_TERMINAL>: str(<elem>) == <STRING>;",
         ),
         # Pattern(
         #     string_pattern="exists <container> in <NON_TERMINAL>: exists <arith> in <container>.<rarithexp>: int(eval(str(<arith>))) == 0;",
@@ -64,12 +66,15 @@ def evaluate_expression(logger_level=LoggerLevel.INFO, random_seed=1):
         NonTerminal("<operator>"),
     }
 
+    relevant_non_terminals = None
     start_time_learning = time.time()
     learner = FandangoLearner(grammar, patterns=patterns, logger_level=logger_level)
 
     learned_constraints = learner.learn_constraints(
         initial_inputs, relevant_non_terminals=relevant_non_terminals
     )
+    for explanation in learned_constraints:
+        print(explanation, explanation.precision(), explanation.recall())
 
     end_time_learning = time.time()
 
@@ -78,7 +83,7 @@ def evaluate_expression(logger_level=LoggerLevel.INFO, random_seed=1):
     return format_results(
         "Expression",
         grammar,
-        lambda x: expression.oracle(x)[0],
+        oracle,
         learned_constraints,
         time_in_seconds,
     )
