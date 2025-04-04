@@ -3,8 +3,8 @@ from pathlib import Path
 from debugging_benchmark.calculator.calculator import CalculatorBenchmarkRepository
 from debugging_benchmark.expression.expression import ExpressionBenchmarkRepository
 from debugging_benchmark.middle.middle import MiddleBenchmarkRepository
+from debugging_benchmark.markup.markup import MarkupBenchmarkRepository as MarkUpBenchmarkRepository
 from debugging_benchmark.tests4py_benchmark.repository import (
-    MarkUpBenchmarkRepository,
     PysnooperBenchmarkRepository,
     CookiecutterBenchmarkRepository,
 )
@@ -80,7 +80,7 @@ def get_pysnooper1_experiment():
     return create_experiment(
         "Pysnooper1",
         PysnooperBenchmarkRepository,
-        custom_inputs_func=lambda p: p.get_passing_inputs()[:2] + p.get_failing_inputs()[:1],
+        #custom_inputs_func=lambda p: p.get_passing_inputs()[:2] + p.get_failing_inputs()[:1],
         print_inputs=True
     )
 
