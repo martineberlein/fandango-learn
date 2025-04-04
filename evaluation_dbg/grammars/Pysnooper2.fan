@@ -1,4 +1,4 @@
-<start> ::= <options>;
+<start> ::= <options> | " ";
 <options> ::= <op>;
 <op> ::= <output><depth><prefix><variables>;
 <sep> ::= " " | "\n";

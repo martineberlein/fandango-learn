@@ -1,4 +1,4 @@
-<start> ::= <options>;
+<start> ::= <options> | " ";
 <options> ::= <flag><op>;
 <flag> ::= <overwrite><thread_info>;
 <op> ::= <output><depth><prefix><watch><custom_repr>;
