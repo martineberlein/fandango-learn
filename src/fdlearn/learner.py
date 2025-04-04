@@ -99,7 +99,7 @@ class FandangoLearner(BaseFandangoLearner):
             [] + self.candidates.candidates
         )
         for candidate in instantiated_candidates - self.removed_candidates:
-            if candidate not in candidates_to_evaluate:
+            if candidate not in self.candidates:
                 candidates_to_evaluate.append(candidate)
 
         LOGGER.info("Evaluating %s candidates", len(candidates_to_evaluate))
@@ -107,6 +107,7 @@ class FandangoLearner(BaseFandangoLearner):
             candidates_to_evaluate, positive_inputs, negative_inputs
         )
 
+        LOGGER.info(f"Calculating combinations for {len(self.candidates)} candidates")
         conjunction_candidates = self.conjunction_processor.process(self.candidates)
         for candidate in conjunction_candidates:
             self.candidates.append(candidate)
