@@ -71,7 +71,7 @@ class FandangoGenerator(Generator):
     def __init__(self, grammar, **kwargs):
         super().__init__(grammar, **kwargs)
 
-    def generate_test_inputs(self, candidate: FandangoConstraintCandidate=None, num_inputs: int = 5, time_out: int = 1, **kwargs) -> List[FandangoInput]:
+    def generate_test_inputs(self, candidate: FandangoConstraintCandidate=None, num_inputs: int = 10, time_out: int = 1, **kwargs) -> List[FandangoInput]:
         """
         Generate multiple inputs to be used in the debugging process.
         """
