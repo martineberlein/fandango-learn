@@ -196,4 +196,4 @@ class FandangoInput(Input):
                 oracle,
             )
         else:
-            raise SyntaxError(f"Could not parse input_string {input_string}.")
+            raise SyntaxError(f"Could not parse input_string '{input_string}'.")
