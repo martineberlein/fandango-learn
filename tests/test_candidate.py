@@ -51,6 +51,17 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
         for key, value in self.candidate.cache.items():
             self.assertEqual(key.oracle.is_failing(), value)
 
+    def test_many_evaluate(self):
+        inputs = []
+        for _ in range(100):
+                inputs.append(FandangoInput.from_str(
+                    self.grammar, "sqrt(-900)", OracleResult.FAILING
+                ))
+
+        for _ in range(10):
+            self.candidate = FandangoConstraintCandidate(self.constraint)
+            self.candidate.evaluate(inputs)
+
     def test_precision(self):
         inputs = [self.failing_input, self.passing_input]
         self.candidate.evaluate(inputs)
