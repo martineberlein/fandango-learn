@@ -10,6 +10,10 @@ from fdlearn.learner import FandangoLearner
 from dbg_evaluation.experiment import Experiment, format_results
 from dbg.data.oracle import OracleResult
 
+from fdlearn.reduction.feature_collector import GrammarFeatureCollector
+from fdlearn.reduction.reducer import FeatureReducer
+from fdlearn.refinement.core import FandangoRefinement
+
 
 class FDLearnExperiment(Experiment):
 
@@ -87,6 +91,8 @@ class LearnerExperiment(FDLearnExperiment):
         random.seed(seed)
 
         parsed_inputs = self._prepare_inputs(self.initial_inputs)
+        for inp in parsed_inputs:
+            print(inp, inp.oracle)
 
         assert isinstance(self.tool, FandangoLearner)
 
@@ -98,29 +104,59 @@ class LearnerExperiment(FDLearnExperiment):
             self.name, explanations, duration, self.evaluation_inputs, seed=seed
         )
 
-#
-# class AlhazenCompleteExperiment(AlhazenExperiment):
-#
-#     def __init__(self, name: str, tool: Alhazen, grammar: str, oracle, initial_inputs: set[str], evaluation_inputs: Optional[set[str]] = None):
-#         super().__init__(
-#             name=name,
-#             subject_name=name,
-#             tool=tool,
-#             grammar=grammar,
-#             initial_inputs=initial_inputs,
-#             oracle=oracle,
-#             evaluation_inputs=evaluation_inputs
-#         )
-#
-#     def evaluate(self, seed = 1, **kwargs):
-#         random.seed(seed)
-#
-#         assert isinstance(self.tool, Alhazen)
-#
-#         start_time = time.time()
-#         explanations = self.tool.explain()
-#         duration = round(time.time() - start_time, 4)
-#
-#         return format_results(
-#             self.name, explanations, duration, self.evaluation_inputs, seed=seed
-#         )
+
+class ReducerExperiment(FDLearnExperiment):
+
+    def _prepare_inputs(self, inputs: set[str]) -> set[FandangoInput]:
+        parsed = {
+            FandangoInput.from_str(self.grammar, inp, self.oracle(inp))
+            for inp in inputs
+        }
+
+        for inp in parsed:
+            inp.features = GrammarFeatureCollector(self.grammar).collect_features(inp)
+
+        return parsed
+
+    def evaluate(self, seed = 1, **kwargs):
+        random.seed(seed)
+
+        test_inputs = {str(self.grammar.fuzz()) for _ in range(50)}
+        parsed_inputs = self._prepare_inputs(self.initial_inputs.union(test_inputs))
+        assert isinstance(self.tool, FeatureReducer)
+
+        start_time = time.time()
+        relevant_features = self.tool.learn(test_inputs=parsed_inputs)
+        duration = round(time.time() - start_time, 4)
+
+        relevant_features_non_terminals = {
+            feature.non_terminal for feature in relevant_features
+        }
+
+        print(relevant_features_non_terminals)
+        print(duration)
+
+        start_time = time.time()
+        learner = FandangoLearner(self.grammar)
+        explanations = learner.learn_constraints(test_inputs=parsed_inputs, oracle=self.oracle, relevant_non_terminals=relevant_features_non_terminals)
+        duration = round(time.time() - start_time, 4)
+
+        return format_results(
+            self.name, explanations, duration, self.evaluation_inputs, seed=seed
+        )
+
+
+class FDLearnRefinementExperiment(FDLearnExperiment):
+
+    def evaluate(self, seed = 1, **kwargs):
+        random.seed(seed)
+
+        assert isinstance(self.tool, FandangoRefinement)
+
+        start_time = time.time()
+        explanations = self.tool.explain()
+        duration = round(time.time() - start_time, 4)
+
+        return format_results(
+            self.name, explanations, duration, self.evaluation_inputs, seed=seed
+        )
