@@ -6,6 +6,44 @@ from fandango.constraints.base import ConjunctionConstraint, DisjunctionConstrai
 
 from fdlearn.learning.candidate import FandangoConstraintCandidate, CandidateSet
 from fdlearn.logger import LOGGER
+from fdlearn.data.oracle import OracleResult
+
+
+def build_conjunction(
+        candidates: tuple[FandangoConstraintCandidate, ...],
+) -> FandangoConstraintCandidate:
+    assert len(candidates) >= 2, "Need at least two candidates for conjunction"
+
+    first = candidates[0]
+    cache_keys = first.cache.keys()
+
+    for other in candidates[1:]:
+        assert other.cache.keys() == cache_keys, "All candidates must share the same cache keys"
+
+    new_cache = {}
+    new_failing, new_passing = [], []
+
+    for inp in cache_keys:
+        conjunction_value = all(c.cache[inp] for c in candidates)
+        new_cache[inp] = conjunction_value
+
+        if inp.oracle == OracleResult.FAILING:
+            new_failing.append(conjunction_value)
+        else:
+            new_passing.append(conjunction_value)
+
+    new_constraint = ConjunctionConstraint(
+        [c.constraint for c in candidates],
+        local_variables=first.constraint.local_variables,
+        global_variables=first.constraint.global_variables,
+    )
+
+    return FandangoConstraintCandidate(
+        constraint=new_constraint,
+        failing_inputs_eval_results=new_failing,
+        passing_inputs_eval_results=new_passing,
+        cache=new_cache,
+    )
 
 
 class CombinationProcessor(ABC):
@@ -52,15 +90,16 @@ class ConjunctionProcessor(CombinationProcessor):
             # if not self.check_minimum_recall(combination):
             #     print("Lol")
             #     continue
-            conjunction: FandangoConstraintCandidate = combination[0]
-            # con_list = [
-            #     conjunction,
-            # ]
-            for candidate in combination[1:]:
-                conjunction = conjunction & candidate
-                # if not self.is_new_conjunction_valid(conjunction, con_list):
-                #     valid = False
-                # con_list.append(conjunction)
+            # conjunction: FandangoConstraintCandidate = combination[0]
+            # # con_list = [
+            # #     conjunction,
+            # # ]
+            # for candidate in combination[1:]:
+            #     conjunction = conjunction & candidate
+            #     # if not self.is_new_conjunction_valid(conjunction, con_list):
+            #     #     valid = False
+            #     # con_list.append(conjunction)
+            conjunction: FandangoConstraintCandidate = build_conjunction(combination)
             if self.is_new_conjunction_valid(conjunction, combination):
                 conjunction_candidates.add(conjunction)
 
