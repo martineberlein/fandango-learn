@@ -12,6 +12,7 @@ from shap import TreeExplainer, summary_plot
 from fandango.language.grammar import Grammar, NonTerminal
 
 from fdlearn.data import FandangoInput, OracleResult
+from fdlearn.logger import LOGGER
 from fdlearn.reduction.feature_class import get_reachability_map
 from fdlearn.reduction.feature_collector import (
     Feature,
@@ -135,12 +136,14 @@ class CorrelationRelevanceFeatureLearner(RelevanceFeatureReducer, ABC):
         top_n_relevant_features: int = 3,
         correlation_threshold: float = 0.7,
         prune_parent_correlation: bool = False,
+        add_correlating_features: bool = True,
     ):
         super().__init__(grammar, feature_types)
         self.correlation_threshold = correlation_threshold
         self.reachability_map = get_reachability_map(grammar)
         self.prune_parent_correlation = prune_parent_correlation
         self.top_n_relevant_features = top_n_relevant_features
+        self.add_correlating_features = add_correlating_features
 
     def learn(self, test_inputs: Set[FandangoInput]) -> Set[Feature]:
         """
@@ -155,11 +158,13 @@ class CorrelationRelevanceFeatureLearner(RelevanceFeatureReducer, ABC):
             for feature in relevant_features
             if feature.non_terminal != NonTerminal("<start>")
         }
-        correlated_features: Set[Feature] = self.find_correlated_features(
-            x_train, relevant_features
-        )
+        if self.add_correlating_features:
+            correlated_features: Set[Feature] = self.find_correlated_features(
+                x_train, relevant_features
+            )
+            relevant_features.update(correlated_features)
 
-        return relevant_features.union(correlated_features)
+        return relevant_features
 
     def find_correlated_features(
         self, x_train: DataFrame, relevant_features: Set[Feature]
@@ -177,7 +182,7 @@ class CorrelationRelevanceFeatureLearner(RelevanceFeatureReducer, ABC):
                         correlated_features.add(feature)
 
         correlated_features = set(list(correlated_features)[:MAX_CORRELATED_FEATURES])
-        logging.info(f"Added Features: {correlated_features} due to high correlation.")
+        LOGGER.debug(f"Added Features: {correlated_features} due to high correlation.")
         return correlated_features
 
     def is_correlating_feature_valid(
@@ -319,11 +324,13 @@ class SHAPRelevanceLearner(CorrelationRelevanceFeatureLearner):
         ] = GradientBoostingTreeRelevanceLearner,
         normalize_data: bool = False,
         show_beeswarm_plot: bool = False,
+        **kwargs,
     ):
         super().__init__(
             grammar,
             top_n_relevant_features=top_n_relevant_features,
             feature_types=feature_types,
+            **kwargs,
         )
         self.classifier = classifier_type(self.grammar)
         self.show_beeswarm_plot = show_beeswarm_plot
