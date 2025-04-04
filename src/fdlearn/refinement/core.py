@@ -18,6 +18,9 @@ from .runner import SingleExecutionHandler, ExecutionHandler
 from .engine import Engine, ParallelEngine
 from .negation import construct_negations
 
+from fdlearn.reduction.reducer import SHAPRelevanceLearner
+from fdlearn.reduction.feature_collector import GrammarFeatureCollector
+
 
 class InputFeatureDebugger(ABC):
     """
@@ -80,6 +83,7 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         )
         self.runner: ExecutionHandler = SingleExecutionHandler(self.oracle)
         # self.engine: Engine = SingleEngine(generator)
+        self.test_inputs: set[FandangoInput] = set()
 
     def set_runner(self, runner: ExecutionHandler):
         """
@@ -142,12 +146,12 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         start_time = self.set_timeout()
         LOGGER.info("Starting the hypothesis-based input feature debugger.")
         try:
-            test_inputs: Set[FandangoInput] = self.prepare_test_inputs()
+            self.test_inputs: set[FandangoInput] = self.prepare_test_inputs()
 
             while self.check_iteration_limits(iteration, start_time):
                 LOGGER.info(f"Starting iteration {iteration}.")
-                new_test_inputs = self.hypothesis_loop(test_inputs)
-                test_inputs.update(new_test_inputs)
+                new_test_inputs = self.hypothesis_loop(self.test_inputs)
+                self.test_inputs.update(new_test_inputs)
 
                 iteration += 1
         except TimeoutError as e:
@@ -274,10 +278,41 @@ class FandangoRefinement(HypothesisInputFeatureDebugger):
             **kwargs,
         )
         self.max_candidates = 5
-        self.relevant_non_terminals = relevant_non_terminals
 
-    def learn_relevant_non_terminals(self):
-        return self.relevant_non_terminals
+        self.collector = GrammarFeatureCollector(self.grammar)
+        self.reducer = SHAPRelevanceLearner(
+            self.grammar,
+            top_n_relevant_features=top_n_relevant_non_terminals,
+        )
+        self.learning_inputs = set()
+        self.relevant_non_terminals = relevant_non_terminals or self.learn_initial_relevant_non_terminals()
+
+    def learn_initial_relevant_non_terminals(self) -> Set[NonTerminal]:
+        for _ in range(100):
+            tree = self.grammar.fuzz()
+            inp = FandangoInput(tree=tree, oracle=self.oracle(str(tree)))
+            self.learning_inputs.add(inp)
+        return self.learn_relevant_non_terminals(self.learning_inputs)
+
+    def learn_relevant_non_terminals(self, test_inputs) -> Set[NonTerminal]:
+        """
+        Learn the relevant non-terminals from the test inputs.
+        :return: Set[NonTerminal]: The relevant non-terminals.
+        """
+        # if self.relevant_non_terminals is not None:
+        #     return self.relevant_non_terminals
+
+        LOGGER.info("Learning relevant non-terminals.")
+        for inp in test_inputs:
+            if inp.features is None:
+                inp.features = self.collector.collect_features(inp)
+
+        relevant_features = self.reducer.learn(
+            test_inputs,
+        )
+        relevant_nonterminals = {feature.non_terminal for feature in relevant_features}
+        LOGGER.info("Relevant non-terminals: {}".format(relevant_nonterminals))
+        return relevant_nonterminals
 
     def learn_candidates(self, test_inputs: Set[FandangoInput]) -> Optional[List[FandangoConstraintCandidate]]:
         """
@@ -286,7 +321,7 @@ class FandangoRefinement(HypothesisInputFeatureDebugger):
         :return Optional[List[Candidate]]: The learned candidates.
         """
         LOGGER.info("Learning the candidates.")
-        relevant_non_terminals = self.learn_relevant_non_terminals()
+        relevant_non_terminals = self.learn_relevant_non_terminals(self.test_inputs.union(self.learning_inputs))
 
         _ = self.learner.learn_constraints(
             test_inputs, relevant_non_terminals=relevant_non_terminals
