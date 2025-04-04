@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 from debugging_benchmark.calculator.calculator import CalculatorBenchmarkRepository
 from debugging_benchmark.expression.expression import ExpressionBenchmarkRepository
 from debugging_benchmark.middle.middle import MiddleBenchmarkRepository
@@ -8,16 +11,21 @@ from debugging_benchmark.tests4py_benchmark.repository import (
 )
 from debugging_benchmark.heartbleed.heartbleed import HeartbleedBenchmarkRepository
 
-from dbg.data.oracle import OracleResult
 from dbg.logger import LoggerLevel
-from evaluation.base_experiment import AlhazenCompleteExperiment
+from evaluation_dbg.base_experiment import FDLearnRefinementExperiment
 
-from alhazen.core import Alhazen
+from fdlearn.data.oracle import OracleResult
+from fdlearn.interface.fandango import parse
+from fdlearn.refinement.core import FandangoRefinement
 
-
-def create_alhazen_experiment(name, repository_cls, program_index=0, custom_inputs_func=None, print_inputs=False):
+def create_alhazen_experiment(name, repository_cls, program_index=0, custom_inputs_func=None, print_inputs=True):
     programs = repository_cls().build()
     program = programs[program_index]
+
+    dirname = os.path.dirname(__file__)
+    filename = os.path.join(Path(dirname).parent / f"grammars/{name}.fan")
+    grammar, _ = parse(filename)
+
 
     def oracle(x):
         result_ = program.oracle(x)
@@ -37,17 +45,18 @@ def create_alhazen_experiment(name, repository_cls, program_index=0, custom_inpu
         for inp in initial_inputs:
             print(inp, oracle(inp))
 
-    alhazen = Alhazen(
-        grammar=program.grammar,
+    refinement = FandangoRefinement(
+        grammar=grammar,
         initial_inputs=initial_inputs,
         oracle=oracle,
-        logger_level=LoggerLevel.CRITICAL,
+        #logger_level=LoggerLevel.CRITICAL,
     )
 
-    return AlhazenCompleteExperiment(
+    return FDLearnRefinementExperiment(
         name=name,
-        tool=alhazen,
-        grammar=program.grammar,
+        subject_name=name,
+        tool=refinement,
+        grammar=grammar,
         initial_inputs=initial_inputs,
         oracle=oracle,
     )
@@ -105,20 +114,34 @@ def get_cookiecutter2_experiment():
 
 
 if __name__ == "__main__":
+    from fdlearn.learning.candidate import FandangoConstraintCandidate
+    from fdlearn.learner import ValueMaps, FandangoLearner, PatternProcessor, ConjunctionProcessor, FandangoInput
+    from fandango.constraints.base import GeneticBase
+    from fandango.constraints.base import Constraint
+    from evaluation_dbg.util import instrument_classes, write_timings_to_csv, write_summary_to_csv, log_runtime
+    instrument_classes([GeneticBase, FandangoRefinement,FandangoLearner, PatternProcessor, ConjunctionProcessor, FandangoInput, FandangoConstraintCandidate, ValueMaps], log_runtime)
+
+
     experiments = [
         get_calculator_experiment,
         get_heartbleed_experiment,
-        get_expression_experiment,
-        get_middle_experiment,
-        get_markup1_experiment,
-        get_markup2_experiment,
-        get_pysnooper1_experiment,
-        get_pysnooper2_experiment,
+        # get_expression_experiment,
+        # get_middle_experiment,
+        # get_markup1_experiment,
+        # get_markup2_experiment,
+        # get_pysnooper1_experiment,
+        # get_pysnooper2_experiment,
         # get_cookiecutter1_experiment,
         # get_cookiecutter2_experiment,
     ]
 
     for experiment in experiments:
         exp = experiment().evaluate()
+
+        #write_timings_to_csv(f"{exp['name']}_method_timings.csv")
+        write_summary_to_csv(f"{exp['name']}_method_timings_summary.csv")
+
+        print(f"Experiment: {exp['name']}")
+        print(f"Time: {exp['time_in_seconds']} seconds")
         for candidate in exp["candidates"]:
             print(candidate)
