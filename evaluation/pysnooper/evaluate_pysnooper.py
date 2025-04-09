@@ -76,7 +76,7 @@ def evaluate_pysnooper3(logger_level=LoggerLevel.INFO, random_seed=1):
         return OracleResult.PASSING
 
     initial_inputs = set()
-    for inp in program.get_initial_inputs()[:14]:
+    for inp in program.get_initial_inputs()[:12]:
         parsed = grammar.parse(inp)
         if parsed:
             initial_inputs.add(FandangoInput(parsed[0], oracle=oracle(str(parsed))))
@@ -105,7 +105,7 @@ def evaluate_pysnooper3(logger_level=LoggerLevel.INFO, random_seed=1):
 
 
 if __name__ == "__main__":
-    results = evaluate_pysnooper2(random_seed=1, logger_level=LoggerLevel.DEBUG)
+    results = evaluate_pysnooper2(random_seed=1, logger_level=LoggerLevel.INFO)
     print("Required Time: ", results["time_in_seconds"], " seconds")
     constraints = results["candidates"]
     for constraint in constraints:

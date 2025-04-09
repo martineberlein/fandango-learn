@@ -46,8 +46,6 @@ def evaluate_calculator(logger_level=LoggerLevel.INFO, random_seed=1):
         NonTerminal("<function>"),
     }
 
-    # print("Check: ", constraint.check(FandangoInput.from_str(grammar, "sqrt(-900)").tree))
-
     start_time_learning = time.time()
     learner = FandangoLearner(grammar, logger_level=logger_level)
 

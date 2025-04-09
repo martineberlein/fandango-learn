@@ -18,20 +18,10 @@ def evaluate_markup(logger_level=LoggerLevel.INFO, random_seed=1):
     random.seed(random_seed)
     dirname = os.path.dirname(__file__)
     filename = os.path.join(dirname, "markup.fan")
-    print("parsing file: ", filename)
     grammar, _ = parse_file(filename)
-
-    print(grammar)
-    print(grammar.parse("This is a strong <s>Sentence</s>!"))
 
     programs = MarkupBenchmarkRepository().build()
     program = programs[0]  # Markup.1
-
-    for inp in program.get_initial_inputs():
-        print(inp)
-        print(
-            grammar.parse(inp)
-        )
 
     def oracle(x):
         result = program.oracle(x)[0]
@@ -41,30 +31,13 @@ def evaluate_markup(logger_level=LoggerLevel.INFO, random_seed=1):
 
     initial_inputs = set(program.get_initial_inputs())
 
-    from fdlearn.resources.patterns import Pattern
-    patterns = [
-        Pattern(
-            string_pattern="exists <elem> in <NON_TERMINAL>: is_inside(<elem>, <start>);",
-        ),
-        Pattern(
-            string_pattern="exists <context> in <NON_TERMINAL>: exists <elem> in <context>: str(<elem>) == '\"';",
-        ),
-        Pattern(
-            string_pattern="exists <elem> in <NON_TERMINAL>: str(<elem>) == <STRING>;",
-        )
-    ]
-
     start_time_learning = time.time()
-    learner = FandangoLearner(grammar, patterns=patterns, logger_level=logger_level)
+    learner = FandangoLearner(grammar, logger_level=logger_level)
 
     candidates = learner.learn_constraints(
         initial_inputs,
         oracle=oracle,
     )
-
-    for explanation in candidates:
-        print(explanation)
-
     end_time_learning = time.time()
 
     # round time
