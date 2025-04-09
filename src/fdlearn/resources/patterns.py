@@ -115,53 +115,16 @@ for operator in [
 #     string_pattern="forall <variable> in <NON_TERMINAL>: <tree>/<xml_open_tag>/<id> == <tree>/<xml_close_tag>/<id>;",
 # )
 
-# Pattern(
-#     string_pattern="int(<NON_TERMINAL>) == int(<NON_TERMINAL>) * <INTEGER> * int(<NON_TERMINAL>) * <INTEGER>;",
-# )
-
-
-# Pattern(
-#     string_pattern="exists <container> in <NON_TERMINAL>: int(<container>) <= <INTEGER>;",
-# )
-#
-# Pattern(
-#     string_pattern="exists <container> in <NON_TERMINAL>: str(<container>) != <INTEGER>;",
-# )
-#
-# Pattern(
-#     string_pattern="exists <container> in <NON_TERMINAL>: int(<container>) == <STRING>;",
-# )
-#
-# Pattern(
-#     string_pattern="exists <elem> in <NON_TERMINAL>: str(<elem>) == <STRING>;",
-# )
-#
-# Pattern(
-#     string_pattern="exists <container_1> in <NON_TERMINAL>: exists <container_2> in <NON_TERMINAL>: int(<container_1>) > len(str(<container_2>));",
-# )
 
 Pattern(
     string_pattern="exists <elem> in <NON_TERMINAL>: is_inside(<elem>, <start>);",
 )
 
-# Pattern(
-#     string_pattern="exists <elem> in <NON_TERMINAL>: str(<elem>) == <STRING>;",
-# )
+Pattern(
+    string_pattern="exists <elem> in <NON_TERMINAL>: str(<elem>) == <STRING>;",
+)
 
 # Pattern(
 #         string_pattern="exists <elem> in <NON_TERMINAL>: str_contains(<elem>, <STRING>);",
 #         use_cache=False,
 #     )
-
-
-if __name__ == "__main__":
-    grammar, _ = parse_file("./../../../playground/calculator.fan")
-    test_inputs = ["sqrt(-900)", "sqrt(2)", "cos(3)"]
-
-    initial_inputs = {FandangoInput.from_str(grammar, inp) for inp in test_inputs}
-
-    for pattern in Pattern.registry:
-        print(pattern)
-        for inp in initial_inputs:
-            comp = pattern.instantiated_pattern
-            print(inp, comp.check(inp.tree))
