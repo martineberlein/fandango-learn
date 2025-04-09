@@ -447,7 +447,7 @@ class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
                     results.add(str(left_result))
                 except Exception as e:
                     e.add_note("Evaluation failed: " + constraint.left)
-                    LOGGER.error(e)
+                    LOGGER.debug(e)
                     continue
         return results
 
