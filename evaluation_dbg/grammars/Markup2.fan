@@ -1,6 +1,6 @@
-<start> ::= <html>
-<html> ::= <text> | <element>
-<element> ::= <open_tag> <html> <close_tag> | <self_closing_tag>
+<start> ::= <content>
+<content> ::= <text> | <html>
+<html> ::= <open_tag> <content> <close_tag> | <self_closing_tag>
 <open_tag> ::= <o> <tag_name> <attributes> <c>
 <o> ::= r'<' # '<'
 <c> ::= r'>' # '>'
