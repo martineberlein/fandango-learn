@@ -124,7 +124,7 @@ Pattern(
     string_pattern="exists <elem> in <NON_TERMINAL>: str(<elem>) == <STRING>;",
 )
 
-# Pattern(
-#         string_pattern="exists <elem> in <NON_TERMINAL>: str_contains(<elem>, <STRING>);",
-#         use_cache=False,
-#     )
+Pattern(
+        string_pattern="exists <elem> in <NON_TERMINAL>: str_contains(<elem>, <STRING>);",
+        use_cache=False,
+    )
