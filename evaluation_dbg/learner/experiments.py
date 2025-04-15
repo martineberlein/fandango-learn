@@ -16,6 +16,9 @@ from fdlearn.interface.fandango import parse
 
 from evaluation_dbg.base_experiment import LearnerExperiment
 
+import logging
+logging.getLogger("tests4py").setLevel(logging.CRITICAL)
+
 
 def create_experiment(name, repository_cls, program_index=0, custom_inputs_func=None, print_inputs=False):
     programs = repository_cls().build()
@@ -80,7 +83,7 @@ def get_pysnooper1_experiment():
     return create_experiment(
         "Pysnooper1",
         PysnooperBenchmarkRepository,
-        #custom_inputs_func=lambda p: p.get_passing_inputs()[:2] + p.get_failing_inputs()[:1],
+        custom_inputs_func=lambda p: p.get_passing_inputs()[:10] + p.get_failing_inputs()[:1],
         print_inputs=True
     )
 
@@ -110,13 +113,13 @@ def get_cookiecutter2_experiment():
 
 if __name__ == "__main__":
     experiments = [
-        get_calculator_experiment,
-        get_heartbleed_experiment,
+        #get_calculator_experiment,
+        #get_heartbleed_experiment,
         # get_expression_experiment,
-        # get_middle_experiment,
+        get_middle_experiment,
         # get_markup1_experiment,
-        # get_markup2_experiment,
-        # get_pysnooper1_experiment,
+        #get_markup2_experiment,
+        #get_pysnooper1_experiment,
         # get_pysnooper2_experiment,
         # get_cookiecutter1_experiment,
         # get_cookiecutter2_experiment,

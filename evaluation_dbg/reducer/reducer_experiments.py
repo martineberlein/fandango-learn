@@ -19,7 +19,7 @@ import fdlearn.reduction.reducer as feature_reducer
 from evaluation_dbg.base_experiment import ReducerExperiment
 
 
-def create_experiment(name, repository_cls, program_index=0, custom_inputs_func=None, print_inputs=True):
+def create_experiment(name, repository_cls, program_index=0, custom_inputs_func=None, print_inputs=False):
     programs = repository_cls().build()
     program = programs[program_index]
 

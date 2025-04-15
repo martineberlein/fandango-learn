@@ -4,8 +4,8 @@ from pathlib import Path
 from debugging_benchmark.calculator.calculator import CalculatorBenchmarkRepository
 from debugging_benchmark.expression.expression import ExpressionBenchmarkRepository
 from debugging_benchmark.middle.middle import MiddleBenchmarkRepository
+from debugging_benchmark.markup.markup import MarkupBenchmarkRepository as MarkUpBenchmarkRepository
 from debugging_benchmark.tests4py_benchmark.repository import (
-    MarkUpBenchmarkRepository,
     PysnooperBenchmarkRepository,
     CookiecutterBenchmarkRepository,
 )
@@ -123,13 +123,13 @@ if __name__ == "__main__":
 
 
     experiments = [
-        get_calculator_experiment,
-        get_heartbleed_experiment,
+        # get_calculator_experiment,
+        # get_heartbleed_experiment,
         # get_expression_experiment,
         # get_middle_experiment,
         # get_markup1_experiment,
         # get_markup2_experiment,
-        # get_pysnooper1_experiment,
+        get_pysnooper1_experiment,
         # get_pysnooper2_experiment,
         # get_cookiecutter1_experiment,
         # get_cookiecutter2_experiment,
