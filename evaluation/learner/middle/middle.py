@@ -1,9 +1,9 @@
 import time
-import os
+from pathlib import Path
 import random
 
 from fdlearn.data import OracleResult
-from fdlearn.interface.fandango import parse_file
+from fdlearn.interface.fandango import parse
 from fandango.language.symbol import NonTerminal
 from fdlearn.learner import FandangoLearner
 from fdlearn.logger import LoggerLevel
@@ -14,9 +14,8 @@ from evaluation.evaluation_helper import format_results
 
 def evaluate_middle(logger_level=LoggerLevel.INFO, random_seed=1):
     random.seed(random_seed)
-    dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "middle.fan")
-    grammar, _ = parse_file(filename)
+    filename = Path(__file__).resolve().parent.parent.parent / "resources" / "middle.fan"
+    grammar, _ = parse(filename)
 
     programs = MiddleBenchmarkRepository().build()
     program = programs[0]  # Middle.1

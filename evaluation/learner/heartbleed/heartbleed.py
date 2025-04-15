@@ -1,14 +1,14 @@
 import time
-import os
+from pathlib import Path
 import random
 
 from fandango.language.symbol import NonTerminal
 from fdlearn.learner import FandangoLearner
 from fdlearn.data.input import FandangoInput
 from fdlearn.logger import LoggerLevel
-from fdlearn.interface.fandango import parse_file
+from fdlearn.interface.fandango import parse
 
-from evaluation.heartbleed.heartbeat import (
+from evaluation.learner.heartbleed.heartbeat import (
     initial_inputs as heartbleed_inputs,
     oracle_simple as oracle,
 )
@@ -17,9 +17,8 @@ from evaluation.evaluation_helper import format_results
 
 def evaluate_heartbleed(logger_level=LoggerLevel.INFO, random_seed=1):
     random.seed(random_seed)
-    dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "heartbleed.fan")
-    grammar, _ = parse_file(filename)
+    filename = Path(__file__).resolve().parent.parent.parent / "resources" / "heartbleed.fan"
+    grammar, _ = parse(filename)
 
     initial_inputs = {
         FandangoInput.from_str(grammar, inp, oracle(inp)) for inp in heartbleed_inputs

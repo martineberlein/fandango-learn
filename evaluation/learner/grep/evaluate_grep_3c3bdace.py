@@ -6,7 +6,7 @@ from dbgbench.framework.oraclesresult import OracleResult
 from dbgbench.resources import get_grep_grammar_path, get_grep_samples
 from dbgbench.framework.util import escape_non_ascii_utf8
 from dbgbench.framework.data import load_from_files
-from dbgbench.subjects import Grep3c3bdace
+from dbgbench.subjects import Grep3c3bdace, Grep5fa8c7c9, Grep7aa698d3, Grep3220317a, Grepc96b0f2c
 
 from fdlearn.interface.fandango import parse
 from fdlearn.data.input import FandangoInput
@@ -19,7 +19,7 @@ from fdlearn.learning.metric import RecallPriorityFitness
 if __name__ == "__main__":
     random.seed(1)
 
-    bug_type = Grep3c3bdace
+    bug_type = Grepc96b0f2c
 
     grep_grammar = get_grep_grammar_path()
     grammar, _ = parse(grep_grammar)
