@@ -81,7 +81,5 @@ class FDLearnReducer(FandangoLearner):
         :param test_inputs: A set of test FandangoInput objects used for learning if needed.
         :return: A set of relevant non-terminals.
         """
-        if self.relevant_non_terminals is not None:
-            return self.relevant_non_terminals
         self.relevant_non_terminals = self.learn_relevant_non_terminals(test_inputs)
         return self.relevant_non_terminals
