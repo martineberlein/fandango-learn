@@ -64,14 +64,14 @@ def row_print_averages(
             file.write(row + "\n")
 
 
-def get_log_file_name():
+def get_log_file_name(experiment_name="evaluation_results"):
     current_time = datetime.datetime.now().strftime("%Y%m%d-%H-%M-%S")
-    return f"evaluation_results_{current_time}.log"
+    return f"{experiment_name}_{current_time}.log"
 
 
-def get_csv_file_name():
+def get_csv_file_name(experiment_name="evaluation_results"):
     current_time = datetime.datetime.now().strftime("%Y%m%d-%H-%M-%S")
-    return f"evaluation_results_{current_time}.csv"
+    return f"{experiment_name}_{current_time}.csv"
 
 
 def write_log_header(log_file="evaluation_results.log"):

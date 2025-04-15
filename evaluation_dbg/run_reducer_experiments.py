@@ -1,4 +1,4 @@
-from evaluation_dbg.learner.experiments import (
+from evaluation_dbg.reducer.reducer_experiments import (
     get_calculator_experiment,
     get_heartbleed_experiment,
     get_middle_experiment,
@@ -59,20 +59,21 @@ def evaluate_cookiecutter2(logger_level=LoggerLevel.CRITICAL, random_seed=1):
 
 def run_evaluation(seconds: int = 3600, write_to_file: bool = True):
     seeds = [1,2,3,4,5]
-    log_file = get_log_file_name()
-    csv_file = get_csv_file_name()
+    experiment_name = "learner_reducer"
+    log_file = get_log_file_name(experiment_name)
+    csv_file = get_csv_file_name(experiment_name)
     if write_to_file:
         write_log_header(log_file)
 
     experiments = [
-        # evaluate_calculator,
-        # evaluate_heartbleed,
-        # evaluate_middle,
+        evaluate_calculator,
+        evaluate_heartbleed,
+        evaluate_middle,
         # evaluate_expression,
         evaluate_markup1,
         evaluate_markup2,
-        # evaluate_pysnooper1,
-        # evaluate_pysnooper2,
+        evaluate_pysnooper1,
+        evaluate_pysnooper2,
         # evaluate_cookiecutter1,
         # evaluate_cookiecutter2,
     ]
@@ -84,7 +85,8 @@ def run_evaluation(seconds: int = 3600, write_to_file: bool = True):
             results = experiment(logger_level=LoggerLevel.CRITICAL, random_seed=seed)
             results_list.append(results)
 
-        save_results_to_csv(results_list, csv_file)
+        if write_to_file:
+            save_results_to_csv(results_list, csv_file)
 
         avg_results = average_results(results_list)
         row_print_averages(avg_results, log_file, write_to_file)

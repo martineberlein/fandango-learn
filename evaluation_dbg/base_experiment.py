@@ -90,14 +90,12 @@ class LearnerExperiment(FDLearnExperiment):
         """Evaluate the learner and return formatted results."""
         random.seed(seed)
 
-        parsed_inputs = self._prepare_inputs(self.initial_inputs)
-        for inp in parsed_inputs:
-            print(inp, inp.oracle)
-
         assert isinstance(self.tool, FandangoLearner)
 
+        parsed_inputs = self._prepare_inputs(self.initial_inputs)
+
         start_time = time.time()
-        explanations = self.tool.learn_constraints(test_inputs=parsed_inputs, oracle=self.oracle) # learn_explanation(test_inputs=parsed_inputs, seed=seed, **kwargs)
+        explanations = self.tool.learn_constraints(test_inputs=parsed_inputs, oracle=self.oracle)
         duration = round(time.time() - start_time, 4)
 
         return format_results(
@@ -121,24 +119,20 @@ class ReducerExperiment(FDLearnExperiment):
     def evaluate(self, seed = 1, **kwargs):
         random.seed(seed)
 
-        test_inputs = {str(self.grammar.fuzz()) for _ in range(50)}
+        test_inputs = {str(self.grammar.fuzz()) for _ in range(200)}
         parsed_inputs = self._prepare_inputs(self.initial_inputs.union(test_inputs))
         assert isinstance(self.tool, FeatureReducer)
 
-        start_time = time.time()
         relevant_features = self.tool.learn(test_inputs=parsed_inputs)
-        duration = round(time.time() - start_time, 4)
 
         relevant_features_non_terminals = {
             feature.non_terminal for feature in relevant_features
         }
 
-        print(relevant_features_non_terminals)
-        print(duration)
-
+        initial_inputs = self._prepare_inputs(self.initial_inputs)
         start_time = time.time()
         learner = FandangoLearner(self.grammar)
-        explanations = learner.learn_constraints(test_inputs=parsed_inputs, oracle=self.oracle, relevant_non_terminals=relevant_features_non_terminals)
+        explanations = learner.learn_constraints(test_inputs=initial_inputs, oracle=self.oracle, relevant_non_terminals=relevant_features_non_terminals)
         duration = round(time.time() - start_time, 4)
 
         return format_results(
