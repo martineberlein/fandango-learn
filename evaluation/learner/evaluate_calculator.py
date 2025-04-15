@@ -1,5 +1,5 @@
 import time
-import os
+from pathlib import Path
 import math
 import random
 
@@ -23,8 +23,7 @@ def calculator_oracle(inp):
 
 def evaluate_calculator(logger_level=LoggerLevel.INFO, random_seed=1):
     random.seed(random_seed)
-    dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "calculator.fan")
+    filename = Path(__file__).resolve().parent.parent / "resources" / "calculator.fan"
     grammar, _ = parse(filename)
 
     initial_inputs = {
