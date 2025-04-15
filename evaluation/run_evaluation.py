@@ -6,14 +6,14 @@ import math
 
 from fdlearn.logger import LoggerLevel
 
-from evaluation.calculator.evaluate_calculator import evaluate_calculator
-from evaluation.heartbleed.heartbleed import evaluate_heartbleed
-from evaluation.middle.middle import evaluate_middle
+from evaluation.learner.calculator import evaluate_calculator
+from evaluation.learner.heartbleed.heartbleed import evaluate_heartbleed
+from evaluation.learner.middle import evaluate_middle
 # from evaluation.expression.expression import evaluate_expression
-from evaluation.refinement.calculator.evaluate_caluclator_refinement import evaluate_calculator_refinement
-from evaluation.refinement.heartbleed.evaluate_heartbleed_refinement import evaluate_heartbleed_refinement
-from evaluation.refinement.middle.evaluate_middle_refinement import evaluate_middle_refinement
-from evaluation.pysnooper.evaluate_pysnooper import evaluate_pysnooper2, evaluate_pysnooper3
+from evaluation.refinement.evaluate_caluclator_refinement import evaluate_calculator_refinement
+from evaluation.refinement.evaluate_heartbleed_refinement import evaluate_heartbleed_refinement
+from evaluation.refinement.evaluate_middle_refinement import evaluate_middle_refinement
+from evaluation.learner.pysnooper import evaluate_pysnooper2, evaluate_pysnooper3
 
 
 def compute_stddev(values):
