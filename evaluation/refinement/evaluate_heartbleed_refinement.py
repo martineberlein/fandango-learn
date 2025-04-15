@@ -9,7 +9,7 @@ from fdlearn.data.input import FandangoInput
 from fdlearn.logger import LoggerLevel
 from fdlearn.refinement.core import FandangoRefinement
 
-from evaluation.heartbleed.heartbeat import (
+from evaluation.learner.heartbleed.heartbeat import (
     initial_inputs as heartbleed_inputs,
     oracle_simple as oracle,
 )
@@ -36,7 +36,7 @@ def evaluate_heartbleed_refinement(logger_level=LoggerLevel.INFO, random_seed=1)
         grammar=grammar,
         oracle=oracle,
         initial_inputs=heartbleed_inputs,
-        relevant_non_terminals=relevant_non_terminals,
+        relevant_non_terminals=None,
         logger_level=logger_level,
     )
 

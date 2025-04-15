@@ -54,7 +54,7 @@ def evaluate_calculator_refinement(logger_level=LoggerLevel.CRITICAL, random_see
         grammar=grammar,
         oracle=calculator_oracle,
         initial_inputs=initial_inputs,
-        relevant_non_terminals=relevant_non_terminals,
+        relevant_non_terminals=None,
         logger_level=logger_level,
     )
 
