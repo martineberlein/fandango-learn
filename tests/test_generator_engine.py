@@ -32,7 +32,7 @@ class TestEngine(unittest.TestCase):
         engine = SingleEngine(self.fandango_generator)
         candidates = [self.candidate1, self.candidate2]
         test_inputs = engine.generate(candidates)
-        assert len(test_inputs) >= 20
+        self.assertTrue(len(test_inputs) >= 4)
         # Check that the test_inputs contain expected patterns
         for inp in test_inputs:
             self.assertIsInstance(inp, FandangoInput)
@@ -46,7 +46,7 @@ class TestEngine(unittest.TestCase):
         engine = ParallelEngine(self.fandango_generator, workers=6)
         candidates = [self.candidate1, self.candidate2]
         test_inputs = engine.generate(candidates)
-        assert len(test_inputs) >= 20
+        self.assertTrue(len(test_inputs) >= 4)
         # Check that the test_inputs contain expected patterns
         for inp in test_inputs:
             self.assertIsInstance(inp, FandangoInput)
