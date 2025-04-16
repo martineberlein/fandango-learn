@@ -1,4 +1,6 @@
 from typing import List, Iterable, Optional, Set, Callable
+import os
+import contextlib
 
 from fandango.language.grammar import Grammar
 from fandango.language.symbol import NonTerminal
@@ -207,10 +209,12 @@ class FandangoLearner(BaseFandangoLearner):
             bool: True if the candidate is valid, False otherwise.
         """
         try:
-            candidate.evaluate(positive_inputs)
-            if candidate.recall() >= self.min_recall:
-                candidate.evaluate(negative_inputs)
-                return True
+            # Redirect sys.stderr to a null file during the call, Fandango allways prints to stderr
+            with open(os.devnull, "w") as null_file, contextlib.redirect_stderr(null_file):
+                candidate.evaluate(positive_inputs)
+                if candidate.recall() >= self.min_recall:
+                    candidate.evaluate(negative_inputs)
+                    return True
         except Exception as e:
             LOGGER.debug(
                 "Error when evaluation candidate %s: %s", candidate.constraint, e
