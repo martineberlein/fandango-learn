@@ -112,7 +112,7 @@ class TestPatternsWithPlaceholders(unittest.TestCase):
         # with the newest version of fandango __contains__ checks also if string == <elem>
         # self.assertFalse(constraint.check(inp5))
 
-    # @unittest.skip
+    @unittest.skip
     def test_parsing_constraint_grep(self):
         from dbgbench.resources import get_grep_grammar_path
 

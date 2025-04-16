@@ -110,8 +110,8 @@ if __name__ == "__main__":
     constraints = results["candidates"]
     for constraint in constraints:
         print(constraint)
-    results = evaluate_pysnooper3(random_seed=1)
-    print("Required Time: ", results["time_in_seconds"], " seconds")
-    constraints = results["candidates"]
-    for constraint in constraints:
-        print(constraint)
+    # results = evaluate_pysnooper3(random_seed=1)
+    # print("Required Time: ", results["time_in_seconds"], " seconds")
+    # constraints = results["candidates"]
+    # for constraint in constraints:
+    #     print(constraint)
