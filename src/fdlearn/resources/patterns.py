@@ -117,7 +117,13 @@ for operator in [
 
 
 Pattern(
-    string_pattern="exists <elem> in <NON_TERMINAL>: is_inside(<elem>, <start>);",
+    string_pattern="exists <elem> in <NON_TERMINAL>: <elem> in <start>;",
+    use_cache=False,
+)
+
+Pattern(
+    string_pattern="exists <elem> in <NON_TERMINAL>: <elem> in <NON_TERMINAL>;",
+    use_cache=False,
 )
 
 Pattern(
@@ -125,6 +131,6 @@ Pattern(
 )
 
 Pattern(
-        string_pattern="exists <elem> in <NON_TERMINAL>: str_contains(<elem>, <STRING>);",
+        string_pattern="exists <elem> in <NON_TERMINAL>: <STRING> in <elem>;",
         use_cache=False,
     )
