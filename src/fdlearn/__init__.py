@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from fandango.language.tree import DerivationTree
+import fandango.logger
 
 __version__ = "0.9.1"
 
@@ -11,5 +12,11 @@ def __contains__(self, other) -> bool:
         return False
     return other in self.value()
 
+def silence(self, *args, **kwargs):
+    """
+    Silence the fandango logger.
+    """
+    pass
 
 DerivationTree.__contains__ = __contains__
+fandango.logger.print_exception = silence
