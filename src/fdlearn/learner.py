@@ -121,7 +121,10 @@ class FandangoLearner(BaseFandangoLearner):
         # for candidate in disjunction_candidates:
         #     self.candidates.append(candidate)
 
-        return self.get_best_candidates()
+        results = self.get_best_candidates()
+        LOGGER.info(f"Learned {len(results)} constraint(s) that meet(s) the criteria")
+
+        return results
 
     def parse_string_initial_inputs(
         self, initial_inputs: Set[str], oracle: Callable[[str], OracleResult]
