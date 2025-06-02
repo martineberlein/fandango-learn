@@ -1,10 +1,10 @@
+import random
 from fandango.evolution.algorithm import Fandango
 
 from fdlearn.data import OracleResult
 from fdlearn.learner import FandangoLearner, FandangoInput
 from fdlearn.interface.fandango import parse_contents
-from fdlearn.logger import LoggerLevel
-from fdlearn.resources.patterns import Pattern
+
 
 grammar = """
 <start> ::= <iban>;
@@ -15,13 +15,14 @@ grammar = """
 <digit>::=  "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
 """
 
+
 def validate_iban(iban: str) -> bool:
     """
     Very simple IBAN validity check:
       - No per-country length verification.
     """
     rotated = iban[4:] + iban[:4]
-    num_str = ''.join(str(int(ch, 36)) for ch in rotated)
+    num_str = "".join(str(int(ch, 36)) for ch in rotated)
     try:
         return int(num_str) % 97 == 1
     except ValueError:
@@ -36,6 +37,7 @@ def oracle(iban: str) -> OracleResult:
 
 
 if __name__ == "__main__":
+    random.seed(1)  # For reproducibility
     grammar, _ = parse_contents(grammar)
 
     positive, negative = set(), set()

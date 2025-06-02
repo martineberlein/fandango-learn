@@ -25,7 +25,9 @@ if __name__ == "__main__":
         ("sqrt(2)", False),
         ("cos(10)", False),
     }
-    initial_inputs = {FandangoInput.from_str(grammar, inp, oracle) for inp, oracle in initial_inputs}
+    initial_inputs = {
+        FandangoInput.from_str(grammar, inp, oracle) for inp, oracle in initial_inputs
+    }
 
     relevant_non_terminals = {
         NonTerminal("<number>"),
@@ -35,8 +37,7 @@ if __name__ == "__main__":
 
     learner = FandangoLearner(grammar)
     learned_constraints = learner.learn_constraints(
-        initial_inputs,
-        relevant_non_terminals=relevant_non_terminals
+        initial_inputs, relevant_non_terminals=relevant_non_terminals
     )
 
     for constraint in learner.get_best_candidates():
