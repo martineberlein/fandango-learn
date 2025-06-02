@@ -250,10 +250,7 @@ class FandangoRefinement(HypothesisInputFeatureDebugger):
         timeout_seconds: int = 3600,
         learner: Optional[FandangoLearner] = None,
         generator: Optional[Generator] = None,
-        min_recall: float = 0.9,
-        min_precision: float = 0.6,
         top_n_relevant_non_terminals: int = 3,
-        relevant_non_terminals: Optional[Set[NonTerminal]] = None,
         logger_level: LoggerLevel = LoggerLevel.INFO,
         **kwargs,
     ):
@@ -277,7 +274,6 @@ class FandangoRefinement(HypothesisInputFeatureDebugger):
             **kwargs,
         )
         self.max_candidates = 5
-        self.relevant_non_terminals = relevant_non_terminals
 
     def learn_candidates(self, test_inputs: Set[FandangoInput]) -> Optional[List[FandangoConstraintCandidate]]:
         """
