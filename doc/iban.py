@@ -39,48 +39,39 @@ if __name__ == "__main__":
     grammar, _ = parse_contents(grammar)
 
     positive, negative = set(), set()
-    while True:
+    while len(positive) < 5:
         tree = grammar.fuzz()
         inp = tree.to_string()
         if validate_iban(inp):
             positive.add(inp)
-            break
+            # break
         else:
             negative.add(inp)
 
     print(f"Found {len(positive)} vaild and {len(negative)} invalid IBANs.")
+    print("--- Learning Invariant ---", end="\n\n")
 
     positive_inputs = {FandangoInput.from_str(grammar, inp, True) for inp in positive}
     negative_inputs = {FandangoInput.from_str(grammar, inp, False) for inp in negative}
     initial_inputs = positive_inputs.union(negative_inputs)
 
-    pattern = [
-        Pattern(
-            string_pattern="""
-def iban_checksum(country: str, bban: str) -> str:
-    moved = bban + country + "00"
-    numeric = "".join(str(int(ch, 36)) for ch in moved)
-    remainder = int(numeric) % 97
-    return 98 - remainder
-
-where iban_checksum(str(<NON_TERMINAL>),str(<NON_TERMINAL>)) == int(<NON_TERMINAL>)
-"""
-        )
-    ]
-
-    learner = FandangoLearner(grammar, patterns=pattern)
+    learner = FandangoLearner(grammar)
     learned_constraints = learner.learn_constraints(
         initial_inputs,
     )
 
+    for invariant in learner.get_best_candidates():
+        print("Learned Invariant: ", invariant)
+
     invariant = learner.get_best_candidates()[0].constraint
 
+    print("--- Generating IBANs ---")
     print("Using Invariant ", invariant, " to generate valid IBANs", end="\n\n")
 
     solutions = set()
 
-    while len(solutions) < 100:
-        fandango = Fandango(grammar, [invariant], desired_solutions=100)
+    while len(solutions) < 10:
+        fandango = Fandango(grammar, [invariant])
         population = fandango.evolve()
         for tree in population:
             solutions.add(tree)
