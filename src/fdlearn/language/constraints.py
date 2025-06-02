@@ -3,12 +3,15 @@ from fandango.constraints.base import *
 
 class NegationConstraint(Constraint):
     """A constraint to represent logical negations."""
+
     def __init__(self, inner_constraint: Constraint, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.inner_constraint = inner_constraint
 
     def fitness(
-            self, tree: DerivationTree, scope: Optional[Dict[NonTerminal, DerivationTree]] = None
+        self,
+        tree: DerivationTree,
+        scope: Optional[Dict[NonTerminal, DerivationTree]] = None,
     ) -> ConstraintFitness:
         """
         Computes the fitness for the negation of the inner constraint.
@@ -20,7 +23,7 @@ class NegationConstraint(Constraint):
         """
         # Evaluate the fitness of the inner constraint
         inner_fitness = self.inner_constraint.fitness(tree, scope)
-        #print("InnerFitness: ", inner_fitness.failing_trees)
+        # print("InnerFitness: ", inner_fitness.failing_trees)
 
         # Negate the fitness results
         solved = 1 - inner_fitness.solved
@@ -55,4 +58,3 @@ class NegationConstraint(Constraint):
         # Apply the transformer to the inner constraint.
         normalized_inner = self.inner_constraint.transform(transformer)
         return NegationConstraint(normalized_inner)
-

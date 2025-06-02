@@ -213,7 +213,10 @@ class FandangoLearner(BaseFandangoLearner):
         """
         try:
             # Redirect sys.stderr to a null file during the call, Fandango allways prints to stderr
-            with open(os.devnull, "w") as null_file, contextlib.redirect_stderr(null_file):
+            with (
+                open(os.devnull, "w") as null_file,
+                contextlib.redirect_stderr(null_file),
+            ):
                 candidate.evaluate(positive_inputs)
                 if candidate.recall() >= self.min_recall:
                     candidate.evaluate(negative_inputs)

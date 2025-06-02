@@ -159,7 +159,9 @@ class DerivationFeature(Feature):
         # the subtree with the expansion of the non-terminal and check if the parsed tree exists.
         new_rules = self.grammar.rules.copy()
         new_rules[self.non_terminal] = self.expansion
-        parsed = Grammar.Parser(Grammar(rules=new_rules)).parse(str(subtree), start=self.non_terminal)
+        parsed = Grammar.Parser(Grammar(rules=new_rules)).parse(
+            str(subtree), start=self.non_terminal
+        )
         if parsed:
             return 1
 

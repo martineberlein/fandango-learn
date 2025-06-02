@@ -29,12 +29,12 @@ class SingleExecutionHandler(ExecutionHandler):
 
 
 class BatchExecutionHandler(ExecutionHandler):
-    def _get_label(self, test_inputs: Set[FandangoInput]) -> list[tuple[FandangoInput, OracleResult]]:
+    def _get_label(
+        self, test_inputs: Set[FandangoInput]
+    ) -> list[tuple[FandangoInput, OracleResult]]:
         results = self.oracle(test_inputs)
 
-        return [
-            (inp, results[inp]) for inp in test_inputs
-        ]
+        return [(inp, results[inp]) for inp in test_inputs]
 
     def label(self, test_inputs: Set[FandangoInput], **kwargs):
         test_results = self._get_label(test_inputs)

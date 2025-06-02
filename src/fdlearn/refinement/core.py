@@ -164,7 +164,9 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         """
         Prepare the input feature debugger.
         """
-        test_inputs: Set[FandangoInput] = self.get_test_inputs_from_strings(self.initial_inputs)
+        test_inputs: Set[FandangoInput] = self.get_test_inputs_from_strings(
+            self.initial_inputs
+        )
         test_inputs = self.run_test_inputs(test_inputs)
         self.check_initial_conditions(test_inputs)
         return test_inputs
@@ -179,7 +181,9 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         labeled_test_inputs = self.run_test_inputs(inputs)
         return labeled_test_inputs
 
-    def learn_candidates(self, test_inputs: Set[FandangoInput]) -> Optional[List[FandangoConstraintCandidate]]:
+    def learn_candidates(
+        self, test_inputs: Set[FandangoInput]
+    ) -> Optional[List[FandangoConstraintCandidate]]:
         """
         Learn the candidates (failure diagnoses) from the test inputs.
         """
@@ -193,7 +197,9 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         negated_candidates = construct_negations(candidates)
         return negated_candidates
 
-    def generate_test_inputs(self, candidates: List[FandangoConstraintCandidate]) -> Set[FandangoInput]:
+    def generate_test_inputs(
+        self, candidates: List[FandangoConstraintCandidate]
+    ) -> Set[FandangoInput]:
         """
         Generate the test inputs based on the learned candidates.
         :param candidates: The learned candidates.
@@ -216,7 +222,11 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         """
         strategy = strategy if strategy else self.strategy
         candidates = self.learner.get_best_candidates()
-        sorted_candidates = sorted(candidates, key=lambda c: strategy.evaluate(c), reverse=True) if candidates else []
+        sorted_candidates = (
+            sorted(candidates, key=lambda c: strategy.evaluate(c), reverse=True)
+            if candidates
+            else []
+        )
         return sorted_candidates
 
     def get_test_inputs_from_strings(self, inputs: Iterable[str]) -> Set[FandangoInput]:
@@ -236,7 +246,9 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         has_passing = any(not inp.oracle.is_failing() for inp in test_inputs)
 
         if not (has_failing and has_passing):
-            raise ValueError("The initial inputs must contain at least one failing and one passing input.")
+            raise ValueError(
+                "The initial inputs must contain at least one failing and one passing input."
+            )
 
 
 class FandangoRefinement(HypothesisInputFeatureDebugger):
@@ -255,11 +267,16 @@ class FandangoRefinement(HypothesisInputFeatureDebugger):
         **kwargs,
     ):
         learner: FandangoLearner = (
-            learner if learner else FDLearnReducer(grammar,oracle=oracle,top_n_relevant_non_terminals=top_n_relevant_non_terminals, logger_level=logger_level)
+            learner
+            if learner
+            else FDLearnReducer(
+                grammar,
+                oracle=oracle,
+                top_n_relevant_non_terminals=top_n_relevant_non_terminals,
+                logger_level=logger_level,
+            )
         )
-        generator: Generator = (
-            generator if generator else FandangoGenerator(grammar)
-        )
+        generator: Generator = generator if generator else FandangoGenerator(grammar)
         self.engine: Engine = ParallelEngine(generator)
 
         super().__init__(
@@ -275,7 +292,9 @@ class FandangoRefinement(HypothesisInputFeatureDebugger):
         )
         self.max_candidates = 5
 
-    def learn_candidates(self, test_inputs: Set[FandangoInput]) -> Optional[List[FandangoConstraintCandidate]]:
+    def learn_candidates(
+        self, test_inputs: Set[FandangoInput]
+    ) -> Optional[List[FandangoConstraintCandidate]]:
         """
         Learn the candidates based on the test inputs. The candidates are ordered based on their scores.
         :param test_inputs: The test inputs to learn the candidates from.
@@ -288,9 +307,11 @@ class FandangoRefinement(HypothesisInputFeatureDebugger):
             test_inputs,
         )
         candidates = self.learner.get_best_candidates()
-        return candidates[:self.max_candidates]
+        return candidates[: self.max_candidates]
 
-    def generate_test_inputs(self, candidates: List[FandangoConstraintCandidate]) -> Set[FandangoInput]:
+    def generate_test_inputs(
+        self, candidates: List[FandangoConstraintCandidate]
+    ) -> Set[FandangoInput]:
         """
         Generate the test inputs based on the learned candidates.
         :param candidates: The learned candidates.
@@ -310,5 +331,3 @@ class FandangoRefinement(HypothesisInputFeatureDebugger):
         LOGGER.info(f"Running {len(test_inputs)} test inputs.")
         labeled_test_inputs = self.runner.label(test_inputs=test_inputs)
         return labeled_test_inputs
-
-

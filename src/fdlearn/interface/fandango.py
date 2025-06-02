@@ -18,9 +18,13 @@ def parse(
     if disable_logging:
         logging.getLogger("fandango").disabled = True
     file = open(file_path, "r")
-    grammar, constraints = fandango_parse(file, use_stdlib=False, use_cache=use_cache, **kwargs)
+    grammar, constraints = fandango_parse(
+        file, use_stdlib=False, use_cache=use_cache, **kwargs
+    )
     assert isinstance(constraints, list), "Expected a list of constraints"
-    assert all(isinstance(constraint, Constraint) for constraint in constraints), "Expected a list of constraints"
+    assert all(
+        isinstance(constraint, Constraint) for constraint in constraints
+    ), "Expected a list of constraints"
     return grammar, constraints
 
 
