@@ -1,12 +1,9 @@
-# fandango-learn
-
 [![Python Tests](https://github.com/fandango-fuzzer/fandango-learn/actions/workflows/python-tests.yml/badge.svg)](https://github.com/fandango-fuzzer/fandango-learn/actions/workflows/python-tests.yml)
 
-This repository contains the code for the Fandango Learn project.
-The goal is to automatically learn _fandango_ constraints form a set of inputs.
+# Fandango-Learn - Learning Input Invariants
 
-Overall, the learner will be integrated into **Avicenna**, which provides the necessary infrastructure of the hypothesis refinement loop.
-Furthermore, **Avicenna** provides the means to automatically learn the set of relevant non-terminals, reducing the search space for the learner.
+This repository contains the code for the Fandango-Learn project.
+The goal is to automatically learn _fandango_ constraints from a set of inputs.
 
 ### Table of Contents
 
@@ -22,7 +19,7 @@ Furthermore, **Avicenna** provides the means to automatically learn the set of r
 
 ### Introduction to FandangoLearner
 
-This notebook demonstrates how to use **FandangoLearner**, a pattern based approach that automatically learns constraints to explain why a program fails.
+This notebook demonstrates how to use **FDLearn**, a pattern-based approach that automatically learns constraints to explain why a program fails.
 
 The core idea of FandangoLearner is to identify patterns in inputs 
 that lead to program errors or unexpected behaviors. Using these patterns, 
@@ -225,29 +222,7 @@ This makes comparing both approaches FandangoLearn and ISLearn extremely easy.
 | Pysnooper3        | 2         | 2           | 100.00         | 5          | 1.0000            | 0.0000       | 1.0000          | 0.0000       | 0.0592      |
 
 
-## First Ideas
-
-- Use Pattern Based Approach
-   - Will likely lead to combinatorial explosion
-   - Requires similar ideas as scatched in the Avicenna paper, i.e. reduce the number of relevant non-terminals
-- Build atomic constraints
-   - Use the atomic constraints to build more complex constraints
-   - Atomic constraints will be combined to more complex constraints with conjunctions and disjunctions.
-- Implement different filter mechanisms 
-   - Allow to rank constraints based on different criteria like precision, recall, etc.
-
-new idea:
-- exists and forall constraints can be quite similar to each other, when that use bounded nonterminals that are applied only once.
-   - we might want to use forall constraints only when they are really needed, i.e. when the nonterminal is used multiple times.
-
-
-
 ## TODOs
 
-- Only add new constraints if they are better than the best one so far.
-- InputReducer
 - AttributeSearches
 - Better Negation
-- CLI
-- Documentation
-- Extend Eval
