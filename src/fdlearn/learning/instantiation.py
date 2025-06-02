@@ -125,6 +125,9 @@ class PatternProcessor:
             transformed = transformer.results
             instantiated_patterns.extend(transformed)
 
+        for pattern in instantiated_patterns:
+            print(pattern)
+
         string_patterns = []
         # Replace value placeholders with actual values
         for pattern in instantiated_patterns:
@@ -172,6 +175,7 @@ class NonTerminalPlaceholderTransformer(ConstraintVisitor):
         """
         Replace <NON_TERMINAL> placeholders in a ComparisonConstraint.
         """
+        print("Visiting ComparisonConstraint")
         matches = [
             key
             for key in constraint.searches.keys()
@@ -249,7 +253,28 @@ class NonTerminalPlaceholderTransformer(ConstraintVisitor):
         """
         Recursively visit each constraint in a conjunction.
         """
-        raise NotImplementedError("Conjunctions are not yet supported.")
+
+        def all_combinations(d):
+            keys = list(d.keys())
+            sequences = [d[k] for k in keys]
+            result = []
+            for combo in itertools.product(*sequences):
+                result.append(list(combo))
+            return result
+
+        all_transformed_constraints = dict()
+        for i, sub_constraint in enumerate(constraint.constraints):
+            sub_constraint.accept(self)
+            all_transformed_constraints[i] = self.results
+            self.results = []  # Reset after each sub-constraint
+
+        all_conjunctions = all_combinations(all_transformed_constraints)
+
+        for conjunction in all_conjunctions:
+            self.results.append(
+                ConjunctionConstraint(constraints=conjunction)
+            )
+
 
     def visit_implication_constraint(self, constraint: "ImplicationConstraint"):
         """
