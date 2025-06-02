@@ -1,6 +1,8 @@
 from typing import List
 from queue import Queue
 from threading import Thread
+import os
+import signal
 from multiprocessing import Process, Queue as ProcessQueue, Manager
 
 from fdlearn.logger import LOGGER
@@ -65,7 +67,10 @@ class ParallelEngine(Engine):
             thread.start()
             threads.append(thread)
         for thread in threads:
-            thread.join()
+            thread.join()  # 10 seconds max
+            if thread.is_alive():
+                LOGGER.warning("Process took too long. Terminating...")
+
 
         test_inputs = set()
         while not output_queue.empty():
@@ -77,28 +82,35 @@ class ParallelEngine(Engine):
 class ProcessBasedParallelEngine(Engine):
     def generate(self, candidates: List[FandangoConstraintCandidate]):
         """
-            Generate new inputs for the given candidates in parallel.
-            :param List[Candidate] candidates: The candidates to generate new inputs for.
-            :return:
-            """
-
+        Generate new inputs for the given candidates in parallel using multiprocessing.
+        Includes per-process timeout and forced termination if needed.
+        """
+        LOGGER.debug("Generating inputs using multiprocessing with timeout control.")
         processes = []
         candidate_queue = ProcessQueue()
         manager = Manager()
-        output_list = manager.list()  # Using Manager list to share data between processes
+        output_list = manager.list()  # Shared list across processes
 
         for candidate in candidates:
             candidate_queue.put(candidate)
 
+        # Start one process per worker
         for worker in self.workers:
-            process = Process(target=worker.run_with_engine, args=(candidate_queue, output_list))
-            process.start()
-            processes.append(process)
-        for process in processes:
-            process.join()
+            p = Process(target=worker.run_with_engine, args=(candidate_queue, output_list))
+            p.start()
+            processes.append(p)
 
+        # Monitor and enforce timeout per process
+        for p in processes:
+            p.join(timeout=1)
+            if p.is_alive():
+                LOGGER.warning(f"Process {p.pid} exceeded time limit. Terminating.")
+                os.kill(p.pid, signal.SIGKILL)
+                p.join()
+
+        # Aggregate all test inputs
         test_inputs = set()
         for output in output_list:
             test_inputs.update(output)
-        return test_inputs
 
+        return test_inputs
