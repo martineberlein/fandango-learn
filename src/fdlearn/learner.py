@@ -12,6 +12,7 @@ from .learning.combination import ConjunctionProcessor, DisjunctionProcessor
 from .learning.instantiation import PatternProcessor, ValueMaps
 from .core import BaseFandangoLearner
 from .types import OracleType
+from .resources.patterns import Pattern
 
 
 class FandangoLearner(BaseFandangoLearner):
@@ -22,7 +23,7 @@ class FandangoLearner(BaseFandangoLearner):
     def __init__(
         self,
         grammar: Grammar,
-        patterns: Optional[Iterable[str]] = None,
+        patterns: Optional[Iterable[str | Pattern]] = None,
         logger_level: LoggerLevel = LoggerLevel.INFO,
         max_conjunction_size=2,
         use_all_non_terminals=False,
