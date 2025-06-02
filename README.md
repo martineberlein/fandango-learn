@@ -1,6 +1,6 @@
 [![Python Tests](https://github.com/fandango-fuzzer/fandango-learn/actions/workflows/python-tests.yml/badge.svg)](https://github.com/fandango-fuzzer/fandango-learn/actions/workflows/python-tests.yml)
 
-# Fandango-Learn - Learning Input Invariants
+# FandangoLearn - Learning Input Invariants
 
 This repository contains the code for the Fandango-Learn project.
 The goal is to automatically learn _fandango_ constraints from a set of inputs.
