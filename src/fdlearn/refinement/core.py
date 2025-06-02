@@ -13,10 +13,12 @@ from fdlearn.learner import FandangoLearner
 from fdlearn.learning.candidate import FandangoConstraintCandidate
 from fdlearn.learning.metric import FitnessStrategy, RecallPriorityStringLengthFitness
 from fdlearn.logger import LoggerLevel, LOGGER
+
 from .generator import Generator, FandangoGrammarGenerator, FandangoGenerator
 from .runner import SingleExecutionHandler, ExecutionHandler
 from .engine import Engine, ParallelEngine
 from .negation import construct_negations
+from .learner import FDLearnReducer
 
 
 class InputFeatureDebugger(ABC):
@@ -80,6 +82,7 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         )
         self.runner: ExecutionHandler = SingleExecutionHandler(self.oracle)
         # self.engine: Engine = SingleEngine(generator)
+        self.test_inputs: set[FandangoInput] = set()
 
     def set_runner(self, runner: ExecutionHandler):
         """
@@ -142,12 +145,12 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         start_time = self.set_timeout()
         LOGGER.info("Starting the hypothesis-based input feature debugger.")
         try:
-            test_inputs: Set[FandangoInput] = self.prepare_test_inputs()
+            self.test_inputs: set[FandangoInput] = self.prepare_test_inputs()
 
             while self.check_iteration_limits(iteration, start_time):
                 LOGGER.info(f"Starting iteration {iteration}.")
-                new_test_inputs = self.hypothesis_loop(test_inputs)
-                test_inputs.update(new_test_inputs)
+                new_test_inputs = self.hypothesis_loop(self.test_inputs)
+                self.test_inputs.update(new_test_inputs)
 
                 iteration += 1
         except TimeoutError as e:
@@ -247,15 +250,12 @@ class FandangoRefinement(HypothesisInputFeatureDebugger):
         timeout_seconds: int = 3600,
         learner: Optional[FandangoLearner] = None,
         generator: Optional[Generator] = None,
-        min_recall: float = 0.9,
-        min_precision: float = 0.6,
         top_n_relevant_non_terminals: int = 3,
-        relevant_non_terminals: Optional[Set[NonTerminal]] = None,
         logger_level: LoggerLevel = LoggerLevel.INFO,
         **kwargs,
     ):
         learner: FandangoLearner = (
-            learner if learner else FandangoLearner(grammar, logger_level=logger_level)
+            learner if learner else FDLearnReducer(grammar,oracle=oracle,top_n_relevant_non_terminals=top_n_relevant_non_terminals, logger_level=logger_level)
         )
         generator: Generator = (
             generator if generator else FandangoGenerator(grammar)
@@ -274,10 +274,6 @@ class FandangoRefinement(HypothesisInputFeatureDebugger):
             **kwargs,
         )
         self.max_candidates = 5
-        self.relevant_non_terminals = relevant_non_terminals
-
-    def learn_relevant_non_terminals(self):
-        return self.relevant_non_terminals
 
     def learn_candidates(self, test_inputs: Set[FandangoInput]) -> Optional[List[FandangoConstraintCandidate]]:
         """
@@ -286,10 +282,10 @@ class FandangoRefinement(HypothesisInputFeatureDebugger):
         :return Optional[List[Candidate]]: The learned candidates.
         """
         LOGGER.info("Learning the candidates.")
-        relevant_non_terminals = self.learn_relevant_non_terminals()
 
+        print(len(test_inputs))
         _ = self.learner.learn_constraints(
-            test_inputs, relevant_non_terminals=relevant_non_terminals
+            test_inputs,
         )
         candidates = self.learner.get_best_candidates()
         return candidates[:self.max_candidates]

@@ -6,6 +6,7 @@ from typing import Set, Union, List
 from fandango.language.grammar import Grammar
 from fandango.evolution.algorithm import Fandango
 
+from fdlearn.logger import LOGGER
 from fdlearn.data.input import FandangoInput
 from fdlearn.learning.candidate import FandangoConstraintCandidate
 
@@ -39,22 +40,19 @@ class Generator(ABC):
                 test_inputs.add(inp)
         return test_inputs
 
-    def run_with_engine(self, candidate_queue: Queue[FandangoConstraintCandidate], output_queue: Union[Queue, List]):
-        """
-        Run the generator within an engine. This is useful for parallelizing the generation process.
-        :param candidate_queue:
-        :param output_queue:
-        :return:
-        """
+    def run_with_engine(self, candidate_queue: Queue, output_queue: Union[Queue, List]):
         try:
             while True:
-                test_inputs = self.generate_test_inputs(candidate=candidate_queue.get_nowait())
-                if isinstance(output_queue, Queue):
+                try:
+                    candidate = candidate_queue.get_nowait()
+                    LOGGER.debug(f"Got candidate: {candidate}")
+                    test_inputs = self.generate_test_inputs(candidate=candidate)
                     output_queue.put(test_inputs)
-                else:
-                    output_queue.append(test_inputs)
-        except Empty:
-            pass
+                except Empty:
+                    LOGGER.debug("Candidate queue empty, exiting.")
+                    break
+        except Exception as e:
+            LOGGER.error(f"Exception in run_with_engine: {e}")
 
     def reset(self, **kwargs):
         """
@@ -71,7 +69,7 @@ class FandangoGenerator(Generator):
     def __init__(self, grammar, **kwargs):
         super().__init__(grammar, **kwargs)
 
-    def generate_test_inputs(self, candidate: FandangoConstraintCandidate=None, num_inputs: int = 10, time_out: int = 1, **kwargs) -> List[FandangoInput]:
+    def generate_test_inputs(self, candidate: FandangoConstraintCandidate=None, num_inputs: int = 2, time_out: int = 1, **kwargs) -> List[FandangoInput]:
         """
         Generate multiple inputs to be used in the debugging process.
         """
@@ -84,15 +82,18 @@ class FandangoGenerator(Generator):
                 if inp not in test_inputs_hashes:
                     test_inputs_hashes.add(inp)
                     test_inputs.append(inp)
-        #print("Generating test inputs for candidate: ", candidate, test_inputs[:num_inputs])
+        print("took: ", time.time() - start_time, candidate,len(test_inputs))
+        # print("Generating test inputs for candidate: ", candidate, test_inputs[:num_inputs])
         return test_inputs[:num_inputs]
 
     def generate(self, candidate: FandangoConstraintCandidate=None, **kwargs) -> Set[FandangoInput]:
         fandango = Fandango(
             grammar=self.grammar,
             constraints=[candidate.constraint],
-            max_generations=100,
-            #random_seed=1,
+            max_generations=50,
+            desired_solutions=2,
+            # random_seed=1,
+            warnings_are_errors=True,
         )
 
         solutions = fandango.evolve()

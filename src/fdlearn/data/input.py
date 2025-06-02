@@ -158,12 +158,19 @@ class Input(ABC):
 
 
 class FandangoInput(Input):
+    """
+    An Input instance representing a test input for the Fandango language.
+    """
 
     def __init__(self, tree: DerivationTree, oracle: Optional[OracleResult] = None):
         super().__init__(tree, oracle)
         self.hash = hash(self.tree)
 
     def __hash__(self) -> int:
+        """
+        Generates a hash based on the structural hash of the derivation tree.
+        :return:
+        """
         return self.hash
 
     @classmethod
@@ -173,6 +180,13 @@ class FandangoInput(Input):
         input_string,
         oracle: Optional[OracleResult | bool] = None,
     ):
+        """
+        Factory method to create an Input instance from a string using the specified grammar.
+        :param grammar: The grammar used for parsing the input string.
+        :param input_string: The input string to parse.
+        :param oracle: The optional oracle result.
+        :return: The created Input instance.
+        """
         tree = grammar.parse(input_string)
         if isinstance(oracle, bool):
             oracle = OracleResult.FAILING if oracle else OracleResult.PASSING
@@ -182,4 +196,4 @@ class FandangoInput(Input):
                 oracle,
             )
         else:
-            raise SyntaxError(f"Could not parse input_string {input_string}.")
+            raise SyntaxError(f"Could not parse input_string '{input_string}'.")

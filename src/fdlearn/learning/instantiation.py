@@ -273,7 +273,28 @@ class NonTerminalPlaceholderTransformer(ConstraintVisitor):
         """
         Expression constraints are returned as-is.
         """
-        self.results.append(constraint)
+        # self.results.append(constraint)
+        matches = [
+            key
+            for key in constraint.searches.keys()
+            if constraint.searches[key].symbol == NonTerminal("<NON_TERMINAL>")
+        ]
+        if matches:
+            for replacements in itertools.product(
+                self.relevant_non_terminals, repeat=len(matches)
+            ):
+                new_searches = deepcopy(constraint.searches)
+                for key, replacement in zip(matches, replacements):
+                    new_searches[key] = RuleSearch(replacement)
+                new_constraint = ExpressionConstraint(
+                    expression=constraint.expression,
+                    searches=new_searches,
+                    local_variables=constraint.local_variables,
+                    global_variables=constraint.global_variables,
+                )
+                self.results.append(new_constraint)
+        else:
+            self.results.append(constraint)
 
 
 class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
@@ -447,7 +468,7 @@ class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
                     results.add(str(left_result))
                 except Exception as e:
                     e.add_note("Evaluation failed: " + constraint.left)
-                    LOGGER.error(e)
+                    LOGGER.debug(e)
                     continue
         return results
 

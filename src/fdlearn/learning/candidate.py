@@ -91,7 +91,8 @@ class FandangoConstraintCandidate(ConstraintCandidate):
         """
         if len(self.failing_inputs_eval_results) == 0:
             return 0.0
-        return sum(int(entry) for entry in self.failing_inputs_eval_results) / len(
+        tp = self.failing_inputs_eval_results.count(True)
+        return tp / len(
             self.failing_inputs_eval_results
         )
 
@@ -99,9 +100,10 @@ class FandangoConstraintCandidate(ConstraintCandidate):
         """
         Return the precision of the candidate.
         """
-        tp = sum(int(entry) for entry in self.failing_inputs_eval_results)
-        fp = sum(int(entry) for entry in self.passing_inputs_eval_results)
-        return tp / (tp + fp) if tp + fp > 0 else 0.0
+        tp = self.failing_inputs_eval_results.count(True)
+        fp = self.passing_inputs_eval_results.count(True)
+        denominator = tp + fp
+        return tp / denominator if denominator else 0.0
 
     def __eq__(self, other):
         """

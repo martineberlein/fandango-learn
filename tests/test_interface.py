@@ -49,6 +49,20 @@ class InterfaceTest(unittest.TestCase):
         constraint = parse_constraint("str(<ab>) == 'a';")
         self.assertIsInstance(constraint, Constraint)
 
+    def test_parse_constraint_none(self):
+        """
+        Test the check function with a constraint that compares None values.
+        This should return False. If this tests fails, it means that the fandango check function is broken.
+        See fandango issue #346.
+        """
+        constraint = parse_constraint("int(<start>) == int(<ab>);")
+        self.assertIsInstance(constraint, Constraint)
+
+        grammar, _ = parse_contents(self.GRAMMAR)
+        tree = grammar.parse("a")
+        self.assertIsNotNone(tree)
+        self.assertFalse(constraint.check(tree))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import List, Dict, Optional, Any, Type
+from typing import List, Optional, Type
 from abc import ABC, abstractmethod
 
 from fandango.language.grammar import Grammar
@@ -27,25 +27,53 @@ DEFAULT_FEATURE_TYPES: List[Type[Feature]] = [
 
 
 class FeatureCollector(ABC):
+    """
+    An abstract class for a feature collector.
+    """
+
     def __init__(
         self, grammar: Grammar, feature_types: Optional[List[Type[Feature]]] = None
     ):
+        """
+        Initializes the feature collector with a grammar and optional feature types.
+        :param grammar:
+        :param feature_types:
+        """
         self.grammar = grammar
         feature_types = feature_types if feature_types else DEFAULT_FEATURE_TYPES
         self.features = self.construct_features(feature_types)
 
     def construct_features(self, feature_types: List[Type[Feature]]) -> List[Feature]:
+        """
+        Constructs the features based on the given feature types.
+        :param feature_types: The feature types to construct the features from.
+        :return: A list of features.
+        """
         factory = FeatureFactory(self.grammar)
         return factory.build(feature_types)
 
     @abstractmethod
-    def collect_features(self, test_input: FandangoInput) -> Dict[str, Any]:
-        pass
+    def collect_features(self, test_input: FandangoInput) -> FeatureVector:
+        """
+        Collects features for a given input.
+        :param test_input: The input for which to collect features.
+        :return: A Feature Vector - dictionary of features and their values.
+        """
+        raise NotImplementedError()
 
 
 class GrammarFeatureCollector(FeatureCollector):
+    """
+    A feature collector that collects features based on the grammar of the Fandango language.
+    """
+
     def collect_features(self, test_input: FandangoInput) -> FeatureVector:
-        feature_vector = FeatureVector(str(test_input))
+        """
+        Collects features for a given input.
+        :param test_input: The input for which to collect features.
+        :return: A Feature Vector - dictionary of features and their values.
+        """
+        feature_vector = FeatureVector()
 
         for feature in self.features:
             feature_vector.set_feature(feature, feature.default_value)
@@ -54,6 +82,12 @@ class GrammarFeatureCollector(FeatureCollector):
         return feature_vector
 
     def set_features(self, tree: DerivationTree, feature_vector: FeatureVector):
+        """
+        Sets the features for a given tree.
+        :param tree: The tree for which to set the features.
+        :param feature_vector: The feature vector to set the features in.
+        :return: None
+        """
         node: Symbol = tree.symbol
         children = tree.children
         assert isinstance(node, NonTerminal)
@@ -70,6 +104,11 @@ class GrammarFeatureCollector(FeatureCollector):
 
     @lru_cache
     def get_corresponding_feature(self, current_node: NonTerminal) -> List[Feature]:
+        """
+        Returns the features that are relevant to the current node.
+        :param current_node: The current node for which to get the features.
+        :return: A list of features that are relevant to the current node.
+        """
         return [
             feature
             for feature in self.features

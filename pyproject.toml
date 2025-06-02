@@ -25,6 +25,7 @@ dependencies = [
     "lightgbm>=4.3.0",
     "numpy>=1.23.2",
     "scikit-learn>=1.1.2",
+    "fandango-fuzzer>=0.8.0"
 ]
 
 [project.optional-dependencies]
@@ -39,3 +40,6 @@ test = [
 [tool.black]
 line-length = 88
 target-version = ['py311']
+
+[project.scripts]
+fdlearn = "fdlearn.cli:main"
