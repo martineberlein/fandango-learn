@@ -392,3 +392,43 @@ def get_reachable_non_terminals(
 
     _find_reachable_nonterminals(grammar, non_terminal)
     return reachable
+
+
+def get_direct_reachable_non_terminals(
+    grammar: Grammar, non_terminal: NonTerminal
+) -> Set[NonTerminal]:
+    """
+    Get all directly reachable non-terminals for a given non-terminal in a grammar.
+
+    :param grammar: The grammar to search in.
+    :param non_terminal: The non-terminal to search for.
+    :return: A set of reachable non-terminals.
+    """
+    reachable = set()
+    non_terminal_visitor = NonTerminalVisitor()
+
+    def _find_reachable_nonterminals(grammar_: Grammar, symbol: NonTerminal):
+        nonlocal reachable
+        expansion_node = grammar_.rules.get(symbol, [])
+        for exp in non_terminal_visitor.visit(expansion_node):
+            if exp not in reachable:
+                reachable.add(exp)
+
+    _find_reachable_nonterminals(grammar, non_terminal)
+    return reachable
+
+
+def get_direct_reachability_map(grammar: Grammar) -> dict[NonTerminal, Set[NonTerminal]]:
+    """
+    Get the reachability map for a given grammar.
+
+    :param grammar: The grammar to get the reachability map for.
+    :return: The reachability map.s
+    """
+    reachability_map = dict()
+    for non_terminal in grammar.rules:
+        reachability_map[non_terminal] = get_direct_reachable_non_terminals(
+            grammar, non_terminal
+        )
+
+    return reachability_map
