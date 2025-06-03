@@ -4,36 +4,33 @@ from fandango.evolution.algorithm import Fandango
 from fdlearn.data import OracleResult
 from fdlearn.learner import FandangoLearner, FandangoInput
 from fdlearn.interface.fandango import parse_contents
-
+from fdlearn.resources import Pattern
 
 grammar = """
-<start> ::= <iban>;
-<iban> ::= <county><checksum><bban>;
-<county> ::= "DE" | "AT" | "CH" | "ES" | "FR" | "IT" | "NL" | "BE" | "LU" | "GB";
-<checksum> ::= <digit><digit>;
-<bban> ::= <digit>+;
-<digit>::=  "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
+<start> ::= <arithexp>;
+<arithexp> ::= <term> | <number> | "(" <arithexp> ")";
+<term> ::= <arithexp><operator><rarithexp>;
+<rarithexp> ::= <arithexp>;
+<operator> ::= " + " | " - " | " * " | " / ";
+<number> ::= <maybeminus><onenine><maybedigits> | "0";
+<maybeminus> ::= "~ " | "";
+<onenine> ::= "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
+<maybedigits> ::= <digit>*;
+<digit>::=  "0" | <onenine>;
 """
 
 
-def validate_iban(iban: str) -> bool:
-    """
-    Very simple IBAN validity check:
-      - No per-country length verification.
-    """
-    rotated = iban[4:] + iban[:4]
-    num_str = "".join(str(int(ch, 36)) for ch in rotated)
-    try:
-        return int(num_str) % 97 == 1
-    except ValueError:
-        return False
-
-
-def oracle(iban: str) -> OracleResult:
+def oracle(inp: str) -> OracleResult:
     """
     Oracle function to validate IBANs.
     """
-    return OracleResult.PASSING if validate_iban(str(iban)) else OracleResult.FAILING
+    try:
+        eval(inp)
+    except ZeroDivisionError:
+        return OracleResult.FAILING
+    except Exception:
+        return OracleResult.UNDEFINED
+    return OracleResult.PASSING
 
 
 if __name__ == "__main__":
@@ -44,13 +41,14 @@ if __name__ == "__main__":
     while len(positive) < 5:
         tree = grammar.fuzz()
         inp = tree.to_string()
-        if validate_iban(inp):
+        if oracle(inp).is_failing():
             positive.add(inp)
-            # break
+            print(inp)
         else:
             negative.add(inp)
 
-    print(f"Found {len(positive)} vaild and {len(negative)} invalid IBANs.")
+    print(f"Found {len(positive)} valid and {len(negative)} invalid inputs.")
+
     print("--- Learning Invariant ---", end="\n\n")
 
     positive_inputs = {FandangoInput.from_str(grammar, inp, True) for inp in positive}
@@ -78,8 +76,8 @@ if __name__ == "__main__":
         for tree in population:
             solutions.add(tree)
 
-    tp = [True for tree in solutions if validate_iban(str(tree))]
-    fp = [True for tree in solutions if not validate_iban(str(tree))]
+    tp = [True for tree in solutions if oracle(str(tree)).is_failing()]
+    fp = [True for tree in solutions if not oracle(str(tree)).is_failing()]
 
     print("--- Invariant Evaluation ---")
     print(f"Generated {len(tp)} valid IBANs and {len(fp)} invalid IBANs.")

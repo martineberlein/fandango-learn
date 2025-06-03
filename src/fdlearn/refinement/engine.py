@@ -13,15 +13,12 @@ from .generator import Generator
 class Engine:
 
     def __init__(
-            self,
-            generator: Generator,
-            workers: int = 10,
+        self,
+        generator: Generator,
+        workers: int = 10,
     ):
         self.generator = generator
-        self.workers = [
-            generator
-            for _ in range(workers)
-        ]
+        self.workers = [generator for _ in range(workers)]
         self._check_generator_compatability()
 
     def _check_generator_compatability(self):
@@ -55,7 +52,9 @@ class ParallelEngine(Engine):
         """
 
         LOGGER.debug("Generating inputs in parallel...")
-        LOGGER.debug(f"Number of workers: {len(self.workers)} Number of candidates: {len(candidates)}")
+        LOGGER.debug(
+            f"Number of workers: {len(self.workers)} Number of candidates: {len(candidates)}"
+        )
 
         threads = []
         candidate_queue = Queue()
@@ -63,14 +62,15 @@ class ParallelEngine(Engine):
         for candidate in candidates:
             candidate_queue.put(candidate)
         for worker in self.workers:
-            thread = Thread(target=worker.run_with_engine, args=(candidate_queue, output_queue))
+            thread = Thread(
+                target=worker.run_with_engine, args=(candidate_queue, output_queue)
+            )
             thread.start()
             threads.append(thread)
         for thread in threads:
             thread.join()  # 10 seconds max
             if thread.is_alive():
                 LOGGER.warning("Process took too long. Terminating...")
-
 
         test_inputs = set()
         while not output_queue.empty():
@@ -96,7 +96,9 @@ class ProcessBasedParallelEngine(Engine):
 
         # Start one process per worker
         for worker in self.workers:
-            p = Process(target=worker.run_with_engine, args=(candidate_queue, output_list))
+            p = Process(
+                target=worker.run_with_engine, args=(candidate_queue, output_list)
+            )
             p.start()
             processes.append(p)
 

@@ -17,13 +17,13 @@ class FDLearnReducer(FandangoLearner):
     """
 
     def __init__(
-            self,
-            *args,
-            oracle: OracleType,
-            top_n_relevant_non_terminals: int = 3,
-            relevant_non_terminals: set[NonTerminal] | None = None,
-            reducer: Optional[FeatureReducer] = None,
-            **kwargs,
+        self,
+        *args,
+        oracle: OracleType,
+        top_n_relevant_non_terminals: int = 3,
+        relevant_non_terminals: set[NonTerminal] | None = None,
+        reducer: Optional[FeatureReducer] = None,
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self.oracle = oracle
@@ -32,7 +32,9 @@ class FDLearnReducer(FandangoLearner):
         self.relevant_non_terminals: set[NonTerminal] | None = relevant_non_terminals
 
         self.collector = GrammarFeatureCollector(self.grammar)
-        self.reducer = reducer or SHAPRelevanceLearner(self.grammar, top_n_relevant_features=top_n_relevant_non_terminals)
+        self.reducer = reducer or SHAPRelevanceLearner(
+            self.grammar, top_n_relevant_features=top_n_relevant_non_terminals
+        )
 
     def set_learning_inputs(self) -> None:
         """
@@ -45,7 +47,7 @@ class FDLearnReducer(FandangoLearner):
             self.learning_inputs.add(inp)
 
     def learn_relevant_non_terminals(
-            self, test_inputs: set[FandangoInput]
+        self, test_inputs: set[FandangoInput]
     ) -> set[NonTerminal]:
         """
         Learns the relevant non-terminals from a combination of test inputs and the generated
@@ -70,7 +72,7 @@ class FDLearnReducer(FandangoLearner):
         return relevant_nonterminals
 
     def get_relevant_non_terminals(
-            self, _cached_relevant: set[NonTerminal], test_inputs: set[FandangoInput]
+        self, _cached_relevant: set[NonTerminal], test_inputs: set[FandangoInput]
     ) -> set[NonTerminal]:
         """
         Returns the relevant non-terminals. If a cached set is available, it is returned.

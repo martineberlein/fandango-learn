@@ -12,6 +12,8 @@ from .learning.combination import ConjunctionProcessor, DisjunctionProcessor
 from .learning.instantiation import PatternProcessor, ValueMaps
 from .core import BaseFandangoLearner
 from .types import OracleType
+from .resources.patterns import Pattern
+from .reduction.feature_class import get_direct_reachability_map
 
 
 class FandangoLearner(BaseFandangoLearner):
@@ -22,7 +24,7 @@ class FandangoLearner(BaseFandangoLearner):
     def __init__(
         self,
         grammar: Grammar,
-        patterns: Optional[Iterable[str]] = None,
+        patterns: Optional[Iterable[str | Pattern]] = None,
         logger_level: LoggerLevel = LoggerLevel.INFO,
         max_conjunction_size=2,
         use_all_non_terminals=False,
@@ -96,8 +98,10 @@ class FandangoLearner(BaseFandangoLearner):
         value_maps = ValueMaps(relevant_non_terminals)
         value_maps.extract_non_terminal_values(self.all_positive_inputs)
 
+        reachability_map = get_direct_reachability_map(self.grammar)
+
         instantiated_candidates = self.pattern_processor.instantiate_patterns(
-            relevant_non_terminals, sorted_positive_inputs, value_maps=value_maps
+            relevant_non_terminals, sorted_positive_inputs, value_maps=value_maps, reachability_map=reachability_map
         )
 
         candidates_to_evaluate: List[FandangoConstraintCandidate] = (
@@ -213,7 +217,10 @@ class FandangoLearner(BaseFandangoLearner):
         """
         try:
             # Redirect sys.stderr to a null file during the call, Fandango allways prints to stderr
-            with open(os.devnull, "w") as null_file, contextlib.redirect_stderr(null_file):
+            with (
+                open(os.devnull, "w") as null_file,
+                contextlib.redirect_stderr(null_file),
+            ):
                 candidate.evaluate(positive_inputs)
                 if candidate.recall() >= self.min_recall:
                     candidate.evaluate(negative_inputs)

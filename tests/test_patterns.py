@@ -165,9 +165,8 @@ class TestPatternsWithPlaceholders(unittest.TestCase):
         instantiated_patterns = []
         for pattern in [pattern.instantiated_pattern]:
             transformer = NonTerminalPlaceholderTransformer({NonTerminal("<C>")})
-            pattern.accept(transformer)
-            transformed = transformer.results
-            instantiated_patterns.extend(transformed)
+            all_transformed = transformer.transform(pattern)
+            instantiated_patterns.extend(all_transformed)
 
         for inp in instantiated_patterns:
             self.assertTrue(inp.check(inp1))

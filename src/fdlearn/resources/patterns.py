@@ -131,12 +131,12 @@ Pattern(
 )
 
 Pattern(
-        string_pattern="exists <elem> in <NON_TERMINAL>: <STRING> in <elem>;",
-        use_cache=False,
-    )
+    string_pattern="exists <elem> in <NON_TERMINAL>: <STRING> in <elem>;",
+    use_cache=False,
+)
 
 Pattern(
-            string_pattern="""
+    string_pattern="""
 def iban_checksum(country: str, bban: str) -> str:
     moved = bban + country + "00"
     numeric = "".join(str(int(ch, 36)) for ch in moved)
@@ -145,4 +145,11 @@ def iban_checksum(country: str, bban: str) -> str:
 
 where iban_checksum(str(<NON_TERMINAL>),str(<NON_TERMINAL>)) == int(<NON_TERMINAL>)
 """
-        )
+)
+
+pattern = [
+    Pattern(
+        string_pattern="""exists <elem> in <NON_TERMINAL>: (str(<ATTRIBUTE>) == <STRING>) and (int(eval(str(<ATTRIBUTE>))) == <INTEGER>);
+        """
+    )
+]

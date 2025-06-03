@@ -10,7 +10,7 @@ from fdlearn.data.oracle import OracleResult
 
 
 def build_conjunction(
-        candidates: tuple[FandangoConstraintCandidate, ...],
+    candidates: tuple[FandangoConstraintCandidate, ...],
 ) -> FandangoConstraintCandidate:
     assert len(candidates) >= 2, "Need at least two candidates for conjunction"
 
@@ -18,7 +18,9 @@ def build_conjunction(
     cache_keys = first.cache.keys()
 
     for other in candidates[1:]:
-        assert other.cache.keys() == cache_keys, "All candidates must share the same cache keys"
+        assert (
+            other.cache.keys() == cache_keys
+        ), "All candidates must share the same cache keys"
 
     new_cache = {}
     new_failing, new_passing = [], []

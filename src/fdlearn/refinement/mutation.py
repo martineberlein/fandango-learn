@@ -259,15 +259,13 @@ class MutationFuzzer:
 
     def process_new_input(self, inp: FandangoInput, update_fragments: bool) -> bool:
         if inp in self.population:
-            LOGGER.debug(
-                f"Input {inp} already exists in the population. Skipping...")
+            LOGGER.debug(f"Input {inp} already exists in the population. Skipping...")
             return False
 
         if self.oracle is not None:
             oracle_result = self.oracle(inp)
             inp.oracle = oracle_result
-            LOGGER.debug(
-                f"Input {inp} is {oracle_result}. Skipping...")
+            LOGGER.debug(f"Input {inp} is {oracle_result}. Skipping...")
             if oracle_result != OracleResult.FAILING:
                 return False
 
@@ -279,4 +277,3 @@ class MutationFuzzer:
         print(f"Input: {inp} Added.")
         LOGGER.debug(f"Input {inp} added to the population.")
         return True
-

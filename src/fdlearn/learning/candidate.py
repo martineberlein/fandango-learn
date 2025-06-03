@@ -92,9 +92,7 @@ class FandangoConstraintCandidate(ConstraintCandidate):
         if len(self.failing_inputs_eval_results) == 0:
             return 0.0
         tp = self.failing_inputs_eval_results.count(True)
-        return tp / len(
-            self.failing_inputs_eval_results
-        )
+        return tp / len(self.failing_inputs_eval_results)
 
     def precision(self) -> float:
         """

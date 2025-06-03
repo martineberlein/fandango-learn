@@ -1,6 +1,11 @@
 from itertools import product
 
-from fandango.constraints.base import ConjunctionConstraint, DisjunctionConstraint, ComparisonConstraint, Comparison
+from fandango.constraints.base import (
+    ConjunctionConstraint,
+    DisjunctionConstraint,
+    ComparisonConstraint,
+    Comparison,
+)
 
 from fdlearn.language.constraints import NegationConstraint
 from fdlearn.learning.candidate import FandangoConstraintCandidate
@@ -22,7 +27,9 @@ def construct_negations(candidates: list[FandangoConstraintCandidate]):
         elif isinstance(candidate.constraint, ComparisonConstraint):
             result.append(negate_comparison_constraint(candidate))
         else:
-            result.append(FandangoConstraintCandidate(NegationConstraint(candidate.constraint)))
+            result.append(
+                FandangoConstraintCandidate(NegationConstraint(candidate.constraint))
+            )
 
     return result
 
@@ -39,8 +46,15 @@ def construct_negations_from_conjunctions(candidate: FandangoConstraintCandidate
     def negate(constraint):
         return NegationConstraint(constraint)
 
-    results = [FandangoConstraintCandidate(ConjunctionConstraint(
-        [negate(value) if bit else value for value, bit in zip(lst, combination)]))
+    results = [
+        FandangoConstraintCandidate(
+            ConjunctionConstraint(
+                [
+                    negate(value) if bit else value
+                    for value, bit in zip(lst, combination)
+                ]
+            )
+        )
         for combination in product([0, 1], repeat=len(lst))
         if any(combination)
     ]
@@ -62,9 +76,11 @@ def construct_negation_from_disjunction(candidate: FandangoConstraintCandidate):
 
     # Create one negation at a time
     results = [
-        FandangoConstraintCandidate(DisjunctionConstraint(
-            [negate(value) if i == idx else value for idx, value in enumerate(lst)]
-        ))
+        FandangoConstraintCandidate(
+            DisjunctionConstraint(
+                [negate(value) if i == idx else value for idx, value in enumerate(lst)]
+            )
+        )
         for i in range(len(lst))
     ]
 
@@ -83,25 +99,33 @@ def negate_comparison_operator(operator: Comparison) -> Comparison:
     return negation_map[operator]
 
 
-def negate_comparison_constraint(candidate: FandangoConstraintCandidate) -> FandangoConstraintCandidate:
+def negate_comparison_constraint(
+    candidate: FandangoConstraintCandidate,
+) -> FandangoConstraintCandidate:
     assert isinstance(candidate.constraint, ComparisonConstraint)
     constraint = candidate.constraint
     negated_operator = negate_comparison_operator(constraint.operator)
-    return FandangoConstraintCandidate(ComparisonConstraint(
-        negated_operator,
-        constraint.left,
-        constraint.right,
-        searches=constraint.searches,
-        local_variables=constraint.local_variables,
-        global_variables=constraint.global_variables,
-    ))
+    return FandangoConstraintCandidate(
+        ComparisonConstraint(
+            negated_operator,
+            constraint.left,
+            constraint.right,
+            searches=constraint.searches,
+            local_variables=constraint.local_variables,
+            global_variables=constraint.global_variables,
+        )
+    )
 
 
 if __name__ == "__main__":
     constraint_1 = parse_constraint("int(<number>) <= 0;")
     constraint_2 = parse_constraint("str(<function>) <= 'sqrt';")
-    candidate_conjunction = FandangoConstraintCandidate(ConjunctionConstraint([constraint_1, constraint_2]))
-    candidate_disjunction = FandangoConstraintCandidate(DisjunctionConstraint([constraint_1, constraint_2]))
+    candidate_conjunction = FandangoConstraintCandidate(
+        ConjunctionConstraint([constraint_1, constraint_2])
+    )
+    candidate_disjunction = FandangoConstraintCandidate(
+        DisjunctionConstraint([constraint_1, constraint_2])
+    )
     res = construct_negations_from_conjunctions(candidate_conjunction)
     for cand in res:
         print(cand.constraint)

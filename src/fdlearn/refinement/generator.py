@@ -69,7 +69,13 @@ class FandangoGenerator(Generator):
     def __init__(self, grammar, **kwargs):
         super().__init__(grammar, **kwargs)
 
-    def generate_test_inputs(self, candidate: FandangoConstraintCandidate=None, num_inputs: int = 2, time_out: int = 1, **kwargs) -> List[FandangoInput]:
+    def generate_test_inputs(
+        self,
+        candidate: FandangoConstraintCandidate = None,
+        num_inputs: int = 2,
+        time_out: int = 1,
+        **kwargs,
+    ) -> List[FandangoInput]:
         """
         Generate multiple inputs to be used in the debugging process.
         """
@@ -82,11 +88,12 @@ class FandangoGenerator(Generator):
                 if inp not in test_inputs_hashes:
                     test_inputs_hashes.add(inp)
                     test_inputs.append(inp)
-        print("took: ", time.time() - start_time, candidate,len(test_inputs))
-        # print("Generating test inputs for candidate: ", candidate, test_inputs[:num_inputs])
+        LOGGER.debug("took: ", time.time() - start_time, candidate, len(test_inputs))
         return test_inputs[:num_inputs]
 
-    def generate(self, candidate: FandangoConstraintCandidate=None, **kwargs) -> Set[FandangoInput]:
+    def generate(
+        self, candidate: FandangoConstraintCandidate = None, **kwargs
+    ) -> Set[FandangoInput]:
         fandango = Fandango(
             grammar=self.grammar,
             constraints=[candidate.constraint],
@@ -111,7 +118,13 @@ class FandangoGrammarGenerator(Generator):
     def generate(self, **kwargs) -> FandangoInput:
         return FandangoInput(tree=self.grammar.fuzz())
 
-    def generate_test_inputs(self, candidate: FandangoConstraintCandidate=None, num_inputs: int = 5, time_out: int = 1, **kwargs) -> Set[FandangoInput]:
+    def generate_test_inputs(
+        self,
+        candidate: FandangoConstraintCandidate = None,
+        num_inputs: int = 5,
+        time_out: int = 1,
+        **kwargs,
+    ) -> Set[FandangoInput]:
         """
         Generate multiple inputs to be used in the debugging process.
         """
