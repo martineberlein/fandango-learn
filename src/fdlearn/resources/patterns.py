@@ -146,3 +146,10 @@ def iban_checksum(country: str, bban: str) -> str:
 where iban_checksum(str(<NON_TERMINAL>),str(<NON_TERMINAL>)) == int(<NON_TERMINAL>)
 """
 )
+
+pattern = [
+    Pattern(
+        string_pattern="""exists <elem> in <NON_TERMINAL>: (str(<ATTRIBUTE>) == <STRING>) and (int(eval(str(<ATTRIBUTE>))) == <INTEGER>);
+        """
+    )
+]
