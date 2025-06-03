@@ -13,6 +13,7 @@ from .learning.instantiation import PatternProcessor, ValueMaps
 from .core import BaseFandangoLearner
 from .types import OracleType
 from .resources.patterns import Pattern
+from .reduction.feature_class import get_direct_reachability_map
 
 
 class FandangoLearner(BaseFandangoLearner):
@@ -97,8 +98,10 @@ class FandangoLearner(BaseFandangoLearner):
         value_maps = ValueMaps(relevant_non_terminals)
         value_maps.extract_non_terminal_values(self.all_positive_inputs)
 
+        reachability_map = get_direct_reachability_map(self.grammar)
+
         instantiated_candidates = self.pattern_processor.instantiate_patterns(
-            relevant_non_terminals, sorted_positive_inputs, value_maps=value_maps
+            relevant_non_terminals, sorted_positive_inputs, value_maps=value_maps, reachability_map=reachability_map
         )
 
         candidates_to_evaluate: List[FandangoConstraintCandidate] = (
