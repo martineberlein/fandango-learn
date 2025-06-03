@@ -605,6 +605,8 @@ class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
         for name, search in tmp_constraint.searches.items():
             if isinstance(search, AttributeSearch):
                 search.base = RuleSearch(self.bounded_non_terminals[search.base.symbol])
+            elif isinstance(search, RuleSearch) and search.symbol not in (NonTerminal("<INTEGER>"), NonTerminal("<STRING>")) and self.bounded_non_terminals[search.symbol]:
+                search.symbol = self.bounded_non_terminals[search.symbol]
 
         for inp in self.test_inputs:
             scope = None
