@@ -88,8 +88,7 @@ class FandangoGenerator(Generator):
                 if inp not in test_inputs_hashes:
                     test_inputs_hashes.add(inp)
                     test_inputs.append(inp)
-        print("took: ", time.time() - start_time, candidate, len(test_inputs))
-        # print("Generating test inputs for candidate: ", candidate, test_inputs[:num_inputs])
+        LOGGER.debug("took: ", time.time() - start_time, candidate, len(test_inputs))
         return test_inputs[:num_inputs]
 
     def generate(
