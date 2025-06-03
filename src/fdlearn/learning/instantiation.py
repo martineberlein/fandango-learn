@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import List, Dict, Set, Iterable, Tuple, Callable
+from typing import List, Dict, Set, Iterable, Tuple, Callable, Mapping
 import re
 
 from fandango.constraints.base import *
@@ -129,9 +129,8 @@ class PatternProcessor:
         instantiated_patterns = []
         for pattern in self.patterns:
             transformer = NonTerminalPlaceholderTransformer(relevant_non_terminals, reachability_map)
-            pattern.accept(transformer)
-            transformed = transformer.results
-            instantiated_patterns.extend(transformed)
+            all_candidates: List[Constraint] = transformer.transform(pattern)
+            instantiated_patterns.extend(all_candidates)
 
         string_patterns = []
         # Replace value placeholders with actual values
@@ -157,206 +156,280 @@ class PatternProcessor:
         return new_candidates
 
 
-class NonTerminalPlaceholderTransformer(ConstraintVisitor):
+class NonTerminalPlaceholderTransformer:
     """
-    A visitor for replacing non-terminal placeholders in constraints with relevant non-terminals.
+    Visitor that replaces <NON_TERMINAL> and <ATTRIBUTE> placeholders
+    in any Constraint. All of the “expand over products” logic is
+    centralized in `_expand_searches(...)`.
     """
 
-    def __init__(self, relevant_non_terminals: Set[NonTerminal], reachability_map: Dict[NonTerminal, Set[NonTerminal]] = None):
+    def __init__(
+        self,
+        relevant_non_terminals: Set[NonTerminal],
+        reachability_map: Mapping[NonTerminal, Set[NonTerminal]] = None,
+    ):
         """
-        Initialize the visitor with the set of relevant non-terminals.
-
         Args:
-            relevant_non_terminals (Set[NonTerminal]): Non-terminals to replace placeholders with.
+            relevant_non_terminals: NonTerminals used to replace <NON_TERMINAL>.
+            reachability_map: for each bound non‐terminal symbol,
+                              the set of attribute‐candidates for <ATTRIBUTE>.
         """
-        super().__init__()
-        self.relevant_non_terminals = relevant_non_terminals
-        self.reachability_map = reachability_map
+        self.relevant_non_terminals: Set[NonTerminal] = relevant_non_terminals
+        self.reachability_map: Dict[NonTerminal, Set[NonTerminal]] = (
+            dict(reachability_map) if reachability_map else {}
+        )
 
-        self.results: List[Constraint] = []  # Store transformed constraints
-        self.bounded_non_terminals: dict[NonTerminal, NonTerminal] = dict()
-
-    def do_continue(self, constraint: "Constraint") -> bool:
-        return False
-
-    def visit_comparison_constraint(self, constraint: "ComparisonConstraint"):
+    def transform(self, root: "Constraint") -> List["Constraint"]:
         """
-        Replace <NON_TERMINAL> placeholders in a ComparisonConstraint.
+        Public entry point. Returns a flat list of all instantiated constraints.
         """
-        matches = [
-            key
-            for key in constraint.searches.keys()
-            if constraint.searches[key].symbol == NonTerminal("<NON_TERMINAL>")
-        ]
+        return self._visit(root, bounded_map={})
 
-        attribute_matches = [
-            key
-            for key in constraint.searches.keys()
-            if constraint.searches[key].symbol == NonTerminal("<ATTRIBUTE>")
-        ]
-
-        partial_constraints = []
-
-        if matches:
-            for replacements in itertools.product(
-                self.relevant_non_terminals, repeat=len(matches)
-            ):
-                new_searches = deepcopy(constraint.searches)
-                for key, replacement in zip(matches, replacements):
-                    new_searches[key] = RuleSearch(replacement)
-
-                    new_constraint = ComparisonConstraint(
-                        operator=constraint.operator,
-                        left=constraint.left,
-                        right=constraint.right,
-                        searches=new_searches,
-                        local_variables=constraint.local_variables,
-                        global_variables=constraint.global_variables,
-                    )
-                    partial_constraints.append(new_constraint)
-        else:
-            partial_constraints.append(constraint)
-        if attribute_matches:
-            for p_constraint in partial_constraints:
-                for bounded_non_terminal, bound in self.bounded_non_terminals.items():
-                    for replacements in itertools.product(
-                             self.reachability_map[bounded_non_terminal], repeat=len(attribute_matches)
-                    ):
-                        new_searches = deepcopy(p_constraint.searches)
-                        for key, replacement in zip(attribute_matches, replacements):
-                            new_searches[key] = AttributeSearch(RuleSearch(bound), RuleSearch(replacement))
-
-                            new_constraint = ComparisonConstraint(
-                                operator=p_constraint.operator,
-                                left=p_constraint.left,
-                                right=p_constraint.right,
-                                searches=new_searches,
-                                local_variables=p_constraint.local_variables,
-                                global_variables=p_constraint.global_variables,
-                            )
-                            self.results.append(new_constraint)
-        else:
-            self.results.extend(partial_constraints)
-
-
-    def visit_forall_constraint(self, constraint: "ForallConstraint"):
+    def _visit(
+        self,
+        constraint: "Constraint",
+        bounded_map: Dict[NonTerminal, NonTerminal],
+    ) -> List["Constraint"]:
         """
-        Recursively visit the statement inside a forall constraint.
+        Dispatch based on constraint type, always returning a List[Constraint].
         """
-        constraint.statement.accept(self)
-        transformed_constraints = self.results
-        self.results = []  # Reset for independent processing
+        if isinstance(constraint, ComparisonConstraint):
+            return self._visit_comparison(constraint, bounded_map)
 
-        for bound_container_nonterm in self.relevant_non_terminals:
-            new_search = RuleSearch(bound_container_nonterm)
-            for transformed_statement in transformed_constraints:
-                self.results.append(
-                    ForallConstraint(
-                        statement=transformed_statement,
-                        bound=constraint.bound,
-                        search=new_search,
-                    )
-                )
+        if isinstance(constraint, ExpressionConstraint):
+            return self._visit_expression(constraint, bounded_map)
 
-    def visit_exists_constraint(self, constraint: "ExistsConstraint"):
+        if isinstance(constraint, ForallConstraint):
+            return self._visit_forall(constraint, bounded_map)
+
+        if isinstance(constraint, ExistsConstraint):
+            return self._visit_exists(constraint, bounded_map)
+
+        if isinstance(constraint, ConjunctionConstraint):
+            return self._visit_conjunction(constraint, bounded_map)
+
+        if isinstance(constraint, ImplicationConstraint):
+            return self._visit_implication(constraint, bounded_map)
+
+        if isinstance(constraint, DisjunctionConstraint):
+            # If you truly cannot handle disjunctions, keep this.
+            raise NotImplementedError("Disjunctions are not yet supported.")
+
+        # Fallback: return it as‐is if it’s some other Constraint subtype.
+        return [constraint]
+
+    def _visit_comparison(
+        self,
+        constraint: "ComparisonConstraint",
+        bounded_map: Dict[NonTerminal, NonTerminal],
+    ) -> List["Constraint"]:
         """
-        Recursively visit the statement inside an exists constraint.
+        1) Generate all fully‐expanded `searches` dicts via `_expand_searches`.
+        2) Rebuild a ComparisonConstraint for each expanded‐searches.
         """
-        new_constraints = []
-        for bound_container_nonterm in self.relevant_non_terminals:
-            if isinstance(
-                constraint.search, RuleSearch
-            ) and constraint.search.symbol == NonTerminal("<NON_TERMINAL>"):
-                new_search = RuleSearch(bound_container_nonterm)
-            else:
-                new_search = constraint.search
+        expanded_search_dicts = self._expand_searches(constraint.searches, bounded_map)
 
-            self.bounded_non_terminals[bound_container_nonterm] = constraint.bound
-            constraint.statement.accept(self)
-            transformed_constraints = self.results
-
-            self.results = []  # Reset for independent processing
-            del self.bounded_non_terminals[bound_container_nonterm]
-
-            for transformed_statement in transformed_constraints:
-                new_constraints.append(
-                    ExistsConstraint(
-                        statement=transformed_statement,
-                        bound=constraint.bound,
-                        search=new_search,
-                    )
-                )
-        self.results.extend(new_constraints)
-
-    def visit_disjunction_constraint(self, constraint: "DisjunctionConstraint"):
-        """
-        Recursively visit each constraint in a disjunction.
-        """
-        raise NotImplementedError("Disjunctions are not yet supported.")
-
-    def visit_conjunction_constraint(self, constraint: "ConjunctionConstraint"):
-        """
-        Recursively visit each constraint in a conjunction.
-        """
-
-        all_transformed_constraints: list[list] = list()
-        for sub_constraint in constraint.constraints:
-            sub_constraint.accept(self)
-            all_transformed_constraints.append(self.results)
-            self.results = []  # Reset after each sub-constraint
-
-        all_conjunctions = all_combinations(all_transformed_constraints)
-
-        for conjunction in all_conjunctions:
-            self.results.append(
-                ConjunctionConstraint(constraints=conjunction)
-            )
-
-
-    def visit_implication_constraint(self, constraint: "ImplicationConstraint"):
-        """
-        Recursively visit the antecedent and consequent in an implication.
-        """
-        constraint.antecedent.accept(self)
-        transformed_antecedents = self.results
-        self.results = []  # Reset after antecedent
-
-        constraint.consequent.accept(self)
-        transformed_consequents = self.results
-        self.results = []  # Reset after consequent
-
-        for antecedent in transformed_antecedents:
-            for consequent in transformed_consequents:
-                self.results.append(
-                    ImplicationConstraint(antecedent=antecedent, consequent=consequent)
-                )
-
-    def visit_expression_constraint(self, constraint: "ExpressionConstraint"):
-        """
-        Expression constraints are returned as-is.
-        """
-        # self.results.append(constraint)
-        matches = [
-            key
-            for key in constraint.searches.keys()
-            if constraint.searches[key].symbol == NonTerminal("<NON_TERMINAL>")
-        ]
-        if matches:
-            for replacements in itertools.product(
-                self.relevant_non_terminals, repeat=len(matches)
-            ):
-                new_searches = deepcopy(constraint.searches)
-                for key, replacement in zip(matches, replacements):
-                    new_searches[key] = RuleSearch(replacement)
-                new_constraint = ExpressionConstraint(
-                    expression=constraint.expression,
-                    searches=new_searches,
+        result: List["Constraint"] = []
+        for searches_dict in expanded_search_dicts:
+            result.append(
+                ComparisonConstraint(
+                    operator=constraint.operator,
+                    left=constraint.left,
+                    right=constraint.right,
+                    searches=searches_dict,
                     local_variables=constraint.local_variables,
                     global_variables=constraint.global_variables,
                 )
-                self.results.append(new_constraint)
+            )
+        return result
+
+    def _visit_expression(
+        self,
+        constraint: "ExpressionConstraint",
+        bounded_map: Dict[NonTerminal, NonTerminal],
+    ) -> List["Constraint"]:
+        """
+        Same pattern as ComparisonConstraint, but rebuild ExpressionConstraint.
+        """
+        expanded_search_dicts = self._expand_searches(constraint.searches, bounded_map)
+
+        result: List["Constraint"] = []
+        for searches_dict in expanded_search_dicts:
+            result.append(
+                ExpressionConstraint(
+                    expression=constraint.expression,
+                    searches=searches_dict,
+                    local_variables=constraint.local_variables,
+                    global_variables=constraint.global_variables,
+                )
+            )
+        return result
+
+    def _visit_forall(
+        self,
+        constraint: "ForallConstraint",
+        bounded_map: Dict[NonTerminal, NonTerminal],
+    ) -> List["Constraint"]:
+        """
+        Recurse into the inner statement; then wrap each instantiation
+        in a new ForallConstraint, one per relevant non‐terminal.
+        """
+        inner_results = self._visit(constraint.statement, bounded_map)
+        final: List["Constraint"] = []
+        for nt in self.relevant_non_terminals:
+            new_search = RuleSearch(nt)
+            for inner in inner_results:
+                final.append(
+                    ForallConstraint(statement=inner, bound=constraint.bound, search=new_search)
+                )
+        return final
+
+    def _visit_exists(
+        self,
+        constraint: "ExistsConstraint",
+        bounded_map: Dict[NonTerminal, NonTerminal],
+    ) -> List["Constraint"]:
+        """
+        If the `search` is a <NON_TERMINAL> placeholder, replace it with each
+        relevant non‐terminal. In either case, add (chosen_nt → bound) to the
+        new bounded_map before recursing into the inner statement.
+        """
+        result: List["Constraint"] = []
+
+        # Figure out if this ExistsConstraint.search is exactly <NON_TERMINAL>
+        is_nt_placeholder = (
+            isinstance(constraint.search, RuleSearch)
+            and constraint.search.symbol == NonTerminal("<NON_TERMINAL>")
+        )
+
+        for candidate_nt in self.relevant_non_terminals:
+            if is_nt_placeholder:
+                new_search = RuleSearch(candidate_nt)
+            else:
+                new_search = constraint.search
+
+            # Thread a fresh bounded_map so attributes can see this binding
+            new_bounded = {**bounded_map, candidate_nt: constraint.bound}
+
+            # Recurse on the inner statement under new_bounded
+            inner_expanded = self._visit(constraint.statement, new_bounded)
+            for inner in inner_expanded:
+                result.append(
+                    ExistsConstraint(statement=inner, bound=constraint.bound, search=new_search)
+                )
+
+        return result
+
+    def _visit_conjunction(
+        self,
+        constraint: "ConjunctionConstraint",
+        bounded_map: Dict[NonTerminal, NonTerminal],
+    ) -> List["Constraint"]:
+        """
+        Expand each sub‐constraint in turn, collect lists of their instantiations,
+        take the Cartesian product (all_combinations), and re‐wrap each tuple in
+        a ConjunctionConstraint.
+        """
+        expanded_lists: List[List["Constraint"]] = []
+        for sub in constraint.constraints:
+            expanded_lists.append(self._visit(sub, bounded_map))
+
+        # all_combinations produces a List[List[Constraint]] of every possible tuple
+        all_tuples = all_combinations(expanded_lists)
+        return [ConjunctionConstraint(constraints=combo) for combo in all_tuples]
+
+    def _visit_implication(
+        self,
+        constraint: "ImplicationConstraint",
+        bounded_map: Dict[NonTerminal, NonTerminal],
+    ) -> List["Constraint"]:
+        """
+        Recursively expand antecedent and consequent, then combine pairwise.
+        """
+        expanded_ant = self._visit(constraint.antecedent, bounded_map)
+        expanded_con = self._visit(constraint.consequent, bounded_map)
+
+        result: List["Constraint"] = []
+        for a in expanded_ant:
+            for c in expanded_con:
+                result.append(ImplicationConstraint(antecedent=a, consequent=c))
+        return result
+
+    def _expand_searches(
+        self,
+        base_searches: Dict[str, "RuleSearch | AttributeSearch"],
+        bounded_map: Dict[NonTerminal, NonTerminal],
+    ) -> List[Dict[str, "RuleSearch | AttributeSearch"]]:
+        """
+        Core placeholder‐expansion helper. Given an initial `base_searches` dict, produce
+        a list of *fully‐instantiated* `searches` dicts by:
+
+          1) Replacing all <NON_TERMINAL> placeholders with every combination of
+             `self.relevant_non_terminals`.
+          2) For each “partially expanded” dict, if any <ATTRIBUTE> placeholders exist,
+             loop over each (bound_nt → bound_symbol) in `bounded_map` and over
+             `self.reachability_map[bound_nt]` to fill in <ATTRIBUTE>.
+
+        If there are no placeholders of a given type, that stage just yields the input dict unchanged.
+        If there are <ATTRIBUTE> placeholders but no valid `(bound_nt, reachable_set)` pairs,
+        this will yield an empty list (i.e. no valid expansions).
+        """
+        # 1) Find keys whose searches[...] is exactly `<NON_TERMINAL>`
+        nt_keys = [
+            key
+            for key, search in base_searches.items()
+            if isinstance(search, RuleSearch) and search.symbol == NonTerminal("<NON_TERMINAL>")
+        ]
+
+        # Build “partially expanded” list by substituting <NON_TERMINAL>
+        partials: List[Dict[str, "RuleSearch | AttributeSearch"]] = []
+        if nt_keys:
+            # For every tuple of replacements (one non‐terminal per nt_key)
+            for combo in itertools.product(self.relevant_non_terminals, repeat=len(nt_keys)):
+                new_searches = deepcopy(base_searches)
+                for key, nt_repl in zip(nt_keys, combo):
+                    new_searches[key] = RuleSearch(nt_repl)
+                partials.append(new_searches)
         else:
-            self.results.append(constraint)
+            partials.append(deepcopy(base_searches))
+
+        # 2) For each partial, fill in <ATTRIBUTE> if any
+        final_expanded: List[Dict[str, "RuleSearch | AttributeSearch"]] = []
+        for part in partials:
+            # Find keys whose searches[...] is `<ATTRIBUTE>`
+            attr_keys = [
+                key
+                for key, search in part.items()
+                if isinstance(search, RuleSearch) and search.symbol == NonTerminal("<ATTRIBUTE>")
+            ]
+
+            if not attr_keys:
+                # No <ATTRIBUTE> placeholders → this partial is fully expanded
+                final_expanded.append(part)
+                continue
+
+            # There *are* <ATTRIBUTE> placeholders; we need at least one (bound_nt → reachable) pair
+            any_expanded = False
+            for bound_nt, bound_symbol in bounded_map.items():
+                reachable = self.reachability_map.get(bound_nt, ())
+                if not reachable:
+                    continue
+
+                for combo in itertools.product(reachable, repeat=len(attr_keys)):
+                    new_searches = deepcopy(part)
+                    for key, attr_nt in zip(attr_keys, combo):
+                        # Replace placeholder with AttributeSearch(RuleSearch(bound_symbol), RuleSearch(attr_nt))
+                        new_searches[key] = AttributeSearch(RuleSearch(bound_symbol), RuleSearch(attr_nt))
+                    final_expanded.append(new_searches)
+                    any_expanded = True
+
+            # If no bound_nt → reachable existed, this partial yields ZERO expansions
+            # (i.e. if you had <ATTRIBUTE> but no valid bound_nts, you get no results)
+            if not any_expanded:
+                # (Intentionally drop this partial entirely—no valid expansions.)
+                pass
+
+        return final_expanded
 
 
 class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
