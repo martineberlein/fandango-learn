@@ -38,7 +38,7 @@ if __name__ == "__main__":
     grammar, _ = parse_contents(grammar)
 
     positive, negative = set(), set()
-    while len(positive) < 5:
+    while len(positive) < 10 :
         tree = grammar.fuzz()
         inp = tree.to_string()
         if oracle(inp).is_failing():
