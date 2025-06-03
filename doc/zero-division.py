@@ -8,7 +8,8 @@ from fdlearn.resources import Pattern
 
 grammar = """
 <start> ::= <arithexp>;
-<arithexp> ::= <arithexp><operator><rarithexp> | <number> | "(" <arithexp> ")";
+<arithexp> ::= <term> | <number> | "(" <arithexp> ")";
+<term> ::= <arithexp><operator><rarithexp>;
 <rarithexp> ::= <arithexp>;
 <operator> ::= " + " | " - " | " * " | " / ";
 <number> ::= <maybeminus><onenine><maybedigits> | "0";
@@ -54,14 +55,7 @@ if __name__ == "__main__":
     negative_inputs = {FandangoInput.from_str(grammar, inp, False) for inp in negative}
     initial_inputs = positive_inputs.union(negative_inputs)
 
-    pattern = [
-        Pattern(
-            string_pattern="""exists <elem> in <NON_TERMINAL>: (str(<NON_TERMINAL>) == <STRING>) and (eval(str(<NON_TERMINAL>)) == <INTEGER>);
-            """
-        )
-    ]
-
-    learner = FandangoLearner(grammar, patterns=pattern)
+    learner = FandangoLearner(grammar)
     learned_constraints = learner.learn_constraints(
         initial_inputs,
     )
