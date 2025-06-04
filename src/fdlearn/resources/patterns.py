@@ -111,11 +111,6 @@ for operator in [
         ),
     )
 
-# Pattern(
-#     string_pattern="forall <variable> in <NON_TERMINAL>: <tree>/<xml_open_tag>/<id> == <tree>/<xml_close_tag>/<id>;",
-# )
-
-
 Pattern(
     string_pattern="exists <elem> in <NON_TERMINAL>: <elem> in <start>;",
     use_cache=False,
@@ -154,4 +149,8 @@ Pattern(
 
 Pattern(
     string_pattern="exists <elem> in <NON_TERMINAL>: int(eval(str(<elem>))) == <INTEGER>;",
+)
+
+Pattern(
+    string_pattern="forall <elem> in <NON_TERMINAL>: str(<elem>.<xml_open_tag>.<id>) == str(<elem>.<xml_close_tag>.<id>);",
 )
