@@ -4,7 +4,6 @@ import time
 import logging
 
 from fandango.language.grammar import Grammar
-from fandango.language.symbol import NonTerminal
 
 from fdlearn.types import OracleType
 from fdlearn.data.input import FandangoInput
@@ -16,7 +15,7 @@ from fdlearn.logger import LoggerLevel, LOGGER
 
 from .generator import Generator, FandangoGrammarGenerator, FandangoGenerator
 from .runner import SingleExecutionHandler, ExecutionHandler
-from .engine import Engine, ParallelEngine
+from .engine import Engine, ParallelEngine, ProcessBasedParallelEngine
 from .negation import construct_negations
 from .learner import FDLearnReducer
 
@@ -276,7 +275,7 @@ class FandangoRefinement(HypothesisInputFeatureDebugger):
                 logger_level=logger_level,
             )
         )
-        generator: Generator = generator if generator else FandangoGenerator(grammar)
+        generator: Generator = generator if generator else FandangoGrammarGenerator(grammar)
         self.engine: Engine = ParallelEngine(generator)
 
         super().__init__(
@@ -302,7 +301,6 @@ class FandangoRefinement(HypothesisInputFeatureDebugger):
         """
         LOGGER.info("Learning the candidates.")
 
-        print(len(test_inputs))
         _ = self.learner.learn_constraints(
             test_inputs,
         )
