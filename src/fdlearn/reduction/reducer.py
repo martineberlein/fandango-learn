@@ -26,18 +26,21 @@ MAX_CORRELATED_FEATURES: int = 10
 
 class FeatureReducer(ABC):
     """
-    A feature reducer is responsible for extracting the feature that are most relevant for the program failure.
+    A feature reducer is responsible for extracting the features that are most relevant for the program failure.
     """
 
     def __init__(
         self,
         grammar: Grammar,
         feature_types: Optional[List[Type[Feature]]] = None,
+        filter_features: bool = False,
     ):
         self.grammar = grammar
         self.features = FeatureFactory(self.grammar).build(
             feature_types or DEFAULT_FEATURE_TYPES
         )
+        if filter_features:
+            self.features = [f for f in self.features if f.non_terminal not in [NonTerminal("<digit>")]]
 
     @abstractmethod
     def learn(self, test_inputs: Set[FandangoInput]) -> Set[Feature]:

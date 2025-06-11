@@ -32,7 +32,7 @@ class FeatureCollector(ABC):
     """
 
     def __init__(
-        self, grammar: Grammar, feature_types: Optional[List[Type[Feature]]] = None
+        self, grammar: Grammar, feature_types: Optional[List[Type[Feature]]] = None, filter_features=False
     ):
         """
         Initializes the feature collector with a grammar and optional feature types.
@@ -42,6 +42,9 @@ class FeatureCollector(ABC):
         self.grammar = grammar
         feature_types = feature_types if feature_types else DEFAULT_FEATURE_TYPES
         self.features = self.construct_features(feature_types)
+
+        if filter_features:
+            self.features = [f for f in self.features if f.non_terminal not in [NonTerminal("<digit>")]]
 
     def construct_features(self, feature_types: List[Type[Feature]]) -> List[Feature]:
         """
