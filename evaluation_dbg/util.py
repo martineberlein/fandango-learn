@@ -19,11 +19,16 @@ def average_results(results_list):
     mean_length = sum(r.get("mean_length", 0) for r in results_list) / len(results_list)
     precisions = [r.get("precision", 0) for r in results_list]
     recalls = [r.get("recall", 0) for r in results_list]
+
+    precisions = [r.get("avg_precision", 0) for r in results_list]
+    recalls = [r.get("avg_recall", 0) for r in results_list]
+
     precision_mean = sum(precisions) / len(precisions)
     recall_mean = sum(recalls) / len(recalls)
     precision_stddev = compute_stddev(precisions)
     recall_stddev = compute_stddev(recalls)
     time = sum(r["time_in_seconds"] for r in results_list) / len(results_list)
+
     return {
         "name": results_list[0]["name"],
         "total": total // len(results_list),
