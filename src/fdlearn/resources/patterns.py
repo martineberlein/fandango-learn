@@ -130,15 +130,29 @@ Pattern(
     use_cache=False,
 )
 
+# Pattern(
+#     string_pattern="""
+# def iban_checksum(country: str, bban: str) -> str:
+#     moved = bban + country + "00"
+#     numeric = "".join(str(int(ch, 36)) for ch in moved)
+#     remainder = int(numeric) % 97
+#     return 98 - remainder
+#
+# where iban_checksum(str(<NON_TERMINAL>),str(<NON_TERMINAL>)) == int(<NON_TERMINAL>)
+# """
+# )
+
 Pattern(
     string_pattern="""
-def iban_checksum(country: str, bban: str) -> str:
+def iban_checksum(iban: str) -> str:
+    country = iban[:2]
+    bban = iban[4:]
     moved = bban + country + "00"
     numeric = "".join(str(int(ch, 36)) for ch in moved)
     remainder = int(numeric) % 97
     return 98 - remainder
 
-where iban_checksum(str(<NON_TERMINAL>),str(<NON_TERMINAL>)) == int(<NON_TERMINAL>)
+where iban_checksum(str(<NON_TERMINAL>)) == int(<NON_TERMINAL>)
 """
 )
 
