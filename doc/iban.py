@@ -33,7 +33,7 @@ def oracle(iban: str) -> OracleResult:
     """
     Oracle function to validate IBANs.
     """
-    return OracleResult.PASSING if validate_iban(str(iban)) else OracleResult.FAILING
+    return OracleResult.FAILING if validate_iban(str(iban)) else OracleResult.PASSING
 
 
 if __name__ == "__main__":
