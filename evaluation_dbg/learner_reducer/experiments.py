@@ -12,7 +12,7 @@ from debugging_benchmark.heartbleed.heartbleed import HeartbleedBenchmarkReposit
 from debugging_benchmark.iban.iban import IBANBenchmarkRepository
 
 from fdlearn.data.oracle import OracleResult
-from fdlearn.learner import FandangoLearner
+from fdlearn.refinement.learner import FDLearnReducer
 from fdlearn.interface.fandango import parse
 
 from evaluation_dbg.base_experiment import LearnerExperiment
@@ -47,8 +47,9 @@ def create_experiment(name, repository_cls, program_index=0, custom_inputs_func=
         for inp in initial_inputs:
             print(inp, oracle(inp))
 
-    fdlearn = FandangoLearner(
+    fdlearn = FDLearnReducer(
         grammar=grammar,
+        oracle=oracle,
     )
 
     return LearnerExperiment(
