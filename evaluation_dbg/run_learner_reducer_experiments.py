@@ -1,4 +1,4 @@
-from evaluation_dbg.learner.experiments import (
+from evaluation_dbg.learner_reducer.experiments import (
     get_iban_experiment,
     get_calculator_experiment,
     get_heartbleed_experiment,
@@ -57,13 +57,14 @@ def evaluate_cookiecutter1(logger_level=LoggerLevel.CRITICAL, random_seed=1):
 def evaluate_cookiecutter2(logger_level=LoggerLevel.CRITICAL, random_seed=1):
     return get_cookiecutter2_experiment().evaluate(seed=random_seed)
 
+
 def evaluate_iban(logger_level=LoggerLevel.CRITICAL, random_seed=1):
     return get_iban_experiment().evaluate(seed=random_seed)
 
 
 def run_evaluation(seconds: int = 3600, write_to_file: bool = True):
-    seeds = [1, ]#2, 3, 4, 5]
-    experiment_name = "learner"
+    seeds = [1, 2, 3, 4, 5]
+    experiment_name = "learner-reducer"
     log_file = get_log_file_name(experiment_name)
     csv_file = get_csv_file_name(experiment_name)
     if write_to_file:
@@ -74,7 +75,7 @@ def run_evaluation(seconds: int = 3600, write_to_file: bool = True):
         # evaluate_calculator,
         # evaluate_heartbleed,
         # evaluate_middle,
-        # evaluate_expression,
+        # # evaluate_expression,
         # evaluate_markup1,
         # evaluate_markup2,
         # evaluate_pysnooper1,
