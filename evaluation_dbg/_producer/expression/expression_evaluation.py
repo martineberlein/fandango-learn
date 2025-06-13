@@ -1,5 +1,5 @@
 import time
-from debugging_benchmark.calculator.calculator import CalculatorBenchmarkRepository
+from debugging_benchmark.expression.expression import ExpressionBenchmarkRepository
 
 from fandango.evolution.algorithm import Fandango, LoggerLevel
 from fandango.language.parse import parse
@@ -8,11 +8,11 @@ from fandango.language.parse import parse
 def evaluate_calculator(
     seconds=60,
 ) :
-    file = open("calculator.fan", "r")
+    file = open("Expression.fan", "r")
     grammar, constraints = parse(file, use_stdlib=False, use_cache=False)
     solutions = []
 
-    repo = CalculatorBenchmarkRepository().build()[0]
+    repo = ExpressionBenchmarkRepository().build()[0]
     oracle = repo.get_oracle()
 
     time_in_an_hour = time.time() + seconds
@@ -22,6 +22,7 @@ def evaluate_calculator(
             grammar,
             constraints,
             desired_solutions=100,
+            initial_population=["23 / (1 - 1)"],
             logger_level=LoggerLevel.ERROR,
         )
         fandango.evolve()
@@ -32,8 +33,10 @@ def evaluate_calculator(
 
     valid = []
     for solution in solutions:
-        if oracle(str(solution)):
+        if oracle(str(solution))[0].is_failing():
             valid.append(solution)
+        else:
+            print(solution, oracle(str(solution))[0])
 
     uniques = set()
     for solution in solutions:
@@ -43,7 +46,7 @@ def evaluate_calculator(
     set_medium_length = sorted(len(str(x)) for x in valid)[len(valid) // 2]
     valid_percentage = len(valid) / len(solutions) * 100
     return (
-        "Calculator",
+        "Expression",
         len(solutions),
         len(valid),
         len(uniques),
