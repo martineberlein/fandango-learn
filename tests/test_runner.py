@@ -2,7 +2,11 @@ import unittest
 import os
 
 from fdlearn.data import FandangoInput, OracleResult
-from fdlearn.refinement.runner import ExecutionHandler, SingleExecutionHandler, BatchExecutionHandler
+from fdlearn.refinement.runner import (
+    ExecutionHandler,
+    SingleExecutionHandler,
+    BatchExecutionHandler,
+)
 from fdlearn.interface import parse
 
 
@@ -28,7 +32,6 @@ class TestExecutionRunner(unittest.TestCase):
         for inp in test_inputs:
             self.assertEqual(inp.oracle, OracleResult.FAILING)
 
-
     def test_batch_runner(self):
         def oracle(inp_: set[FandangoInput]) -> dict[FandangoInput, OracleResult]:
             result = dict()
@@ -47,5 +50,5 @@ class TestExecutionRunner(unittest.TestCase):
             self.assertEqual(inp.oracle, OracleResult.FAILING)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

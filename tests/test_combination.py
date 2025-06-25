@@ -1,10 +1,10 @@
 import unittest
-import os
 
 from fandango.constraints.base import DisjunctionConstraint
+from fandango.language.parse import parse
 
 from fdlearn.data.input import FandangoInput
-from fdlearn.interface.fandango import parse_constraint, parse
+from fdlearn.interface.fandango import parse_constraint
 from fdlearn.learning.candidate import FandangoConstraintCandidate
 from fdlearn.learning.combination import (
     ConjunctionProcessor,
@@ -12,12 +12,15 @@ from fdlearn.learning.combination import (
 )
 from fdlearn.learning.candidate import CandidateSet
 
+from .utils import RESOURCES_ROOT
+
 
 class TestConjunctionProcessor(unittest.TestCase):
     def setUp(self):
-        dirname = os.path.dirname(__file__)
-        filename = os.path.join(dirname, "resources", "calculator.fan")
-        self.grammar, self.constraints = parse(filename)
+        with open(RESOURCES_ROOT / "calculator.fan", "r") as calc:
+            self.grammar, self.constraints = parse(
+                calc, use_cache=False, use_stdlib=False
+            )
 
         # Set up a ConjunctionProcessor with constraints
         self.processor = ConjunctionProcessor(
@@ -37,10 +40,10 @@ class TestConjunctionProcessor(unittest.TestCase):
 
         self.candidate1 = FandangoConstraintCandidate(self.constraints[0])
         self.candidate2 = FandangoConstraintCandidate(
-            parse_constraint("str(<function>) == 'cos';")
+            parse_constraint("where str(<function>) == 'cos'")
         )
         self.candidate3 = FandangoConstraintCandidate(
-            parse_constraint("int(<number>) <= -1;")
+            parse_constraint("where int(<number>) <= -1")
         )
 
         for candidate in [self.candidate1, self.candidate2, self.candidate3]:
@@ -68,10 +71,10 @@ class TestConjunctionProcessor(unittest.TestCase):
 
     def test_process_disjunctions(self):
         candidate1 = FandangoConstraintCandidate(
-            parse_constraint("int(<number>) == -1;")
+            parse_constraint("where int(<number>) == -1")
         )
         candidate2 = FandangoConstraintCandidate(
-            parse_constraint("int(<number>) == -900;")
+            parse_constraint("where int(<number>) == -900")
         )
         for candidate in [candidate1, candidate2]:
             candidate.evaluate(self.test_inputs)

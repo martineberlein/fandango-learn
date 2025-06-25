@@ -1,5 +1,6 @@
 import unittest
 
+from fandango import DerivationTree
 from fandango.constraints.base import ConjunctionConstraint
 from fandango.evolution.algorithm import Fandango
 
@@ -11,25 +12,22 @@ from fdlearn.interface.fandango import parse_contents, parse_constraint
 
 class TestFandangoConstraintCandidate(unittest.TestCase):
 
-    GRAMMAR = """
-        <start> ::= <arithexp>;
-        <arithexp> ::= <function>"("<number>")";
-        <function> ::= "sqrt" | "cos" | "sin" | "tan";
-        <number> ::= <maybeminus><onenine><maybedigits> | "0";
-        <maybeminus> ::= "-" | "";
-        <onenine> ::= "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
-        <maybedigits> ::= <digit>*;
-        <digit>::=  "0" | <onenine>;
-    """
+    GRAMMAR = """<start> ::= <arithexp>;
+<arithexp> ::= <function>"("<number>")";
+<function> ::= "sqrt" | "cos" | "sin" | "tan";
+<number> ::= <maybeminus><onenine><maybedigits> | "0";
+<maybeminus> ::= "-" | "";
+<onenine> ::= "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
+<maybedigits> ::= <digit>*;
+<digit>::=  "0" | <onenine>;"""
 
     def setUp(self):
         grammar, constraints = parse_contents(
-            self.GRAMMAR + "(int(<number>) <= -10 and str(<function>) == 'sqrt');",
+            self.GRAMMAR + "where (int(<number>) <= -10 and str(<function>) == 'sqrt')",
         )
         self.constraint = constraints[0]
         self.grammar = grammar
 
-        # Create mock derivation trees
         self.failing_input = FandangoInput.from_str(
             self.grammar, "sqrt(-900)", OracleResult.FAILING
         )
@@ -54,9 +52,9 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
     def test_many_evaluate(self):
         inputs = []
         for _ in range(100):
-                inputs.append(FandangoInput.from_str(
-                    self.grammar, "sqrt(-900)", OracleResult.FAILING
-                ))
+            inputs.append(
+                FandangoInput.from_str(self.grammar, "sqrt(-900)", OracleResult.FAILING)
+            )
 
         for _ in range(10):
             self.candidate = FandangoConstraintCandidate(self.constraint)
@@ -88,9 +86,11 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
 
     def test_and_operator(self):
         # Create another candidate with a similar constraint
-        candidate = FandangoConstraintCandidate(parse_constraint("int(<number>) <= 0;"))
+        candidate = FandangoConstraintCandidate(
+            parse_constraint("where int(<number>) <= 0")
+        )
         other_candidate = FandangoConstraintCandidate(
-            parse_constraint("str(<function>) == 'sqrt';")
+            parse_constraint("where str(<function>) == 'sqrt'")
         )
 
         # Evaluate both candidates
@@ -114,9 +114,11 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
 
     def test_or_operator(self):
         # Create another candidate with a different constraint
-        candidate = FandangoConstraintCandidate(parse_constraint("int(<number>) <= 0;"))
+        candidate = FandangoConstraintCandidate(
+            parse_constraint("where int(<number>) <= 0")
+        )
         other_candidate = FandangoConstraintCandidate(
-            parse_constraint("str(<function>) == 'sqrt';")
+            parse_constraint("where str(<function>) == 'sqrt'")
         )
 
         # Evaluate both candidates
@@ -135,7 +137,9 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
         self.assertEqual(combined_candidate.cache[self.passing_input], True)
 
     def test_negation(self):
-        candidate = FandangoConstraintCandidate(parse_constraint("int(<number>) <= 0;"))
+        candidate = FandangoConstraintCandidate(
+            parse_constraint("where int(<number>) <= 0")
+        )
         candidate.evaluate([self.failing_input, self.passing_input])
         self.assertEqual(candidate.cache[self.failing_input], True)
         self.assertEqual(candidate.cache[self.passing_input], False)
@@ -170,7 +174,7 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
 
     def test_constraint_with_missing_non_terminals(self):
         candidate = FandangoConstraintCandidate(
-            parse_constraint("str(<maybeminus>) == '-';")
+            parse_constraint("where str(<maybeminus>) == '-'")
         )
         null_input = FandangoInput.from_str(
             self.grammar, "sqrt(0)", OracleResult.PASSING
@@ -245,37 +249,30 @@ class TestFandangoConstraintCandidate(unittest.TestCase):
         self.assertFalse(self.candidate not in candidate_set)
 
     def test_negation_fuzzing(self):
-        candidate = FandangoConstraintCandidate(parse_constraint("int(<number>) <= 0;"))
+        candidate = FandangoConstraintCandidate(
+            parse_constraint("where int(<number>) <= 0")
+        )
         candidate.evaluate([self.failing_input, self.passing_input])
         self.assertEqual(candidate.cache[self.failing_input], True)
         self.assertEqual(candidate.cache[self.passing_input], False)
 
         negated_candidate = NegationConstraint(candidate.constraint)
-        candidate2 = FandangoConstraintCandidate(
-            parse_constraint("str(<function>) == 'sqrt';")
-        )
-        test_constraint = ConjunctionConstraint(
-            [negated_candidate, candidate2.constraint]
-        )
-        # print(negated_candidate.check(self.failing_input.tree))
-        print(test_constraint)
 
-        # initial = []
-        # for _ in range(100):
-        #     initial.append(self.grammar.fuzz())
         fandango = Fandango(
             grammar=self.grammar,
             constraints=[negated_candidate],
-            desired_solutions=100,
             random_seed=1,
-            # initial_population=initial,
         )
-        results = fandango.evolve()
         solutions = set()
-        for inp in results:
-            solutions.add(FandangoInput(inp))
 
-        print(solutions)
+        fan_gen = fandango.generate()
+        for inp in fan_gen:
+            solutions.add(FandangoInput(inp))
+            if len(solutions) > 10:
+                break
+
+        self.assertGreater(len(solutions), 0)
+        self.assertTrue(all(isinstance(inp.tree, DerivationTree) for inp in solutions))
 
 
 if __name__ == "__main__":

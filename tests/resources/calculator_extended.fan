@@ -7,4 +7,4 @@
 <digits> ::= <digit>*;
 <digit>::=  "0" | <lead_digit>;
 
-str(<function>) == 'sqrt';
+where str(<function>) == 'sqrt'
