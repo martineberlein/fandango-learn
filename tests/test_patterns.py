@@ -11,7 +11,7 @@ class TestPatternsWithPlaceholders(unittest.TestCase):
         Test Pattern with exists placeholder
         """
         pattern = Pattern(
-            string_pattern=f"exists <container> in <NON_TERMINAL>: int(<container>) <= 5;"
+            string_pattern=f"where exists <container> in <NON_TERMINAL>: int(<container>) <= 5"
         )
         print(type(pattern.instantiated_pattern))
 
@@ -19,34 +19,30 @@ class TestPatternsWithPlaceholders(unittest.TestCase):
         """
         Test Pattern with inside placeholder
         """
-        grammar = """
-        <start> ::= <A> | <B>;
-        <A> ::= "a";
-        <B> ::= "b";
-        """
+        grammar = """<start> ::= <A> | <B>;
+<A> ::= "a";
+<B> ::= "b";"""
         grammar, _ = parse_contents(grammar)
 
         inp1 = grammar.parse("a")
         inp2 = grammar.parse("b")
 
-        constraint = parse_constraint("exists <elem> in <A>: <elem> in <start>;")
+        constraint = parse_constraint("where exists <elem> in <A>: <elem> in <start>")
         print(constraint)
         self.assertTrue(constraint.check(inp1))
         self.assertFalse(constraint.check(inp2))
 
     def test_inside_pattern(self):
-        grammar = """
-        <start> ::= <A> | <B>;
-        <A> ::= "a";
-        <B> ::= "b";
-        """
+        grammar = """<start> ::= <A> | <B>;
+<A> ::= "a";
+<B> ::= "b";"""
         grammar, _ = parse_contents(grammar)
 
         inp1 = grammar.parse("a")
         inp2 = grammar.parse("b")
 
         pattern = Pattern(
-            string_pattern="exists <elem> in <A>: <elem> in <start>;",
+            string_pattern="where exists <elem> in <A>: <elem> in <start>",
         )
         constraint = pattern.instantiated_pattern
         print(constraint.check(inp1))
@@ -55,13 +51,11 @@ class TestPatternsWithPlaceholders(unittest.TestCase):
         self.assertFalse(constraint.check(inp2))
 
     def test_contains_pattern(self):
-        grammar = """
-        <start> ::= <string>;
-        <string> ::= <char>+;
-        <char> ::= <A> | <B>;
-        <A> ::= "a";
-        <B> ::= "b";
-        """
+        grammar = """<start> ::= <string>;
+<string> ::= <char>+;
+<char> ::= <A> | <B>;
+<A> ::= "a";
+<B> ::= "b";"""
         grammar, _ = parse_contents(grammar)
 
         inp1 = grammar.parse("a")
@@ -72,7 +66,7 @@ class TestPatternsWithPlaceholders(unittest.TestCase):
         # print('bb' in str(inp3))
 
         pattern = Pattern(
-            string_pattern="exists <elem> in <start>: 'bb' in <elem>;",
+            string_pattern="where exists <elem> in <start>: 'bb' in <elem>",
             use_cache=False,
         )
         constraint = pattern.instantiated_pattern
@@ -81,14 +75,12 @@ class TestPatternsWithPlaceholders(unittest.TestCase):
         self.assertTrue(constraint.check(inp3))
 
     def test_contains_escaped_pattern(self):
-        grammar = r"""
-        <start> ::= <string>;
-        <string> ::= <char>+;
-        <char> ::= <A> | <B> | <newline>;
-        <A> ::= "a";
-        <B> ::= "b";
-        <newline> ::= "\\n";
-        """
+        grammar = r"""<start> ::= <string>;
+<string> ::= <char>+;
+<char> ::= <A> | <B> | <newline>;
+<A> ::= "a";
+<B> ::= "b";
+<newline> ::= "\\n";"""
         grammar, _ = parse_contents(grammar)
 
         inp1 = grammar.parse("a")
@@ -98,7 +90,7 @@ class TestPatternsWithPlaceholders(unittest.TestCase):
         inp5 = grammar.parse("\\n\\n")
 
         pattern = Pattern(
-            string_pattern=r"exists <elem> in <string>: '\\n\\n' in <elem>;",
+            string_pattern=r"where exists <elem> in <string>: '\\n\\n' in <elem>",
             use_cache=False,
         )
 
@@ -128,14 +120,12 @@ class TestPatternsWithPlaceholders(unittest.TestCase):
         self.assertTrue(constraint.check(grammar.parse(benign)))
 
     def test_contains_recursive(self):
-        grammar = """
-        <start> ::= <A> | <B>;
-        <A> ::= "a";
-        <B> ::= "b" | <C>;
-        <C> ::= "c";
-        """
+        grammar = """<start> ::= <A> | <B>;
+<A> ::= "a";
+<B> ::= "b" | <C>;
+<C> ::= "c";"""
         grammar, constraints = parse_contents(
-            grammar + "exists <elem> in <C>: <elem> in <start>;"
+            grammar + "where exists <elem> in <C>: <elem> in <start>"
         )
 
         inp1 = grammar.parse("c")
@@ -144,19 +134,17 @@ class TestPatternsWithPlaceholders(unittest.TestCase):
         self.assertFalse(constraints[0].check(inp2))
 
     def test_pattern_instantiation(self):
-        grammar = """
-        <start> ::= <A> | <B>;
-        <A> ::= "a";
-        <B> ::= "b" | <C>;
-        <C> ::= "c";
-        """
+        grammar = """<start> ::= <A> | <B>;
+<A> ::= "a";
+<B> ::= "b" | <C>;
+<C> ::= "c";"""
         grammar, _ = parse_contents(grammar)
 
         inp1 = grammar.parse("c")
         inp2 = grammar.parse("a")
 
         pattern = Pattern(
-            string_pattern="exists <elem> in <NON_TERMINAL>: <elem> in <start>;",
+            string_pattern="where exists <elem> in <NON_TERMINAL>: <elem> in <start>",
             use_cache=False,
         )
         from fdlearn.learning.instantiation import NonTerminalPlaceholderTransformer
