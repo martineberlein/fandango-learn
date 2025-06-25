@@ -41,7 +41,7 @@ class Pattern:
 
 
 Pattern(
-    string_pattern="str(<NON_TERMINAL>) == <STRING>;",
+    string_pattern="where str(<NON_TERMINAL>) == <STRING>",
     instantiated_pattern=ComparisonConstraint(
         operator=Comparison.EQUAL,
         left=f"str({Pattern.get_id(1)})",
@@ -57,7 +57,7 @@ Pattern(
 
 for operator in Comparison:
     Pattern(
-        string_pattern=f"int(<NON_TERMINAL>) {operator} len(str(<NON_TERMINAL>));",
+        string_pattern=f"where int(<NON_TERMINAL>) {operator} len(str(<NON_TERMINAL>))",
         instantiated_pattern=ComparisonConstraint(
             operator=operator,
             left=f"int({Pattern.get_id(1)})",
@@ -74,7 +74,7 @@ for operator in Comparison:
 # All Patterns with the form int(<NON_TERMINAL>) <operator> <INTEGER>;
 for operator in Comparison:
     Pattern(
-        string_pattern=f"int(<NON_TERMINAL>) {str(operator.value)} <INTEGER>;",
+        string_pattern=f"where int(<NON_TERMINAL>) {str(operator.value)} <INTEGER>",
         instantiated_pattern=ComparisonConstraint(
             operator=operator,
             left=f"int({Pattern.get_id(1)})",
@@ -97,7 +97,7 @@ for operator in [
     Comparison.NOT_EQUAL,
 ]:
     Pattern(
-        string_pattern=f"int(<NON_TERMINAL>) {str(operator.value)} int(<NON_TERMINAL>);",
+        string_pattern=f"where int(<NON_TERMINAL>) {str(operator.value)} int(<NON_TERMINAL>)",
         instantiated_pattern=ComparisonConstraint(
             operator=operator,
             left=f"int({Pattern.get_id(1)})",
@@ -112,21 +112,21 @@ for operator in [
     )
 
 Pattern(
-    string_pattern="exists <elem> in <NON_TERMINAL>: <elem> in <start>;",
+    string_pattern="where exists <elem> in <NON_TERMINAL>: <elem> in <start>",
     use_cache=False,
 )
 
 Pattern(
-    string_pattern="exists <elem> in <NON_TERMINAL>: <elem> in <NON_TERMINAL>;",
+    string_pattern="where exists <elem> in <NON_TERMINAL>: <elem> in <NON_TERMINAL>",
     use_cache=False,
 )
 
 Pattern(
-    string_pattern="exists <elem> in <NON_TERMINAL>: str(<elem>) == <STRING>;",
+    string_pattern="where exists <elem> in <NON_TERMINAL>: str(<elem>) == <STRING>",
 )
 
 Pattern(
-    string_pattern="exists <elem> in <NON_TERMINAL>: <STRING> in <elem>;",
+    string_pattern="where exists <elem> in <NON_TERMINAL>: <STRING> in <elem>",
     use_cache=False,
 )
 
@@ -157,14 +157,13 @@ where iban_checksum(str(<NON_TERMINAL>)) == int(<NON_TERMINAL>)
 )
 
 Pattern(
-    string_pattern="""exists <elem> in <NON_TERMINAL>: (str(<ATTRIBUTE>) == <STRING>) and (int(eval(str(<ATTRIBUTE>))) == <INTEGER>);
-    """
+    string_pattern="""where exists <elem> in <NON_TERMINAL>: (str(<ATTRIBUTE>) == <STRING>) and (int(eval(str(<ATTRIBUTE>))) == <INTEGER>)"""
 )
 
 Pattern(
-    string_pattern="exists <elem> in <NON_TERMINAL>: int(eval(str(<elem>))) == <INTEGER>;",
+    string_pattern="where exists <elem> in <NON_TERMINAL>: int(eval(str(<elem>))) == <INTEGER>",
 )
 
 Pattern(
-    string_pattern="forall <elem> in <NON_TERMINAL>: str(<elem>.<xml_open_tag>.<id>) == str(<elem>.<xml_close_tag>.<id>);",
+    string_pattern="where forall <elem> in <NON_TERMINAL>: str(<elem>.<xml_open_tag>.<id>) == str(<elem>.<xml_close_tag>.<id>)",
 )
