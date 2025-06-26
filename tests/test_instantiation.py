@@ -6,23 +6,27 @@ from fandango.constraints.base import (
     ConjunctionConstraint,
     ExistsConstraint, ForallConstraint, ExpressionConstraint,
 )
-from fandango.language.search import RuleSearch
+from fandango.language.search import RuleSearch, AttributeSearch
 
 from fdlearn.interface import parse_constraint
 from fdlearn.learning.instantiation import NonTerminalPlaceholderTransformer
+from fdlearn.reduction.feature_class import get_direct_reachability_map
 
 from .utils import RESOURCES_ROOT
 
 
 class TestPatternInstantiation(unittest.TestCase):
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         with open(RESOURCES_ROOT / "calculator.fan", "r") as f:
-            self.grammar, _ = parse(f, use_cache=False, use_stdlib=False)
+            cls.grammar, _ = parse(f, use_cache=False, use_stdlib=False)
 
-        relevant_non_terminals = set(self.grammar.rules.keys())
-        self.non_terminal_transformer = NonTerminalPlaceholderTransformer(
-            relevant_non_terminals
+        relevant_non_terminals = set(cls.grammar.rules.keys())
+        reachability_map = get_direct_reachability_map(cls.grammar)
+        cls.non_terminal_transformer = NonTerminalPlaceholderTransformer(
+            relevant_non_terminals,
+            reachability_map=reachability_map
         )
 
     def transform_pattern(self, pattern):
@@ -107,6 +111,23 @@ class TestPatternInstantiation(unittest.TestCase):
 
         transformed_patterns = self.transform_pattern(pattern)
         self.assertEqual(len(transformed_patterns), len(self.grammar.rules))
+
+    def test_non_terminal_transformer_8(self):
+        pattern = parse_constraint(
+            "where exists <elem> in <NON_TERMINAL>: int(<ATTRIBUTE>) <= 1"
+        )
+        self.assertIsInstance(pattern, ExistsConstraint)
+
+        transformed_patterns = self.transform_pattern(pattern)
+        self.assertEqual(len(transformed_patterns), len(self.grammar.rules))
+
+        for pattern in transformed_patterns:
+            self.assertIsInstance(pattern, ExistsConstraint)
+            self.assertIsInstance(pattern.search, RuleSearch)
+            self.assertTrue(pattern.search.symbol in list(self.grammar.rules.keys()))
+            bounded_constraint = pattern.statement
+            self.assertIsInstance(bounded_constraint, ComparisonConstraint)
+            self.assertTrue(all(isinstance(att, AttributeSearch) for att in list(bounded_constraint.searches.values())))
 
 
 if __name__ == "__main__":
