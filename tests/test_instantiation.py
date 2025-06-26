@@ -4,7 +4,7 @@ from fandango.language.parse import parse
 from fandango.constraints.base import (
     ComparisonConstraint,
     ConjunctionConstraint,
-    ExistsConstraint,
+    ExistsConstraint, ForallConstraint, ExpressionConstraint,
 )
 from fandango.language.search import RuleSearch
 
@@ -83,6 +83,30 @@ class TestPatternInstantiation(unittest.TestCase):
             self.assertIsInstance(pattern.statement, ConjunctionConstraint)
             self.assertIsInstance(pattern.search, RuleSearch)
             self.assertTrue(pattern.search.symbol in list(self.grammar.rules.keys()))
+
+    def test_non_terminal_transformer_6(self):
+        pattern = parse_constraint(
+            "where forall <elem> in <NON_TERMINAL>: int(<elem>) <= -1 and str(<NON_TERMINAL>) == 'a'"
+        )
+        self.assertIsInstance(pattern, ForallConstraint)
+
+        transformed_patterns = self.transform_pattern(pattern)
+        self.assertEqual(len(transformed_patterns), len(self.grammar.rules)**2)
+
+        for pattern in transformed_patterns:
+            self.assertIsInstance(pattern, ForallConstraint)
+            self.assertIsInstance(pattern.statement, ConjunctionConstraint)
+            self.assertIsInstance(pattern.search, RuleSearch)
+            self.assertTrue(pattern.search.symbol in list(self.grammar.rules.keys()))
+
+    def test_non_terminal_transformer_7(self):
+        pattern = parse_constraint(
+            "where <STRING> in str(<NON_TERMINAL>)"
+        )
+        self.assertIsInstance(pattern, ExpressionConstraint)
+
+        transformed_patterns = self.transform_pattern(pattern)
+        self.assertEqual(len(transformed_patterns), len(self.grammar.rules))
 
 
 if __name__ == "__main__":
