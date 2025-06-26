@@ -1,6 +1,5 @@
 from copy import deepcopy
 from typing import List, Dict, Set, Iterable, Tuple, Callable, Mapping
-import re
 
 from fandango.constraints.base import *
 from fandango.language.search import RuleSearch, AttributeSearch
@@ -18,95 +17,102 @@ def all_combinations(sequences: list[list]) -> list[list]:
     return result
 
 
-class ValueMaps:
-    def __init__(self, relevant_non_terminals: Set[NonTerminal]):
-        self.relevant_non_terminals = relevant_non_terminals
-        self._string_values = {nt: set() for nt in self.relevant_non_terminals}
-        self._int_values = {nt: set() for nt in self.relevant_non_terminals}
+def _is_string_numeric(value: str) -> tuple[bool, float | None]:
+    """
+    Safely checks if a string can be converted to a float.
 
-    def get_string_values_for_non_terminal(self, non_terminal: NonTerminal) -> Set[str]:
-        return self._string_values[non_terminal]
+    Returns a tuple of (bool, float or None). This avoids converting twice.
+    """
+    try:
+        return True, float(value)
+    except (ValueError, TypeError):
+        return False, None
 
-    def get_int_values_for_non_terminal(self, non_terminal: NonTerminal) -> Set[int]:
-        return self._int_values[non_terminal]
 
-    def get_filtered_int_values(self) -> Dict[NonTerminal, Set[str]]:
-        return self._calculate_filtered_int_values()
-
-    def get_string_values(self) -> Dict[NonTerminal, Set[str]]:
-        return self._string_values
-
-    def get_int_values(self) -> Dict[NonTerminal, Set[int]]:
-        return self._int_values
-
-    @staticmethod
-    def is_number(value: str) -> bool:
-        """Check if the given string represents a number."""
-        try:
-            float(eval(value))
-            return True
-        except Exception:
-            return False
-
-    @staticmethod
-    def is_number_re(s):
-        if not s.strip():
-            return False
-        number_pattern = re.compile(r"^-?(?:\d+|\d*\.\d+)(?:[eE]-?\d+)?$")
-        return bool(number_pattern.match(s))
-
-    @staticmethod
-    def longest_common_substring(strings):
-        if not strings:
-            return ""
-
-        # Choose the shortest string, as any common substring must be a substring of it
-        shortest = min(strings, key=len)
-        n = len(shortest)
-
-        # Check all possible substring lengths, from longest to shortest
-        for sub_len in range(n, 0, -1):
-            # Try every substring of length sub_len in the shortest string
-            for start in range(n - sub_len + 1):
-                candidate = shortest[start : start + sub_len]
-                # Check if this candidate is in all strings
-                if all(candidate in s for s in strings):
-                    return candidate  # Return as soon as we find the longest common substring
-
-        # If no common substring is found (shouldn't happen unless the list is empty), return an empty string
+def _find_longest_common_substring(strings: list[str]) -> str:
+    """
+    Finds the longest common substring among a list of strings.
+    """
+    if not strings:
         return ""
 
-    def extract_non_terminal_values(
-        self, inputs: Set[FandangoInput]
-    ) -> Tuple[Dict[NonTerminal, Set[str]], Dict[NonTerminal, Set[float]]]:
-        """Extracts and returns values associated with non-terminals."""
+    shortest_str = min(strings, key=len)
+    n = len(shortest_str)
 
+    for length in range(n, 0, -1):
+        for start in range(n - length + 1):
+            substring = shortest_str[start:start + length]
+            if all(substring in s for s in strings):
+                return substring
+    return ""
+
+
+class ValueMaps:
+    """
+    Extracts and stores string and numeric values associated with specific
+    non-terminals from a set of input data.
+    """
+
+    def __init__(self, relevant_non_terminals: set[NonTerminal]):
+        """Initializes the storage for non-terminal values."""
+        self.relevant_non_terminals = relevant_non_terminals
+        self._string_values: dict[NonTerminal, set[str]] = {nt: set() for nt in relevant_non_terminals}
+        self._numeric_values: dict[NonTerminal, set[float]] = {nt: set() for nt in relevant_non_terminals}
+
+    @classmethod
+    def from_inputs(cls, relevant_non_terminals: set[NonTerminal], inputs: set[FandangoInput]) -> 'ValueMaps':
+        """
+        A factory method to create an instance and populate it from inputs.
+        """
+        instance = cls(relevant_non_terminals)
+        instance._populate_values(inputs)
+        return instance
+
+    def _populate_values(self, inputs: set[FandangoInput]) -> None:
+        """
+        Extracts and categorizes values from inputs for relevant non-terminals.
+        This method modifies the instance's state.
+        """
         for non_terminal in self.relevant_non_terminals:
-            strings = []
+            all_values_as_strings = []
             for input_obj in inputs:
                 found_trees = input_obj.tree.find_all_trees(non_terminal)
                 for tree in found_trees:
-                    value = str(tree)
-                    strings.append(value)
-                    if self.is_number(value):
-                        self._int_values[non_terminal].add(eval(value))
+                    value_str = str(tree)
+                    all_values_as_strings.append(value_str)
+
+                    is_numeric, numeric_val = _is_string_numeric(value_str)
+                    if is_numeric:
+                        self._numeric_values[non_terminal].add(numeric_val)
                     else:
-                        self._string_values[non_terminal].add(value)
+                        self._string_values[non_terminal].add(value_str)
 
-            longest_common_substring = self.longest_common_substring(strings)
-            if len(longest_common_substring) >= 2:
-                self._string_values[non_terminal].add(longest_common_substring)
+            if len(all_values_as_strings) > 1:
+                lcs = _find_longest_common_substring(all_values_as_strings)
+                if len(lcs) >= 2:
+                    self._string_values[non_terminal].add(lcs)
 
-        return self._string_values, self._int_values
+    @property
+    def string_values(self) -> dict[NonTerminal, set[str]]:
+        """Returns all collected string values."""
+        return self._string_values
 
-    def _calculate_filtered_int_values(self) -> Dict[NonTerminal, Set[str]]:
-        """Filters the value map to only include min and max values for non-terminals that have integer values."""
-        reduced_int_values = {}
-        for non_terminal, values in self._int_values.items():
+    @property
+    def numeric_values(self) -> dict[NonTerminal, set[float]]:
+        """Returns all collected numeric values."""
+        return self._numeric_values
+
+    @property
+    def filtered_numeric_values(self) -> dict[NonTerminal, set[float]]:
+        """
+        Returns a map containing only the min and max numeric values
+        for each non-terminal.
+        """
+        reduced_values = {}
+        for non_terminal, values in self._numeric_values.items():
             if values:
-                min_val, max_val = min(values), max(values)
-                reduced_int_values[non_terminal] = {min_val, max_val}
-        return reduced_int_values
+                reduced_values[non_terminal] = {min(values), max(values)}
+        return reduced_values
 
 
 class PatternProcessor:
@@ -159,7 +165,7 @@ class PatternProcessor:
 class NonTerminalPlaceholderTransformer:
     """
     Visitor that replaces <NON_TERMINAL> and <ATTRIBUTE> placeholders
-    in any Constraint. All of the “expand over products” logic is
+    in any Constraint. All the “expand over products” logic is
     centralized in `_expand_searches(...)`.
     """
 
@@ -191,7 +197,7 @@ class NonTerminalPlaceholderTransformer:
         bounded_map: Dict[NonTerminal, NonTerminal],
     ) -> List["Constraint"]:
         """
-        Dispatch based on constraint type, always returning a List[Constraint].
+        visit function, always returning a List[Constraint].
         """
         if isinstance(constraint, ComparisonConstraint):
             return self._visit_comparison(constraint, bounded_map)
@@ -212,10 +218,8 @@ class NonTerminalPlaceholderTransformer:
             return self._visit_implication(constraint, bounded_map)
 
         if isinstance(constraint, DisjunctionConstraint):
-            # If you truly cannot handle disjunctions, keep this.
             raise NotImplementedError("Disjunctions are not yet supported.")
 
-        # Fallback: return it as‐is if it’s some other Constraint subtype.
         return [constraint]
 
     def _visit_comparison(
@@ -630,7 +634,7 @@ class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
         self,
         initialized_patterns: List[Tuple[Constraint, Set[NonTerminal]]],
         placeholder: NonTerminal,
-        values: Dict[NonTerminal, Set[str]],
+        values: Dict[NonTerminal, Set[str|int|float]],
         format_value: Callable[[str], str],
     ) -> List[Tuple[Constraint, Set[NonTerminal]]]:
         """
@@ -704,14 +708,14 @@ class IntegerValuePlaceholderTransformer(ValuePlaceholderTransformer):
 
     def update_value_map(self, bound: NonTerminal, search: RuleSearch):
         """ """
-        if search.symbol in self.value_maps._int_values:
-            self.value_maps._int_values[bound] = self.value_maps._int_values[
+        if search.symbol in self.value_maps.numeric_values:
+            self.value_maps.numeric_values[bound] = self.value_maps.numeric_values[
                 search.symbol
             ]
 
     def remove_value_map(self, bound: NonTerminal):
-        if bound in self.value_maps._int_values:
-            del self.value_maps._int_values[bound]
+        if bound in self.value_maps.numeric_values:
+            del self.value_maps.numeric_values[bound]
 
     def visit_comparison_constraint(self, constraint: "ComparisonConstraint"):
         """
@@ -725,7 +729,7 @@ class IntegerValuePlaceholderTransformer(ValuePlaceholderTransformer):
         instantiated_patterns = self.replace_placeholders(
             instantiated_patterns,
             NonTerminal("<INTEGER>"),
-            values=self.value_maps.get_filtered_int_values(),
+            values=self.value_maps.filtered_numeric_values,
             format_value=lambda x: f"{x}",
         )
 
@@ -739,14 +743,14 @@ class StringValuePlaceholderTransformer(ValuePlaceholderTransformer):
 
     def update_value_map(self, bound: NonTerminal, search: RuleSearch):
         """ """
-        if search.symbol in self.value_maps._string_values:
-            self.value_maps._string_values[bound] = self.value_maps._string_values[
+        if search.symbol in self.value_maps.string_values:
+            self.value_maps.string_values[bound] = self.value_maps.string_values[
                 search.symbol
             ]
 
     def remove_value_map(self, bound: NonTerminal):
-        if bound in self.value_maps._string_values:
-            del self.value_maps._string_values[bound]
+        if bound in self.value_maps.string_values:
+            del self.value_maps.string_values[bound]
 
     def visit_comparison_constraint(self, constraint: "ComparisonConstraint"):
         """
@@ -759,7 +763,7 @@ class StringValuePlaceholderTransformer(ValuePlaceholderTransformer):
         instantiated_patterns = self.replace_placeholders(
             instantiated_patterns,
             NonTerminal("<STRING>"),
-            values=self.value_maps.get_string_values(),
+            values=self.value_maps.string_values,
             format_value=lambda x: f"'{x}'",
         )
 
@@ -788,7 +792,7 @@ class StringValuePlaceholderTransformer(ValuePlaceholderTransformer):
         if matches:
             for non_terminal in non_terminals:
                 values = set(
-                    self.value_maps.get_string_values_for_non_terminal(non_terminal)
+                    self.value_maps.string_values[non_terminal]
                 )
 
                 for value in values:

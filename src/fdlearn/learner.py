@@ -95,13 +95,11 @@ class FandangoLearner(BaseFandangoLearner):
             self.all_positive_inputs
         )
 
-        value_maps = ValueMaps(relevant_non_terminals)
-        value_maps.extract_non_terminal_values(self.all_positive_inputs)
-
+        value_map = ValueMaps.from_inputs(relevant_non_terminals, self.all_positive_inputs)
         reachability_map = get_direct_reachability_map(self.grammar)
 
         instantiated_candidates = self.pattern_processor.instantiate_patterns(
-            relevant_non_terminals, sorted_positive_inputs, value_maps=value_maps, reachability_map=reachability_map
+            relevant_non_terminals, sorted_positive_inputs, value_maps=value_map, reachability_map=reachability_map
         )
 
         candidates_to_evaluate: List[FandangoConstraintCandidate] = (
