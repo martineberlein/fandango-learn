@@ -5,10 +5,11 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from fandango.evolution.algorithm import Fandango
+from fandango.language.parse import parse
 
 from fdlearn.data import OracleResult
 from fdlearn.learner import FandangoLearner, FandangoInput, NonTerminal
-from fdlearn.interface.fandango import parse_contents, parse
+from fdlearn.interface.fandango import parse_contents
 
 
 def oracle(inp: str) -> OracleResult:
@@ -26,8 +27,8 @@ def oracle(inp: str) -> OracleResult:
 
 if __name__ == "__main__":
     random.seed(1)  # For reproducibility
-    filename = Path(__file__).resolve().parent / "xml.fan"
-    grammar, _ = parse(filename)
+    with open("xml.fan", "r") as f:
+        grammar, _ = parse(f)
 
     positive, negative = set(), set()
     while len(positive) < 10 :
@@ -69,11 +70,13 @@ if __name__ == "__main__":
 
     solutions = set()
 
-    while len(solutions) < 10:
-        fandango = Fandango(grammar, [invariant], desired_solutions=100)
-        population = fandango.evolve()
-        for tree in population:
-            solutions.add(tree)
+    fandango = Fandango(grammar, [invariant])
+    fandango_generator = fandango.generate()
+
+    for inp in fandango_generator:
+        solutions.add(inp)
+        if len(solutions) >= 10:
+            break
 
     tp = [tree for tree in solutions if oracle(str(tree)).is_failing()]
     fp = [tree for tree in solutions if not oracle(str(tree)).is_failing()]

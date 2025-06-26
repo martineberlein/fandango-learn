@@ -72,11 +72,13 @@ if __name__ == "__main__":
 
     solutions = set()
 
-    while len(solutions) < 10:
-        fandango = Fandango(grammar, [invariant])
-        population = fandango.evolve()
-        for tree in population:
-            solutions.add(tree)
+    fandango = Fandango(grammar, [invariant])
+    fandango_generator = fandango.generate()
+
+    for inp in fandango_generator:
+        solutions.add(inp)
+        if len(solutions) >= 10:
+            break
 
     tp = [True for tree in solutions if validate_iban(str(tree))]
     fp = [True for tree in solutions if not validate_iban(str(tree))]

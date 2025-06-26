@@ -6,8 +6,7 @@ from fdlearn.learner import FandangoLearner, FandangoInput
 from fdlearn.interface.fandango import parse_contents
 from fdlearn.resources import Pattern
 
-grammar = """
-<start> ::= <arithexp>;
+grammar = """<start> ::= <arithexp>;
 <arithexp> ::= <term> | <number> | "(" <arithexp> ")";
 <term> ::= <arithexp><operator><rarithexp>;
 <rarithexp> ::= <arithexp>;
@@ -70,11 +69,13 @@ if __name__ == "__main__":
 
     solutions = set()
 
-    while len(solutions) < 10:
-        fandango = Fandango(grammar, [invariant])
-        population = fandango.evolve()
-        for tree in population:
-            solutions.add(tree)
+    fandango = Fandango(grammar, [invariant])
+    fandango_generator = fandango.generate()
+
+    for inp in fandango_generator:
+        solutions.add(inp)
+        if len(solutions) >= 10:
+            break
 
     tp = [True for tree in solutions if oracle(str(tree)).is_failing()]
     fp = [True for tree in solutions if not oracle(str(tree)).is_failing()]
