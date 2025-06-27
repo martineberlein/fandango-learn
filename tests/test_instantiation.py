@@ -164,6 +164,7 @@ class TestPatternInstantiation(unittest.TestCase):
         )
         self.integer_transformer.visit(pattern)
         transformed_patterns = self.integer_transformer.results
+        self.integer_transformer.reset()
         self.assertEqual(len(transformed_patterns), 2)
 
     def test_integer_transformer_11(self):
@@ -172,6 +173,7 @@ class TestPatternInstantiation(unittest.TestCase):
         )
         self.integer_transformer.visit(pattern)
         transformed_patterns = self.integer_transformer.results
+        self.integer_transformer.reset()
         self.assertEqual(len(transformed_patterns), 4)
 
 if __name__ == "__main__":

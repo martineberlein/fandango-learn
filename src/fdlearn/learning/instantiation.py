@@ -445,6 +445,13 @@ class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
 
         self.bounded_non_terminals: dict[NonTerminal, NonTerminal] = dict()
 
+    def reset(self):
+        """
+        Reset the results and bounded non-terminals for a new transformation.
+        """
+        self.results = []
+        self.bounded_non_terminals = dict()
+
     def do_continue(self, constraint: "Constraint") -> bool:
         return False
 
