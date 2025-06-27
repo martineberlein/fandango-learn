@@ -9,7 +9,7 @@ from .learning.candidate import FandangoConstraintCandidate
 from .data import FandangoInput, OracleResult
 from .logger import LOGGER, LoggerLevel
 from .learning.combination import ConjunctionProcessor, DisjunctionProcessor
-from .learning.instantiation import PatternProcessor, ValueMaps
+from .learning.instantiation import PatternProcessor, ValueMap
 from .core import BaseFandangoLearner
 from .types import OracleType
 from .resources.patterns import Pattern
@@ -95,7 +95,7 @@ class FandangoLearner(BaseFandangoLearner):
             self.all_positive_inputs
         )
 
-        value_map = ValueMaps.from_inputs(relevant_non_terminals, self.all_positive_inputs)
+        value_map = ValueMap.from_inputs(relevant_non_terminals, self.all_positive_inputs)
         reachability_map = get_direct_reachability_map(self.grammar)
 
         instantiated_candidates = self.pattern_processor.instantiate_patterns(
