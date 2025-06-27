@@ -2,7 +2,7 @@ from copy import deepcopy
 from typing import List, Dict, Set, Iterable, Tuple, Callable, Mapping
 
 from fandango.constraints.base import *
-from fandango.language.search import RuleSearch, AttributeSearch
+from fandango.language.search import RuleSearch, AttributeSearch, Container
 from fandango.language.symbol import NonTerminal
 
 from fdlearn.data import FandangoInput
@@ -569,13 +569,13 @@ class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
         """
         self.results.append(constraint)
 
+    @staticmethod
     def get_combinations(
-        self,
         constraint: Constraint,
         tree: DerivationTree,
         scope: Optional[Dict[NonTerminal, DerivationTree]] = None,
     ):
-        nodes: List[List[Tuple[str, DerivationTree]]] = []
+        nodes: List[List[Tuple[str, Container]]] = []
         for name, search in constraint.searches.items():
             if isinstance(search, RuleSearch) and search.symbol == NonTerminal("<INTEGER>"):
                 continue
