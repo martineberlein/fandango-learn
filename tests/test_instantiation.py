@@ -8,8 +8,10 @@ from fandango.constraints.base import (
 )
 from fandango.language.search import RuleSearch, AttributeSearch
 
+from fdlearn.data import FandangoInput
 from fdlearn.interface import parse_constraint
-from fdlearn.learning.instantiation import NonTerminalPlaceholderTransformer
+from fdlearn.learning.instantiation import NonTerminalPlaceholderTransformer, IntegerValuePlaceholderTransformer, \
+    ValueMap
 from fdlearn.reduction.feature_class import get_direct_reachability_map
 
 from .utils import RESOURCES_ROOT
@@ -27,6 +29,17 @@ class TestPatternInstantiation(unittest.TestCase):
         cls.non_terminal_transformer = NonTerminalPlaceholderTransformer(
             relevant_non_terminals,
             reachability_map=reachability_map
+        )
+
+        test_inputs = set()
+        for _ in range(100):
+            tree = cls.grammar.fuzz()
+            test_inputs.add(FandangoInput(tree=tree))
+
+        value_map = ValueMap.from_inputs(relevant_non_terminals=relevant_non_terminals, inputs=test_inputs)
+        cls.integer_transformer = IntegerValuePlaceholderTransformer(
+            value_maps=value_map,
+            test_inputs=test_inputs,
         )
 
     def transform_pattern(self, pattern):
@@ -145,6 +158,21 @@ class TestPatternInstantiation(unittest.TestCase):
             self.assertIsInstance(bounded_constraint, ComparisonConstraint)
             self.assertTrue(all(isinstance(att, AttributeSearch) for att in list(bounded_constraint.searches.values())))
 
+    def test_integer_transformer_10(self):
+        pattern = parse_constraint(
+            "where int(<number>) <= <INTEGER> and str(<function>) == 'sqrt'"
+        )
+        self.integer_transformer.visit(pattern)
+        transformed_patterns = self.integer_transformer.results
+        self.assertEqual(len(transformed_patterns), 2)
+
+    def test_integer_transformer_11(self):
+        pattern = parse_constraint(
+            "where int(<number>) <= <INTEGER> and int(<number>) <= <INTEGER>"
+        )
+        self.integer_transformer.visit(pattern)
+        transformed_patterns = self.integer_transformer.results
+        self.assertEqual(len(transformed_patterns), 4)
 
 if __name__ == "__main__":
     unittest.main()
