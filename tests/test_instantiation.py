@@ -129,6 +129,22 @@ class TestPatternInstantiation(unittest.TestCase):
             self.assertIsInstance(bounded_constraint, ComparisonConstraint)
             self.assertTrue(all(isinstance(att, AttributeSearch) for att in list(bounded_constraint.searches.values())))
 
+    def test_non_terminal_transformer_9(self):
+        pattern = parse_constraint(
+            "where forall <elem> in <NON_TERMINAL>: int(<ATTRIBUTE>) <= 1"
+        )
+        self.assertIsInstance(pattern, ForallConstraint)
+        transformed_patterns = self.transform_pattern(pattern)
+        self.assertEqual(len(transformed_patterns), len(self.grammar.rules))
+
+        for pattern in transformed_patterns:
+            self.assertIsInstance(pattern, ForallConstraint)
+            self.assertIsInstance(pattern.search, RuleSearch)
+            self.assertTrue(pattern.search.symbol in list(self.grammar.rules.keys()))
+            bounded_constraint = pattern.statement
+            self.assertIsInstance(bounded_constraint, ComparisonConstraint)
+            self.assertTrue(all(isinstance(att, AttributeSearch) for att in list(bounded_constraint.searches.values())))
+
 
 if __name__ == "__main__":
     unittest.main()

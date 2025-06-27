@@ -4,7 +4,7 @@ from fandango.language.symbol import NonTerminal
 from fandango.language.parse import parse
 
 from fdlearn.data.input import FandangoInput
-from fdlearn.learning.instantiation import ValueMaps
+from fdlearn.learning.instantiation import ValueMap
 from .utils import RESOURCES_ROOT
 
 
@@ -34,7 +34,7 @@ class TestConjunctionProcessor(unittest.TestCase):
             NonTerminal("<function>"),
         }
 
-        value_map = ValueMaps.from_inputs(
+        value_map = ValueMap.from_inputs(
             relevant_non_terminals=relevant_non_terminals, inputs=self.test_inputs
         )
 
@@ -60,7 +60,7 @@ class TestConjunctionProcessor(unittest.TestCase):
             NonTerminal("<function>"),
         }
 
-        value_map = ValueMaps.from_inputs(
+        value_map = ValueMap.from_inputs(
             relevant_non_terminals=relevant_non_terminals, inputs=self.test_inputs
         )
 
@@ -82,7 +82,7 @@ class TestConjunctionProcessor(unittest.TestCase):
             NonTerminal("<function>"),
         }
 
-        value_map = ValueMaps.from_inputs(
+        value_map = ValueMap.from_inputs(
             relevant_non_terminals=relevant_non_terminals, inputs=test_inputs
         )
 
