@@ -7,6 +7,7 @@ from fandango.language.symbol import NonTerminal
 
 from fdlearn.data import FandangoInput
 from fdlearn.learning.candidate import FandangoConstraintCandidate
+from fdlearn.learning.transformer import ConstraintTransformer
 from fdlearn.logger import LOGGER
 
 
@@ -47,7 +48,7 @@ def _find_longest_common_substring(strings: list[str]) -> str:
     return ""
 
 
-class ValueMaps:
+class ValueMap:
     """
     Extracts and stores string and numeric values associated with specific
     non-terminals from a set of input data.
@@ -60,7 +61,7 @@ class ValueMaps:
         self._numeric_values: dict[NonTerminal, set[float]] = {nt: set() for nt in relevant_non_terminals}
 
     @classmethod
-    def from_inputs(cls, relevant_non_terminals: set[NonTerminal], inputs: set[FandangoInput]) -> 'ValueMaps':
+    def from_inputs(cls, relevant_non_terminals: set[NonTerminal], inputs: set[FandangoInput]) -> 'ValueMap':
         """
         A factory method to create an instance and populate it from inputs.
         """
@@ -127,7 +128,7 @@ class PatternProcessor:
         self,
         relevant_non_terminals: Set[NonTerminal],
         positive_inputs: Set[FandangoInput],
-        value_maps: ValueMaps,
+        value_maps: ValueMap,
         reachability_map: Dict[NonTerminal, Set[NonTerminal]] = None,
     ) -> Set[FandangoConstraintCandidate]:
 
@@ -162,7 +163,7 @@ class PatternProcessor:
         return new_candidates
 
 
-class NonTerminalPlaceholderTransformer:
+class NonTerminalPlaceholderTransformer(ConstraintTransformer):
     """
     Visitor that replaces <NON_TERMINAL> and <ATTRIBUTE> placeholders
     in any Constraint. All the “expand over products” logic is
@@ -185,47 +186,11 @@ class NonTerminalPlaceholderTransformer:
             dict(reachability_map) if reachability_map else {}
         )
 
-    def transform(self, root: "Constraint") -> List["Constraint"]:
-        """
-        Public entry point. Returns a flat list of all instantiated constraints.
-        """
-        return self._visit(root, bounded_map={})
-
-    def _visit(
-        self,
-        constraint: "Constraint",
-        bounded_map: Dict[NonTerminal, NonTerminal],
-    ) -> List["Constraint"]:
-        """
-        visit function, always returning a List[Constraint].
-        """
-        if isinstance(constraint, ComparisonConstraint):
-            return self._visit_comparison(constraint, bounded_map)
-
-        if isinstance(constraint, ExpressionConstraint):
-            return self._visit_expression(constraint, bounded_map)
-
-        if isinstance(constraint, ForallConstraint):
-            return self._visit_forall(constraint, bounded_map)
-
-        if isinstance(constraint, ExistsConstraint):
-            return self._visit_exists(constraint, bounded_map)
-
-        if isinstance(constraint, ConjunctionConstraint):
-            return self._visit_conjunction(constraint, bounded_map)
-
-        if isinstance(constraint, ImplicationConstraint):
-            return self._visit_implication(constraint, bounded_map)
-
-        if isinstance(constraint, DisjunctionConstraint):
-            raise NotImplementedError("Disjunctions are not yet supported.")
-
-        return [constraint]
 
     def _visit_comparison(
         self,
         constraint: "ComparisonConstraint",
-        bounded_map: Dict[NonTerminal, NonTerminal],
+        bounded_map: Dict[NonTerminal, NonTerminal]=None,
     ) -> List["Constraint"]:
         """
         1) Generate all fully‐expanded `searches` dicts via `_expand_searches`.
@@ -250,7 +215,7 @@ class NonTerminalPlaceholderTransformer:
     def _visit_expression(
         self,
         constraint: "ExpressionConstraint",
-        bounded_map: Dict[NonTerminal, NonTerminal],
+        bounded_map: Dict[NonTerminal, NonTerminal]=None,
     ) -> List["Constraint"]:
         """
         Same pattern as ComparisonConstraint, but rebuild ExpressionConstraint.
@@ -272,33 +237,54 @@ class NonTerminalPlaceholderTransformer:
     def _visit_forall(
         self,
         constraint: "ForallConstraint",
-        bounded_map: Dict[NonTerminal, NonTerminal],
-    ) -> List["Constraint"]:
+        bounded_map: Dict[NonTerminal, NonTerminal]=None,
+    ) -> List["ForallConstraint"]:
         """
         Recurse into the inner statement; then wrap each instantiation
         in a new ForallConstraint, one per relevant non‐terminal.
         """
-        inner_results = self._visit(constraint.statement, bounded_map)
-        final: List["Constraint"] = []
-        for nt in self.relevant_non_terminals:
-            new_search = RuleSearch(nt)
-            for inner in inner_results:
-                final.append(
+        if bounded_map is None:
+            bounded_map = dict()
+
+        result: List["ForallConstraint"] = []
+
+        is_nt_placeholder = (
+            isinstance(constraint.search, RuleSearch)
+            and constraint.search.symbol == NonTerminal("<NON_TERMINAL>")
+        )
+
+        for candidate_nt in self.relevant_non_terminals:
+            if is_nt_placeholder:
+                new_search = RuleSearch(candidate_nt)
+            else:
+                new_search = constraint.search
+
+            # Thread a fresh bounded_map so attributes can see this binding
+            new_bounded = {**bounded_map, candidate_nt: constraint.bound}
+
+            # Recurse on the inner statement under new_bounded
+            inner_expanded = self.transform(constraint.statement, bounded_map=new_bounded)
+            for inner in inner_expanded:
+                result.append(
                     ForallConstraint(statement=inner, bound=constraint.bound, search=new_search)
                 )
-        return final
+
+        return result
 
     def _visit_exists(
         self,
         constraint: "ExistsConstraint",
-        bounded_map: Dict[NonTerminal, NonTerminal],
-    ) -> List["Constraint"]:
+            bounded_map=None,
+    ) -> List["ExistsConstraint"]:
         """
         If the `search` is a <NON_TERMINAL> placeholder, replace it with each
         relevant non‐terminal. In either case, add (chosen_nt → bound) to the
         new bounded_map before recursing into the inner statement.
         """
-        result: List["Constraint"] = []
+        if bounded_map is None:
+            bounded_map = dict()
+
+        result: List["ExistsConstraint"] = []
 
         # Figure out if this ExistsConstraint.search is exactly <NON_TERMINAL>
         is_nt_placeholder = (
@@ -316,7 +302,7 @@ class NonTerminalPlaceholderTransformer:
             new_bounded = {**bounded_map, candidate_nt: constraint.bound}
 
             # Recurse on the inner statement under new_bounded
-            inner_expanded = self._visit(constraint.statement, new_bounded)
+            inner_expanded = self.transform(constraint.statement, bounded_map=new_bounded)
             for inner in inner_expanded:
                 result.append(
                     ExistsConstraint(statement=inner, bound=constraint.bound, search=new_search)
@@ -327,7 +313,7 @@ class NonTerminalPlaceholderTransformer:
     def _visit_conjunction(
         self,
         constraint: "ConjunctionConstraint",
-        bounded_map: Dict[NonTerminal, NonTerminal],
+        bounded_map: Dict[NonTerminal, NonTerminal]=None,
     ) -> List["Constraint"]:
         """
         Expand each sub‐constraint in turn, collect lists of their instantiations,
@@ -336,7 +322,7 @@ class NonTerminalPlaceholderTransformer:
         """
         expanded_lists: List[List["Constraint"]] = []
         for sub in constraint.constraints:
-            expanded_lists.append(self._visit(sub, bounded_map))
+            expanded_lists.append(self.transform(sub, bounded_map=bounded_map))
 
         # all_combinations produces a List[List[Constraint]] of every possible tuple
         all_tuples = all_combinations(expanded_lists)
@@ -345,13 +331,13 @@ class NonTerminalPlaceholderTransformer:
     def _visit_implication(
         self,
         constraint: "ImplicationConstraint",
-        bounded_map: Dict[NonTerminal, NonTerminal],
+        bounded_map: Dict[NonTerminal, NonTerminal]=None,
     ) -> List["Constraint"]:
         """
         Recursively expand antecedent and consequent, then combine pairwise.
         """
-        expanded_ant = self._visit(constraint.antecedent, bounded_map)
-        expanded_con = self._visit(constraint.consequent, bounded_map)
+        expanded_ant = self.transform(constraint.antecedent, bounded_map=bounded_map)
+        expanded_con = self.transform(constraint.consequent, bounded_map=bounded_map)
 
         result: List["Constraint"] = []
         for a in expanded_ant:
@@ -443,7 +429,7 @@ class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
 
     def __init__(
         self,
-        value_maps: ValueMaps,
+        value_maps: ValueMap,
         test_inputs: Set[FandangoInput],
     ):
         """
@@ -453,7 +439,7 @@ class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
             value_maps (Dict[str, Dict[NonTerminal, List[str]]]): Mapping of placeholders to their replacement values.
         """
         super().__init__()
-        self.value_maps: ValueMaps = value_maps
+        self.value_maps: ValueMap = value_maps
         self.results: List[Constraint] = []
         self.test_inputs: Set[FandangoInput] = test_inputs
 
@@ -703,7 +689,7 @@ class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
 
 class IntegerValuePlaceholderTransformer(ValuePlaceholderTransformer):
 
-    def __init__(self, value_maps: ValueMaps, test_inputs: Set[FandangoInput]):
+    def __init__(self, value_maps: ValueMap, test_inputs: Set[FandangoInput]):
         super().__init__(value_maps, test_inputs)
 
     def update_value_map(self, bound: NonTerminal, search: RuleSearch):
@@ -738,7 +724,7 @@ class IntegerValuePlaceholderTransformer(ValuePlaceholderTransformer):
 
 class StringValuePlaceholderTransformer(ValuePlaceholderTransformer):
 
-    def __init__(self, value_maps: ValueMaps, test_inputs: Set[FandangoInput]):
+    def __init__(self, value_maps: ValueMap, test_inputs: Set[FandangoInput]):
         super().__init__(value_maps, test_inputs)
 
     def update_value_map(self, bound: NonTerminal, search: RuleSearch):
