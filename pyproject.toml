@@ -21,8 +21,8 @@ classifiers = [
 ]
 dependencies = [
     "pandas>=2.2.3",
-    "shap>=0.45",
-    "lightgbm>=4.3.0",
+    "shap>=0.48",
+    "lightgbm>=4.6.0",
     "numpy>=1.23.2",
     "scikit-learn>=1.1.2",
     "fandango-fuzzer>=0.8.0"
