@@ -73,6 +73,15 @@ class TestPatternInstantiation(unittest.TestCase):
         transformed_patterns = self.transform_pattern(pattern)
         self.assertEqual(len(transformed_patterns), len(self.grammar.rules) ** 2)
 
+    def test_non_terminal_transformer_3_1(self):
+        pattern = parse_constraint(
+            "where (int(<NON_TERMINAL>) + str(<NON_TERMINAL>)) == 0"
+        )
+        self.assertIsInstance(pattern, ComparisonConstraint)
+
+        transformed_patterns = self.transform_pattern(pattern)
+        self.assertEqual(len(transformed_patterns), len(self.grammar.rules) ** 2)
+
     def test_non_terminal_transformer_4(self):
         pattern = parse_constraint(
             "where exists <elem> in <NON_TERMINAL>: int(<elem>) <= -1"
