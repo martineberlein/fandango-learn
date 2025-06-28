@@ -1,16 +1,20 @@
 import itertools
+from typing import Optional
+from copy import deepcopy
 
 from fandango.constraints.base import ConjunctionConstraint, DisjunctionConstraint, ImplicationConstraint, \
     ExpressionConstraint, ComparisonConstraint
 from fandango.constraints.base import Constraint, ExistsConstraint, ForallConstraint
-from fandango.language.search import RuleSearch, NonTerminalSearch, AttributeSearch
+from fandango.language.search import RuleSearch, NonTerminalSearch, AttributeSearch, Container
 from fandango.language.symbol import NonTerminal
+from fandango.language.tree import DerivationTree
 
 from fdlearn.learning.instantiation import (
     ConstraintTransformer,
     ValueMap,
 )
 from fdlearn.data.input import FandangoInput
+from fdlearn.logger import LOGGER
 
 
 class ValuePlaceholderTransformer(ConstraintTransformer):
@@ -159,8 +163,111 @@ class ValuePlaceholderTransformer(ConstraintTransformer):
                 )
         return results
 
+    @staticmethod
+    def find_placeholders(constraint: Constraint, placeholder: NonTerminal)-> list[str]:
+        """
+        Returns all the identifiers of the placeholders in the search dictionary.
+        :param constraint:
+        :param placeholder:
+        :return: Identifiers of the placeholders
+        """
+        matches = []
+        for name, search in constraint.searches.items():
+            if isinstance(search, RuleSearch):
+                if search.symbol == placeholder:
+                    matches.append(name)
+        return matches
+
+    @staticmethod
+    def resolve_bounded_non_terminals_in_constraint(constraint: Constraint, bounded_non_terminals, **kwargs) -> Constraint:
+        for name, search in constraint.searches.items():
+            nt = bounded_non_terminals.get(search.symbol, None)
+            if not nt:
+                continue
+            if isinstance(search, AttributeSearch):
+                search.base = RuleSearch(nt)
+            elif isinstance(search, RuleSearch):
+                search.symbol = RuleSearch(nt)
+        return constraint
+
+    @staticmethod
+    def get_combinations_for_partial_evaluation(
+        constraint: Constraint,
+        tree: DerivationTree,
+        scope: Optional[dict[NonTerminal, DerivationTree]] = None,
+    ):
+        nodes: list[list[tuple[str, Container]]] = []
+        for name, search in constraint.searches.items():
+            if search.get_access_points() in (NonTerminal("<INTEGER>"), NonTerminal("<STRING>")):
+                continue
+            nodes.append(
+                [(name, container) for container in search.find(tree, scope=scope)]
+            )
+        return itertools.product(*nodes)
+
+    def evaluate_partial_constraint(self, constraint, bounded_non_terminals, **kwargs) -> set:
+        results = set()
+        try:
+            tmp_constraint = deepcopy(constraint)
+        except TypeError as e:
+            return set()
+
+        constraint_wt_bounded_nt = self.resolve_bounded_non_terminals_in_constraint(tmp_constraint, bounded_non_terminals, **kwargs)
+        assert isinstance(constraint_wt_bounded_nt, ComparisonConstraint)
+
+        for inp in self.test_inputs:
+            for combination in self.get_combinations_for_partial_evaluation(constraint_wt_bounded_nt, inp.tree, scope=None):
+                local_variables = constraint_wt_bounded_nt.local_variables.copy()
+                local_variables.update(
+                    {name: container.evaluate() for name, container in combination}
+                )
+                try:
+                    left_result = eval(
+                        constraint_wt_bounded_nt.left, constraint_wt_bounded_nt.global_variables, local_variables
+                    )
+                    results.add(str(left_result))
+                except Exception as e:
+                    e.add_note("Evaluation failed: " + constraint.left)
+                    LOGGER.debug(e)
+                    continue
+
+        return results
+
+
+
+    def replace_placeholders(self,
+                             constraint: Constraint,
+                             placeholder: NonTerminal,
+                             value_map,
+                             **kwargs) -> list[Constraint]:
+        new_constraints: list[Constraint] = list()
+        assert placeholder in (NonTerminal("<INTEGER>"), NonTerminal("<STRING>"))
+
+        if not isinstance(constraint, ComparisonConstraint):
+            raise ValueError(
+                f"Only comparison constraints are supported. "
+                f"Constraint type {type(constraint)} is not yet supported."
+            )
+
+        matches = self.find_placeholders(constraint, placeholder)
+        if not matches:
+            return [constraint]
+
+        non_terminals = set()
+        for _, search in constraint.searches.items():
+            nt: NonTerminal = self.get_search_symbol(search)
+            if nt not in (NonTerminal("<INTEGER>"), NonTerminal("<STRING>")):
+                non_terminals.add(nt)
+
+        for non_terminal in non_terminals:
+            possible_values = value_map[non_terminal]
+            possible_values.update(self.evaluate_partial(constraint))
+            pass
+
+        return new_constraints
+
     def _visit_comparison(self, constraint: ComparisonConstraint, **kwargs) -> list[ComparisonConstraint]:
         pass
 
     def _visit_expression(self, constraint: ExpressionConstraint, **kwargs) -> list[ExpressionConstraint]:
-        pass
+        return [constraint]
