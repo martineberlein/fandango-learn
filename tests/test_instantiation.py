@@ -82,6 +82,15 @@ class TestPatternInstantiation(unittest.TestCase):
         transformed_patterns = self.transform_pattern(pattern)
         self.assertEqual(len(transformed_patterns), len(self.grammar.rules) ** 2)
 
+    def test_non_terminal_transformer_3_2(self):
+        pattern = parse_constraint(
+            "where str(<NON_TERMINAL>) in 'sqrt'"
+        )
+        self.assertIsInstance(pattern, ExpressionConstraint)
+
+        transformed_patterns = self.transform_pattern(pattern)
+        self.assertEqual(len(transformed_patterns), len(self.grammar.rules))
+
     def test_non_terminal_transformer_4(self):
         pattern = parse_constraint(
             "where exists <elem> in <NON_TERMINAL>: int(<elem>) <= -1"
@@ -184,6 +193,15 @@ class TestPatternInstantiation(unittest.TestCase):
         transformed_patterns = self.integer_transformer.results
         self.integer_transformer.reset()
         self.assertEqual(len(transformed_patterns), 4)
+
+    # def test_integer_transformer_15(self):
+    #     pattern = parse_constraint(
+    #         "where <STRING> in str(<function>) "
+    #     )
+    #     self.integer_transformer.visit(pattern)
+    #     transformed_patterns = self.integer_transformer.results
+    #     self.integer_transformer.reset()
+    #     self.assertEqual(len(transformed_patterns), 4)
 
 if __name__ == "__main__":
     unittest.main()
