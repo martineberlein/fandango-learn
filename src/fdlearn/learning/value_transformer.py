@@ -344,3 +344,11 @@ class ValuePlaceholderTransformer(ConstraintTransformer):
         self, constraint: ExpressionConstraint, bounded_non_terminals=None, **kwargs
     ) -> list[ExpressionConstraint]:
         return [constraint]
+
+
+class IntegerPlaceholderTransformer(ValuePlaceholderTransformer):
+    pass
+
+
+class StringPlaceholderTransformer(ValuePlaceholderTransformer):
+    pass
