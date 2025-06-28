@@ -2,10 +2,20 @@ import itertools
 from typing import Optional
 from copy import deepcopy
 
-from fandango.constraints.base import ConjunctionConstraint, DisjunctionConstraint, ImplicationConstraint, \
-    ExpressionConstraint, ComparisonConstraint
+from fandango.constraints.base import (
+    ConjunctionConstraint,
+    DisjunctionConstraint,
+    ImplicationConstraint,
+    ExpressionConstraint,
+    ComparisonConstraint,
+)
 from fandango.constraints.base import Constraint, ExistsConstraint, ForallConstraint
-from fandango.language.search import RuleSearch, NonTerminalSearch, AttributeSearch, Container
+from fandango.language.search import (
+    RuleSearch,
+    NonTerminalSearch,
+    AttributeSearch,
+    Container,
+)
 from fandango.language.symbol import NonTerminal
 from fandango.language.tree import DerivationTree
 
@@ -147,13 +157,19 @@ class ValuePlaceholderTransformer(ConstraintTransformer):
 
         return results
 
-    def _visit_implication(self, constraint: ImplicationConstraint, **kwargs)-> list[ImplicationConstraint]:
+    def _visit_implication(
+        self, constraint: ImplicationConstraint, **kwargs
+    ) -> list[ImplicationConstraint]:
         """
         Recursively visit the antecedent and consequent in an ImplicationConstraint.
         """
-        transformed_constraint_antecedents = self.transform(constraint.antecedent, **kwargs)
+        transformed_constraint_antecedents = self.transform(
+            constraint.antecedent, **kwargs
+        )
 
-        transformed_constraint_consequents = self.transform(constraint.consequent, **kwargs)
+        transformed_constraint_consequents = self.transform(
+            constraint.consequent, **kwargs
+        )
 
         results: list["ImplicationConstraint"] = []
         for antecedent in transformed_constraint_antecedents:
@@ -164,7 +180,9 @@ class ValuePlaceholderTransformer(ConstraintTransformer):
         return results
 
     @staticmethod
-    def find_placeholders(constraint: Constraint, placeholder: NonTerminal)-> list[str]:
+    def find_placeholders(
+        constraint: Constraint, placeholder: NonTerminal
+    ) -> list[str]:
         """
         Returns all the identifiers of the placeholders in the search dictionary.
         :param constraint:
@@ -179,7 +197,9 @@ class ValuePlaceholderTransformer(ConstraintTransformer):
         return matches
 
     @staticmethod
-    def resolve_bounded_non_terminals_in_constraint(constraint: Constraint, bounded_non_terminals, **kwargs) -> Constraint:
+    def resolve_bounded_non_terminals_in_constraint(
+        constraint: Constraint, bounded_non_terminals, **kwargs
+    ) -> Constraint:
         for name, search in constraint.searches.items():
             nt = bounded_non_terminals.get(search.symbol, None)
             if not nt:
@@ -198,32 +218,47 @@ class ValuePlaceholderTransformer(ConstraintTransformer):
     ):
         nodes: list[list[tuple[str, Container]]] = []
         for name, search in constraint.searches.items():
-            if search.get_access_points() in (NonTerminal("<INTEGER>"), NonTerminal("<STRING>")):
+            if search.get_access_points() in (
+                NonTerminal("<INTEGER>"),
+                NonTerminal("<STRING>"),
+            ):
                 continue
             nodes.append(
                 [(name, container) for container in search.find(tree, scope=scope)]
             )
         return itertools.product(*nodes)
 
-    def evaluate_partial_constraint(self, constraint, bounded_non_terminals, **kwargs) -> set:
+    @staticmethod
+    def format_value(value) -> any:
+        raise value
+
+    def evaluate_partial_constraint(
+        self, constraint, bounded_non_terminals, **kwargs
+    ) -> set:
         results = set()
         try:
             tmp_constraint = deepcopy(constraint)
         except TypeError as e:
             return set()
 
-        constraint_wt_bounded_nt = self.resolve_bounded_non_terminals_in_constraint(tmp_constraint, bounded_non_terminals, **kwargs)
+        constraint_wt_bounded_nt = self.resolve_bounded_non_terminals_in_constraint(
+            tmp_constraint, bounded_non_terminals, **kwargs
+        )
         assert isinstance(constraint_wt_bounded_nt, ComparisonConstraint)
 
         for inp in self.test_inputs:
-            for combination in self.get_combinations_for_partial_evaluation(constraint_wt_bounded_nt, inp.tree, scope=None):
+            for combination in self.get_combinations_for_partial_evaluation(
+                constraint_wt_bounded_nt, inp.tree, scope=None
+            ):
                 local_variables = constraint_wt_bounded_nt.local_variables.copy()
                 local_variables.update(
                     {name: container.evaluate() for name, container in combination}
                 )
                 try:
                     left_result = eval(
-                        constraint_wt_bounded_nt.left, constraint_wt_bounded_nt.global_variables, local_variables
+                        constraint_wt_bounded_nt.left,
+                        constraint_wt_bounded_nt.global_variables,
+                        local_variables,
                     )
                     results.add(str(left_result))
                 except Exception as e:
@@ -233,14 +268,18 @@ class ValuePlaceholderTransformer(ConstraintTransformer):
 
         return results
 
+    def replace_placeholders(
+        self,
+        constraint: Constraint,
+        bounded_non_terminals,
+        placeholder: NonTerminal,
+        value_map,
+        evaluate_partials: bool = True,
+        **kwargs,
+    ) -> list[tuple[str, dict[str, NonTerminalSearch]]]:
 
+        new_replacements: list[tuple[str, dict[str, NonTerminalSearch]]] = []
 
-    def replace_placeholders(self,
-                             constraint: Constraint,
-                             placeholder: NonTerminal,
-                             value_map,
-                             **kwargs) -> list[Constraint]:
-        new_constraints: list[Constraint] = list()
         assert placeholder in (NonTerminal("<INTEGER>"), NonTerminal("<STRING>"))
 
         if not isinstance(constraint, ComparisonConstraint):
@@ -251,7 +290,10 @@ class ValuePlaceholderTransformer(ConstraintTransformer):
 
         matches = self.find_placeholders(constraint, placeholder)
         if not matches:
-            return [constraint]
+            return []
+        assert (
+            len(matches) == 1
+        ), "More than one Value-Placeholder is not yet supported."
 
         non_terminals = set()
         for _, search in constraint.searches.items():
@@ -260,14 +302,45 @@ class ValuePlaceholderTransformer(ConstraintTransformer):
                 non_terminals.add(nt)
 
         for non_terminal in non_terminals:
-            possible_values = value_map[non_terminal]
-            possible_values.update(self.evaluate_partial(constraint))
-            pass
+            possible_values = value_map.get(non_terminal, [])
+            if evaluate_partials:
+                possible_values.update(
+                    self.evaluate_partial_constraint(constraint, bounded_non_terminals)
+                )
 
-        return new_constraints
+            for possible_value in possible_values:
+                updated_right = constraint.right
+                # replace placeholder in with actual value
+                for match in matches:
+                    updated_right = updated_right.replace(
+                        match, self.format_value(possible_value), 1
+                    )
+                # remove placeholder search id from searches
+                new_searches = deepcopy(constraint.searches)
+                for match in matches:
+                    del new_searches[match]
 
-    def _visit_comparison(self, constraint: ComparisonConstraint, **kwargs) -> list[ComparisonConstraint]:
-        pass
+                new_replacements.append((updated_right, new_searches))
 
-    def _visit_expression(self, constraint: ExpressionConstraint, **kwargs) -> list[ExpressionConstraint]:
+                # new_constraints.append(
+                #     ComparisonConstraint(
+                #         operator=constraint.operator,
+                #         left=constraint.left,
+                #         right=updated_right,
+                #         searches=new_searches,
+                #         local_variables=constraint.local_variables,
+                #         global_variables=constraint.global_variables,
+                #     )
+                # )
+
+        return new_replacements
+
+    def _visit_comparison(
+        self, constraint: ComparisonConstraint, bounded_non_terminals=None, **kwargs
+    ) -> list[ComparisonConstraint]:
+        raise NotImplementedError()
+
+    def _visit_expression(
+        self, constraint: ExpressionConstraint, bounded_non_terminals=None, **kwargs
+    ) -> list[ExpressionConstraint]:
         return [constraint]
