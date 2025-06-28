@@ -494,6 +494,17 @@ class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
                 )
             )
 
+    @staticmethod
+    def get_search_symbol(search: NonTerminalSearch) -> NonTerminal:
+        """
+        Return the symbol corresponding to the given search instance.
+        :param search:
+        :return:
+        """
+        assert isinstance(search, RuleSearch) or isinstance(search, AttributeSearch)
+        symbol = search.get_access_points()
+        return symbol[0]
+
     def visit_exists_constraint(self, constraint: "ExistsConstraint"):
         """
         Recursively visit the statement inside an ExistsConstraint.
@@ -503,7 +514,8 @@ class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
         ), f"AttributeSearch not yet supported! {constraint}"
 
         self.update_value_map(constraint.bound, constraint.search)
-        self.bounded_non_terminals[constraint.bound] = constraint.search.symbol
+        #self.bounded_non_terminals[constraint.bound] = constraint.search.symbol
+        self.bounded_non_terminals[constraint.bound] = self.get_search_symbol(constraint.search)
         constraint.statement.accept(self)
         self.remove_value_map(constraint.bound)
 

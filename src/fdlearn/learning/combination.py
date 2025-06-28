@@ -117,7 +117,7 @@ class ConjunctionProcessor(CombinationProcessor):
     ) -> bool:
         """
         Check if the new conjunction is valid based on the minimum specificity and the recall of the candidates in
-        the combination. The specificity of the new conjunction should be greater than the minimum specificity and
+        the combination. The specificity of the new conjunction should be greater than the minimum specificity, and
         the specificity of the conjunction should be greater than the specificity of the individual formula.
         """
         new_precision = conjunction.precision()
