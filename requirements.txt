@@ -3,4 +3,4 @@ pandas~=2.2.3
 lightgbm~=4.6.0
 scikit-learn~=1.6.1
 shap~=0.48.0
-fandango-fuzzer~=0.8.0
+fandango-fuzzer~=1.0.2
