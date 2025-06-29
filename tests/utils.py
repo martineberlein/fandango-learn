@@ -1,6 +1,11 @@
 from pathlib import Path
 
-from fandango.constraints.base import ConstraintVisitor, Constraint, ExpressionConstraint, ComparisonConstraint
+from fandango.constraints.base import (
+    ConstraintVisitor,
+    Constraint,
+    ExpressionConstraint,
+    ComparisonConstraint,
+)
 from fandango.language import NonTerminal
 
 TEST_ROOT = Path(__file__).parent
@@ -31,7 +36,7 @@ class PlaceholderVisitor(ConstraintVisitor):
         :param constraint:
         :return: True if the constraint contains any of the placeholders, False otherwise.
         """
-        for _ , search in constraint.searches.items():
+        for _, search in constraint.searches.items():
             nt = search.get_access_points()
             print(nt)
             return any(n in self.placeholders for n in nt)

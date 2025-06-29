@@ -3,7 +3,12 @@ import os
 
 from fandango.evolution.algorithm import Fandango
 from fandango.language.grammar import Grammar
-from fandango.constraints.base import Constraint, ExistsConstraint, ConjunctionConstraint, ComparisonConstraint
+from fandango.constraints.base import (
+    Constraint,
+    ExistsConstraint,
+    ConjunctionConstraint,
+    ComparisonConstraint,
+)
 
 from fdlearn.interface.fandango import parse, parse_constraint, parse_contents
 
@@ -78,7 +83,9 @@ class InterfaceTest(unittest.TestCase):
 
         self.assertEqual(len(solutions), 2)
 
-    @unittest.skip("Skipping test_fandango_parser_conjunction_constraint due to complexity")
+    @unittest.skip(
+        "Skipping test_fandango_parser_conjunction_constraint due to complexity"
+    )
     def test_fandango_parser_conjunction_constraint(self):
         pattern = parse_constraint(
             "where exists <elem> in <NON_TERMINAL>: (int(<elem>) <= -1 and str(<elem>) == 'a')"
