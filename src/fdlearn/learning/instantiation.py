@@ -328,6 +328,24 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
         all_tuples = all_combinations(expanded_lists)
         return [ConjunctionConstraint(constraints=combo) for combo in all_tuples]
 
+    def _visit_disjunction(
+        self,
+        constraint: "DisjunctionConstraint",
+        bounded_map: Dict[NonTerminal, NonTerminal]=None,
+    ) -> List["DisjunctionConstraint"]:
+        """
+        Expand each sub‐constraint in turn, collect lists of their instantiations,
+        take the Cartesian product (all_combinations), and re‐wrap each tuple in
+        a ConjunctionConstraint.
+        """
+        expanded_lists: List[List["Constraint"]] = []
+        for sub in constraint.constraints:
+            expanded_lists.append(self.transform(sub, bounded_map=bounded_map))
+
+        # all_combinations produces a List[List[Constraint]] of every possible tuple
+        all_tuples = all_combinations(expanded_lists)
+        return [DisjunctionConstraint(constraints=combo) for combo in all_tuples]
+
     def _visit_implication(
         self,
         constraint: "ImplicationConstraint",
