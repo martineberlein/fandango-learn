@@ -4,7 +4,7 @@ from fandango.language.parse import parse
 from fandango.constraints.base import (
     ComparisonConstraint,
     ConjunctionConstraint,
-    ExistsConstraint, ForallConstraint, ExpressionConstraint,
+    ExistsConstraint, ForallConstraint, ExpressionConstraint, DisjunctionConstraint,
 )
 from fandango.language.search import RuleSearch, AttributeSearch
 
@@ -14,7 +14,7 @@ from fdlearn.learning.instantiation import NonTerminalPlaceholderTransformer, In
     ValueMap
 from fdlearn.reduction.feature_class import get_direct_reachability_map
 
-from .utils import RESOURCES_ROOT
+from .utils import RESOURCES_ROOT, PlaceholderVisitor
 
 
 class TestPatternInstantiation(unittest.TestCase):
@@ -41,6 +41,7 @@ class TestPatternInstantiation(unittest.TestCase):
             value_maps=value_map,
             test_inputs=test_inputs,
         )
+        cls.placeholder_visitor = PlaceholderVisitor()
 
     def transform_pattern(self, pattern):
         transformed_patterns = self.non_terminal_transformer.transform(pattern)
@@ -69,6 +70,15 @@ class TestPatternInstantiation(unittest.TestCase):
             "where int(<NON_TERMINAL>) <= -1 and str(<NON_TERMINAL>) == 'a'"
         )
         self.assertIsInstance(pattern, ConjunctionConstraint)
+
+        transformed_patterns = self.transform_pattern(pattern)
+        self.assertEqual(len(transformed_patterns), len(self.grammar.rules) ** 2)
+
+    def test_non_terminal_transformer_3_0(self):
+        pattern = parse_constraint(
+            "where int(<NON_TERMINAL>) <= -1 or str(<NON_TERMINAL>) == 'a'"
+        )
+        self.assertIsInstance(pattern, DisjunctionConstraint)
 
         transformed_patterns = self.transform_pattern(pattern)
         self.assertEqual(len(transformed_patterns), len(self.grammar.rules) ** 2)
