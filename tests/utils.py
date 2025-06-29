@@ -11,11 +11,14 @@ PLACEHOLDERS = [
     NonTerminal("<INTEGER>"),
     NonTerminal("<STRING>"),
     NonTerminal("<NON_TERMINAL>"),
-    NonTerminal("ATTRIBUTE"),
+    NonTerminal("<ATTRIBUTE>"),
 ]
 
 
 class PlaceholderVisitor(ConstraintVisitor):
+    """
+    A visitor that checks if a constraint contains any of the placeholders.
+    """
 
     def __init__(self, placeholders=None, **kwargs):
         super().__init__()
@@ -23,6 +26,11 @@ class PlaceholderVisitor(ConstraintVisitor):
             self.placeholders = PLACEHOLDERS
 
     def check_for_placeholders(self, constraint: Constraint) -> bool:
+        """
+        Checks if the constraint contains any of the placeholders.
+        :param constraint:
+        :return: True if the constraint contains any of the placeholders, False otherwise.
+        """
         for _ , search in constraint.searches.items():
             nt = search.get_access_points()
             print(nt)
