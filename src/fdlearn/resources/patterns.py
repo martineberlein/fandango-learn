@@ -157,7 +157,7 @@ where iban_checksum(str(<NON_TERMINAL>)) == int(<NON_TERMINAL>)
 )
 
 Pattern(
-    string_pattern="""where exists <elem> in <NON_TERMINAL>: (str(<ATTRIBUTE>) == <STRING>) and (int(eval(str(<ATTRIBUTE>))) == <INTEGER>)"""
+    string_pattern="""where exists <elem> in <NON_TERMINAL>: str(<ATTRIBUTE>) == <STRING> and int(eval(str(<ATTRIBUTE>))) == <INTEGER>"""
 )
 
 Pattern(
