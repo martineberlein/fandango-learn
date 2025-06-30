@@ -11,7 +11,7 @@ from fandango.constraints.base import (
 )
 
 from fdlearn.interface.fandango import parse, parse_constraint, parse_contents
-
+from .utils import RESOURCES_ROOT
 
 class InterfaceTest(unittest.TestCase):
 
@@ -92,6 +92,23 @@ class InterfaceTest(unittest.TestCase):
         )
         self.assertIsInstance(pattern, ExistsConstraint)
         self.assertIsInstance(pattern.statement, ComparisonConstraint)
+
+    def test_fandango_parser_constraints(self):
+        from fandango.language.parse import parse
+
+        with open(RESOURCES_ROOT / "calculator.fan", "r") as f:
+            grammar, constraints = parse(f, use_cache=False, use_stdlib=False)
+
+        solutions = set()
+
+        fandango = Fandango(grammar, constraints)
+        fandango_generator = fandango.generate()
+
+        for inp in fandango_generator:
+            solutions.add(inp)
+            if len(solutions) >= 10:
+                break
+        self.assertEqual(len(solutions), 10)
 
 
 if __name__ == "__main__":
