@@ -19,7 +19,6 @@ class ConstraintTransformer(ABC):
         Public entry point. Returns a flat list of all instantiated constraints.
         """
         if isinstance(constraint, ComparisonConstraint):
-            print(kwargs)
             return self._visit_comparison(constraint, **kwargs)
 
         if isinstance(constraint, ExpressionConstraint):

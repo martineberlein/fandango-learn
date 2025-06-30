@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 import itertools
 from typing import Optional
-from copy import deepcopy
 
 from fandango.constraints.base import (
     ConjunctionConstraint,
@@ -22,10 +21,10 @@ from fandango.language.tree import DerivationTree
 
 from fdlearn.learning.instantiation import (
     ConstraintTransformer,
-    ValueMap,
 )
 from fdlearn.data.input import FandangoInput
 from fdlearn.logger import LOGGER
+from fdlearn.learning.value_map import ValueMap
 
 
 from copy import deepcopy
@@ -138,6 +137,8 @@ class ValuePlaceholderTransformer(ConstraintTransformer, ABC):
     def transform_quantified_constraints(
         self, constraint, bounded_non_terminals=None, **kwargs
     ) -> list[Constraint]:
+        if bounded_non_terminals is None:
+            bounded_non_terminals = {}
         self.update_value_map(constraint.bound, constraint.search)
         bounded_non_terminals[constraint.bound] = self.get_search_symbol(
             constraint.search
@@ -330,7 +331,6 @@ class ValuePlaceholderTransformer(ConstraintTransformer, ABC):
                     )
                     results.add(str(left_result))
                 except Exception as e:
-                    print(e)
                     e.add_note("Evaluation failed: " + constraint_wt_bounded_nt.left)
                     LOGGER.debug(e)
                     continue
@@ -346,15 +346,9 @@ class ValuePlaceholderTransformer(ConstraintTransformer, ABC):
         **kwargs,
     ) -> list[tuple[str, list[str]]]:
 
-        new_replacements: list[tuple[str, list[str]]] = []
-
         assert placeholder in (NonTerminal("<INTEGER>"), NonTerminal("<STRING>"))
 
-        if not isinstance(constraint, ComparisonConstraint):
-            raise ValueError(
-                f"Only comparison constraints are supported. "
-                f"Constraint type {type(constraint)} is not yet supported."
-            )
+        new_replacements: list[tuple[str, list[str]]] = []
 
         matches = self.find_placeholders(constraint, placeholder)
         if not matches:
@@ -419,13 +413,25 @@ class ValuePlaceholderTransformer(ConstraintTransformer, ABC):
 
 class IntegerPlaceholderTransformer(ValuePlaceholderTransformer):
 
-    @staticmethod
-    def update_value_map(bound: NonTerminal, constraint_search: NonTerminalSearch):
-        pass
+    def update_value_map(self, bound: NonTerminal, search: RuleSearch):
+        """Update the value map for the given bound with the search symbol."""
+        if search.symbol in self.value_maps.numeric_values:
+            self.value_maps.numeric_values[bound] = self.value_maps.numeric_values[
+                search.symbol
+            ]
+
+    def remove_value_map(self, bound: NonTerminal):
+        """Remove the value map for the given bound."""
+        if bound in self.value_maps.numeric_values:
+            del self.value_maps.numeric_values[bound]
 
     @staticmethod
-    def remove_value_map(bound: NonTerminal):
-        pass
+    def format_value(value) -> any:
+        """
+        Format the value for string representation.
+        This can be overridden in subclasses if needed.
+        """
+        return f"{int(value)}"
 
     def _visit_comparison(self, constraint: ComparisonConstraint, bounded_non_terminals=None, **kwargs) -> list[
         ComparisonConstraint]:
@@ -437,8 +443,11 @@ class IntegerPlaceholderTransformer(ValuePlaceholderTransformer):
             bounded_non_terminals,
             placeholder=NonTerminal("<INTEGER>"),
             value_map=self.value_maps.filtered_numeric_values,
-            evaluate_partials=True,
         )
+
+        if not new_replacements:
+            # If no replacements were found, return the original constraint
+            return [constraint]
 
         for replacement in new_replacements:
             value, matches = replacement
@@ -468,4 +477,110 @@ class IntegerPlaceholderTransformer(ValuePlaceholderTransformer):
 
 
 class StringPlaceholderTransformer(ValuePlaceholderTransformer):
-    pass
+
+    def update_value_map(self, bound: NonTerminal, search: RuleSearch):
+        """Update the value map for the given bound with the search symbol."""
+        if search.symbol in self.value_maps.string_values:
+            self.value_maps.string_values[bound] = self.value_maps.string_values[
+                search.symbol
+            ]
+
+    def remove_value_map(self, bound: NonTerminal):
+        """Remove the value map for the given bound."""
+        if bound in self.value_maps.string_values:
+            del self.value_maps.string_values[bound]
+
+    @staticmethod
+    def format_value(value) -> any:
+        """
+        Format the value for string representation.
+        This can be overridden in subclasses if needed.
+        """
+        return f"'{str(value)}'"
+
+    def _visit_comparison(self, constraint: ComparisonConstraint, bounded_non_terminals=None, **kwargs) -> list[
+        ComparisonConstraint]:
+
+        result: list[ComparisonConstraint] = []
+
+        new_replacements = self.replace_placeholders(
+            constraint,
+            bounded_non_terminals,
+            placeholder=NonTerminal("<STRING>"),
+            value_map=self.value_maps.string_values,
+        )
+
+        if not new_replacements:
+            # If no replacements were found, return the original constraint
+            return [constraint]
+
+        for replacement in new_replacements:
+            value, matches = replacement
+            updated_right = constraint.right
+            # replace placeholder in with actual value
+            for match in matches:
+                updated_right = updated_right.replace(
+                    match, self.format_value(value), 1
+                )
+            # remove placeholder search id from searches
+            new_searches = deepcopy(constraint.searches)
+            for match in matches:
+                del new_searches[match]
+
+            result.append(
+                ComparisonConstraint(
+                    operator=constraint.operator,
+                    left=constraint.left,
+                    right=updated_right,
+                    searches=new_searches,
+                    local_variables=constraint.local_variables,
+                    global_variables=constraint.global_variables,
+                )
+            )
+
+        return result
+
+    @staticmethod
+    def escape_string(s):
+        return s.encode("unicode_escape").decode("utf-8")
+
+    def _visit_expression(self, constraint: ExpressionConstraint, bounded_non_terminals=None, **kwargs) -> list[
+        ExpressionConstraint]:
+
+        result: list[ExpressionConstraint] = []
+
+        new_replacements = self.replace_placeholders(
+            constraint,
+            bounded_non_terminals,
+            placeholder=NonTerminal("<STRING>"),
+            value_map=self.value_maps.string_values,
+        )
+
+        if not new_replacements:
+            # If no replacements were found, return the original constraint
+            return [constraint]
+
+
+        for replacement in new_replacements:
+            value, matches = replacement
+            expression = constraint.expression
+            # replace placeholder in with actual value
+            for match in matches:
+                expression = expression.replace(
+                    match, self.format_value(value), 1
+                )
+            # remove placeholder search id from searches
+            new_searches = deepcopy(constraint.searches)
+            for match in matches:
+                del new_searches[match]
+
+            result.append(
+                ExpressionConstraint(
+                    expression=expression,
+                    searches=new_searches,
+                    local_variables=constraint.local_variables,
+                    global_variables=constraint.global_variables,
+                )
+            )
+
+        return result
