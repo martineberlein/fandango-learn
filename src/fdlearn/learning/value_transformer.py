@@ -94,6 +94,7 @@ class ValuePlaceholderTransformer(ConstraintTransformer, ABC):
         self,
         value_map: ValueMap,
         test_inputs: set[FandangoInput],
+        use_partial_evaluation: bool = False,
     ):
         """
         Initialize the transformer with value maps for placeholders.
@@ -104,6 +105,7 @@ class ValuePlaceholderTransformer(ConstraintTransformer, ABC):
         super().__init__()
         self.value_maps: ValueMap = value_map
         self.test_inputs: set[FandangoInput] = test_inputs
+        self.use_partial_evaluation = use_partial_evaluation
 
     @staticmethod
     def all_combinations(sequences: list[list]) -> list[list]:
@@ -341,7 +343,6 @@ class ValuePlaceholderTransformer(ConstraintTransformer, ABC):
         bounded_non_terminals,
         placeholder: NonTerminal,
         value_map,
-        evaluate_partials: bool = True,
         **kwargs,
     ) -> list[tuple[str, list[str]]]:
 
@@ -370,7 +371,7 @@ class ValuePlaceholderTransformer(ConstraintTransformer, ABC):
 
         for non_terminal in non_terminals:
             possible_values = value_map.get(non_terminal, [])
-            if evaluate_partials:
+            if self.use_partial_evaluation:
                 partial_eval_results = self.evaluate_partial_constraint(constraint, bounded_non_terminals)
                 print("Partials: ", partial_eval_results)
                 possible_values.update(

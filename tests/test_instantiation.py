@@ -38,17 +38,17 @@ class TestPatternInstantiation(unittest.TestCase):
             relevant_non_terminals, reachability_map=reachability_map
         )
 
-        test_inputs = set()
+        cls.test_inputs = set()
         for _ in range(100):
             tree = cls.grammar.fuzz()
-            test_inputs.add(FandangoInput(tree=tree))
+            cls.test_inputs.add(FandangoInput(tree=tree))
 
-        value_map = ValueMap.from_inputs(
-            relevant_non_terminals=relevant_non_terminals, inputs=test_inputs
+        cls.value_map = ValueMap.from_inputs(
+            relevant_non_terminals=relevant_non_terminals, inputs=cls.test_inputs
         )
         cls.integer_transformer = IntegerPlaceholderTransformer(
-            value_map=value_map,
-            test_inputs=test_inputs,
+            value_map=cls.value_map,
+            test_inputs=cls.test_inputs,
         )
         cls.placeholder_visitor = PlaceholderVisitor()
 
@@ -204,16 +204,14 @@ class TestPatternInstantiation(unittest.TestCase):
             )
 
     def test_integer_transformer_10(self):
-        pattern = parse_constraint(
-            "where int(<number>) <= <INTEGER>"
-        )
+        pattern = parse_constraint("where int(<number>) <= <INTEGER>")
         transformed_patterns = self.integer_transformer.transform(pattern)
         for p in transformed_patterns:
             print(p)
         self.assertTrue(
             all(isinstance(p, ComparisonConstraint) for p in transformed_patterns)
         )
-        self.assertEqual(len(transformed_patterns), 59)
+        self.assertEqual(len(transformed_patterns), 2)
 
     def test_integer_transformer_11(self):
         pattern = parse_constraint(
@@ -226,7 +224,19 @@ class TestPatternInstantiation(unittest.TestCase):
         self.assertEqual(len(transformed_patterns), 4)
 
     def test_integer_transformer_12(self):
-        pass
+        pattern = parse_constraint("where int(<number>) <= <INTEGER>")
+        integer_transformer = IntegerPlaceholderTransformer(
+            value_map=self.value_map,
+            test_inputs=self.test_inputs,
+            use_partial_evaluation=True,
+        )
+        transformed_patterns = integer_transformer.transform(pattern)
+        for p in transformed_patterns:
+            print(p)
+        self.assertTrue(
+            all(isinstance(p, ComparisonConstraint) for p in transformed_patterns)
+        )
+        self.assertEqual(len(transformed_patterns), 59)
 
     # def test_integer_transformer_15(self):
     #     pattern = parse_constraint(
