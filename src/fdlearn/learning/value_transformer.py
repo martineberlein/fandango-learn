@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 import itertools
 from typing import Optional
 from copy import deepcopy
@@ -27,7 +28,67 @@ from fdlearn.data.input import FandangoInput
 from fdlearn.logger import LOGGER
 
 
-class ValuePlaceholderTransformer(ConstraintTransformer):
+from copy import deepcopy
+
+# Assuming the class definitions from the user's prompt are loaded.
+# (e.g., Constraint, ExpressionConstraint, ConjunctionConstraint, etc.)
+
+def deep_copy_constraint(constraint: Constraint) -> Constraint:
+    """
+    Performs a deep copy of a constraint object, ensuring that caches are
+    not carried over and the object is fully independent.
+
+    :param constraint: The constraint object to copy.
+    :return: A new, deeply copied constraint object.
+    """
+    # Use deepcopy for mutable collections of simple types or objects
+    # that are known to be deepcopy-safe (like NonTerminalSearch).
+    new_searches = deepcopy(constraint.searches)
+    new_local_vars = deepcopy(constraint.local_variables)
+    new_global_vars = constraint.global_variables
+
+    common_kwargs = {
+        "searches": new_searches,
+        "local_variables": new_local_vars,
+        "global_variables": new_global_vars,
+    }
+
+    # Handle composite constraints by recursively copying their children.
+    if isinstance(constraint, ConjunctionConstraint):
+        new_constraints = [deep_copy_constraint(c) for c in constraint.constraints]
+        return ConjunctionConstraint(
+            constraints=new_constraints, lazy=constraint.lazy, **common_kwargs
+        )
+
+    if isinstance(constraint, DisjunctionConstraint):
+        new_constraints = [deep_copy_constraint(c) for c in constraint.constraints]
+        return DisjunctionConstraint(
+            constraints=new_constraints, lazy=constraint.lazy, **common_kwargs
+        )
+
+    if isinstance(constraint, ImplicationConstraint):
+        new_antecedent = deep_copy_constraint(constraint.antecedent)
+        new_consequent = deep_copy_constraint(constraint.consequent)
+        return ImplicationConstraint(
+            antecedent=new_antecedent, consequent=new_consequent, **common_kwargs
+        )
+
+    # Handle leaf constraints by creating new instances with copied values.
+    if isinstance(constraint, ExpressionConstraint):
+        return ExpressionConstraint(expression=constraint.expression, **common_kwargs)
+
+    if isinstance(constraint, ComparisonConstraint):
+        return ComparisonConstraint(
+            operator=constraint.operator,
+            left=constraint.left,
+            right=constraint.right,
+            **common_kwargs,
+        )
+
+    # Fallback for any other constraint types.
+    raise TypeError(f"Deep copy not implemented for type {type(constraint).__name__}")
+
+class ValuePlaceholderTransformer(ConstraintTransformer, ABC):
 
     def __init__(
         self,
@@ -52,10 +113,12 @@ class ValuePlaceholderTransformer(ConstraintTransformer):
         return result
 
     @staticmethod
+    @abstractmethod
     def update_value_map(bound: NonTerminal, constraint_search: NonTerminalSearch):
         raise NotImplementedError()
 
     @staticmethod
+    @abstractmethod
     def remove_value_map(bound: NonTerminal):
         raise NotImplementedError()
 
@@ -200,6 +263,9 @@ class ValuePlaceholderTransformer(ConstraintTransformer):
     def resolve_bounded_non_terminals_in_constraint(
         constraint: Constraint, bounded_non_terminals, **kwargs
     ) -> Constraint:
+        if not bounded_non_terminals:
+            return constraint
+
         for name, search in constraint.searches.items():
             nt = bounded_non_terminals.get(search.symbol, None)
             if not nt:
@@ -219,8 +285,8 @@ class ValuePlaceholderTransformer(ConstraintTransformer):
         nodes: list[list[tuple[str, Container]]] = []
         for name, search in constraint.searches.items():
             if search.get_access_points() in (
-                NonTerminal("<INTEGER>"),
-                NonTerminal("<STRING>"),
+                [NonTerminal("<INTEGER>")],
+                [NonTerminal("<STRING>")],
             ):
                 continue
             nodes.append(
@@ -230,14 +296,14 @@ class ValuePlaceholderTransformer(ConstraintTransformer):
 
     @staticmethod
     def format_value(value) -> any:
-        raise value
+        return str(value)
 
     def evaluate_partial_constraint(
-        self, constraint, bounded_non_terminals, **kwargs
+        self, constraint: Constraint, bounded_non_terminals, **kwargs
     ) -> set:
         results = set()
         try:
-            tmp_constraint = deepcopy(constraint)
+            tmp_constraint = deep_copy_constraint(constraint)
         except TypeError as e:
             return set()
 
@@ -262,7 +328,8 @@ class ValuePlaceholderTransformer(ConstraintTransformer):
                     )
                     results.add(str(left_result))
                 except Exception as e:
-                    e.add_note("Evaluation failed: " + constraint.left)
+                    print(e)
+                    e.add_note("Evaluation failed: " + constraint_wt_bounded_nt.left)
                     LOGGER.debug(e)
                     continue
 
@@ -276,9 +343,9 @@ class ValuePlaceholderTransformer(ConstraintTransformer):
         value_map,
         evaluate_partials: bool = True,
         **kwargs,
-    ) -> list[tuple[str, dict[str, NonTerminalSearch]]]:
+    ) -> list[tuple[str, list[str]]]:
 
-        new_replacements: list[tuple[str, dict[str, NonTerminalSearch]]] = []
+        new_replacements: list[tuple[str, list[str]]] = []
 
         assert placeholder in (NonTerminal("<INTEGER>"), NonTerminal("<STRING>"))
 
@@ -304,23 +371,25 @@ class ValuePlaceholderTransformer(ConstraintTransformer):
         for non_terminal in non_terminals:
             possible_values = value_map.get(non_terminal, [])
             if evaluate_partials:
+                partial_eval_results = self.evaluate_partial_constraint(constraint, bounded_non_terminals)
+                print("Partials: ", partial_eval_results)
                 possible_values.update(
-                    self.evaluate_partial_constraint(constraint, bounded_non_terminals)
+                    partial_eval_results
                 )
 
             for possible_value in possible_values:
-                updated_right = constraint.right
-                # replace placeholder in with actual value
-                for match in matches:
-                    updated_right = updated_right.replace(
-                        match, self.format_value(possible_value), 1
-                    )
-                # remove placeholder search id from searches
-                new_searches = deepcopy(constraint.searches)
-                for match in matches:
-                    del new_searches[match]
+                new_replacements.append((possible_value, matches))
+                # updated_right = constraint.right
+                # # replace placeholder in with actual value
+                # for match in matches:
+                #     updated_right = updated_right.replace(
+                #         match, self.format_value(possible_value), 1
+                #     )
+                # # remove placeholder search id from searches
+                # new_searches = deepcopy(constraint.searches)
+                # for match in matches:
+                #     del new_searches[match]
 
-                new_replacements.append((updated_right, new_searches))
 
                 # new_constraints.append(
                 #     ComparisonConstraint(
@@ -335,6 +404,7 @@ class ValuePlaceholderTransformer(ConstraintTransformer):
 
         return new_replacements
 
+    @abstractmethod
     def _visit_comparison(
         self, constraint: ComparisonConstraint, bounded_non_terminals=None, **kwargs
     ) -> list[ComparisonConstraint]:
@@ -347,7 +417,53 @@ class ValuePlaceholderTransformer(ConstraintTransformer):
 
 
 class IntegerPlaceholderTransformer(ValuePlaceholderTransformer):
-    pass
+
+    @staticmethod
+    def update_value_map(bound: NonTerminal, constraint_search: NonTerminalSearch):
+        pass
+
+    @staticmethod
+    def remove_value_map(bound: NonTerminal):
+        pass
+
+    def _visit_comparison(self, constraint: ComparisonConstraint, bounded_non_terminals=None, **kwargs) -> list[
+        ComparisonConstraint]:
+
+        result: list[ComparisonConstraint] = []
+
+        new_replacements = self.replace_placeholders(
+            constraint,
+            bounded_non_terminals,
+            placeholder=NonTerminal("<INTEGER>"),
+            value_map=self.value_maps.filtered_numeric_values,
+            evaluate_partials=True,
+        )
+
+        for replacement in new_replacements:
+            value, matches = replacement
+            updated_right = constraint.right
+            # replace placeholder in with actual value
+            for match in matches:
+                updated_right = updated_right.replace(
+                    match, self.format_value(value), 1
+                )
+            # remove placeholder search id from searches
+            new_searches = deepcopy(constraint.searches)
+            for match in matches:
+                del new_searches[match]
+
+            result.append(
+                ComparisonConstraint(
+                    operator=constraint.operator,
+                    left=constraint.left,
+                    right=updated_right,
+                    searches=new_searches,
+                    local_variables=constraint.local_variables,
+                    global_variables=constraint.global_variables,
+                )
+            )
+
+        return result
 
 
 class StringPlaceholderTransformer(ValuePlaceholderTransformer):

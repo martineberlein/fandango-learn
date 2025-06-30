@@ -1,4 +1,5 @@
 import unittest
+import random
 
 from fandango.language.parse import parse
 from fandango.constraints.base import (
@@ -15,10 +16,10 @@ from fdlearn.data import FandangoInput
 from fdlearn.interface import parse_constraint
 from fdlearn.learning.instantiation import (
     NonTerminalPlaceholderTransformer,
-    IntegerValuePlaceholderTransformer,
     ValueMap,
 )
 from fdlearn.reduction.feature_class import get_direct_reachability_map
+from fdlearn.learning.value_transformer import IntegerPlaceholderTransformer
 
 from .utils import RESOURCES_ROOT, PlaceholderVisitor
 
@@ -27,6 +28,7 @@ class TestPatternInstantiation(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        random.seed(42)
         with open(RESOURCES_ROOT / "calculator.fan", "r") as f:
             cls.grammar, _ = parse(f, use_cache=False, use_stdlib=False)
 
@@ -44,8 +46,8 @@ class TestPatternInstantiation(unittest.TestCase):
         value_map = ValueMap.from_inputs(
             relevant_non_terminals=relevant_non_terminals, inputs=test_inputs
         )
-        cls.integer_transformer = IntegerValuePlaceholderTransformer(
-            value_maps=value_map,
+        cls.integer_transformer = IntegerPlaceholderTransformer(
+            value_map=value_map,
             test_inputs=test_inputs,
         )
         cls.placeholder_visitor = PlaceholderVisitor()
@@ -203,21 +205,28 @@ class TestPatternInstantiation(unittest.TestCase):
 
     def test_integer_transformer_10(self):
         pattern = parse_constraint(
-            "where int(<number>) <= <INTEGER> and str(<function>) == 'sqrt'"
+            "where int(<number>) <= <INTEGER>"
         )
-        self.integer_transformer.visit(pattern)
-        transformed_patterns = self.integer_transformer.results
-        self.integer_transformer.reset()
-        self.assertEqual(len(transformed_patterns), 2)
+        transformed_patterns = self.integer_transformer.transform(pattern)
+        for p in transformed_patterns:
+            print(p)
+        self.assertTrue(
+            all(isinstance(p, ComparisonConstraint) for p in transformed_patterns)
+        )
+        self.assertEqual(len(transformed_patterns), 59)
 
     def test_integer_transformer_11(self):
         pattern = parse_constraint(
             "where int(<number>) <= <INTEGER> and int(<number>) <= <INTEGER>"
         )
-        self.integer_transformer.visit(pattern)
-        transformed_patterns = self.integer_transformer.results
-        self.integer_transformer.reset()
+        transformed_patterns = self.integer_transformer.transform(pattern)
+        self.assertTrue(
+            all(isinstance(p, ConjunctionConstraint) for p in transformed_patterns)
+        )
         self.assertEqual(len(transformed_patterns), 4)
+
+    def test_integer_transformer_12(self):
+        pass
 
     # def test_integer_transformer_15(self):
     #     pattern = parse_constraint(
