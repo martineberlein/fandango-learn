@@ -4,6 +4,7 @@ import contextlib
 
 from fandango.language.grammar import Grammar
 from fandango.language.symbol import NonTerminal
+from fdlearn.learning.value_map import ReachabilityMap
 
 from .learning.candidate import FandangoConstraintCandidate
 from .data import FandangoInput, OracleResult
@@ -13,7 +14,6 @@ from .learning.instantiation import PatternProcessor, ValueMap
 from .core import BaseFandangoLearner
 from .types import OracleType
 from .resources.patterns import Pattern
-from .reduction.feature_class import get_direct_reachability_map
 
 
 class FandangoLearner(BaseFandangoLearner):
@@ -96,7 +96,7 @@ class FandangoLearner(BaseFandangoLearner):
         )
 
         value_map = ValueMap.from_inputs(relevant_non_terminals, self.all_positive_inputs)
-        reachability_map = get_direct_reachability_map(self.grammar)
+        reachability_map = ReachabilityMap(self.grammar)
 
         instantiated_candidates = self.pattern_processor.instantiate_patterns(
             relevant_non_terminals, sorted_positive_inputs, value_maps=value_map, reachability_map=reachability_map
