@@ -14,7 +14,7 @@ from fandango.language.search import (
     RuleSearch,
     NonTerminalSearch,
     AttributeSearch,
-    Container,
+    Container, DescendantAttributeSearch,
 )
 from fandango.language.symbol import NonTerminal
 from fandango.language.tree import DerivationTree
@@ -130,7 +130,7 @@ class ValuePlaceholderTransformer(ConstraintTransformer, ABC):
         :param search:
         :return:
         """
-        assert isinstance(search, RuleSearch) or isinstance(search, AttributeSearch)
+        assert isinstance(search, RuleSearch) or isinstance(search, AttributeSearch) or isinstance(search, DescendantAttributeSearch)
         symbol = search.get_access_points()
         return symbol[0]
 

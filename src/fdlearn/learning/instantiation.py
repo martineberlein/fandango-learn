@@ -2,7 +2,7 @@ from copy import deepcopy
 from typing import List, Dict, Set, Iterable, Tuple, Callable, Mapping
 
 from fandango.constraints.base import *
-from fandango.language.search import RuleSearch, AttributeSearch, Container
+from fandango.language.search import RuleSearch, AttributeSearch, Container, LengthSearch, StarSearch, DescendantAttributeSearch
 from fandango.language.symbol import NonTerminal
 
 from fdlearn.data import FandangoInput
@@ -10,7 +10,7 @@ from fdlearn.learning.candidate import FandangoConstraintCandidate
 from fdlearn.learning.transformer import ConstraintTransformer
 from fdlearn.logger import LOGGER
 from fdlearn.learning.value_transformer import IntegerPlaceholderTransformer, StringPlaceholderTransformer
-from fdlearn.learning.value_map import ValueMap
+from fdlearn.learning.value_map import ValueMap, ReachabilityMap
 
 
 def all_combinations(sequences: list[list]) -> list[list]:
@@ -30,11 +30,11 @@ class PatternProcessor:
 
     def instantiate_patterns(
         self,
-        relevant_non_terminals: Set[NonTerminal],
-        positive_inputs: Set[FandangoInput],
+        relevant_non_terminals: set[NonTerminal],
+        positive_inputs: set[FandangoInput],
         value_maps: ValueMap,
-        reachability_map: Dict[NonTerminal, Set[NonTerminal]] = None,
-    ) -> Set[FandangoConstraintCandidate]:
+        reachability_map: ReachabilityMap = None,
+    ) -> set[FandangoConstraintCandidate]:
 
         transformers = [
             NonTerminalPlaceholderTransformer(
@@ -76,7 +76,7 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
     def __init__(
         self,
         relevant_non_terminals: Set[NonTerminal],
-        reachability_map: Mapping[NonTerminal, Set[NonTerminal]] = None,
+        reachability_map: ReachabilityMap = None,
         **kwargs
     ):
         """
@@ -86,9 +86,8 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
                               the set of attribute‐candidates for <ATTRIBUTE>.
         """
         self.relevant_non_terminals: Set[NonTerminal] = relevant_non_terminals
-        self.reachability_map: Dict[NonTerminal, Set[NonTerminal]] = (
-            dict(reachability_map) if reachability_map else {}
-        )
+        self.reachability_map: ReachabilityMap = reachability_map
+        self.descendant_levels: int = 2
 
 
     def _visit_comparison(
@@ -306,7 +305,7 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
             partials.append(deepcopy(base_searches))
 
         # 2) For each partial, fill in <ATTRIBUTE> if any
-        final_expanded: List[Dict[str, "RuleSearch | AttributeSearch"]] = []
+        final_expanded: List[Dict[str, "RuleSearch | AttributeSearch | DescendantAttributeSearch"]] = []
         for part in partials:
             # Find keys whose searches[...] is `<ATTRIBUTE>`
             attr_keys = [
@@ -323,17 +322,38 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
             # There *are* <ATTRIBUTE> placeholders; we need at least one (bound_nt → reachable) pair
             any_expanded = False
             for bound_nt, bound_symbol in bounded_map.items():
-                reachable = self.reachability_map.get(bound_nt, ())
+                reachable = self.reachability_map.get_reachable_non_terminals(bound_nt)
                 if not reachable:
                     continue
-
-                for combo in itertools.product(reachable, repeat=len(attr_keys)):
-                    new_searches = deepcopy(part)
-                    for key, attr_nt in zip(attr_keys, combo):
-                        # Replace placeholder with AttributeSearch(RuleSearch(bound_symbol), RuleSearch(attr_nt))
-                        new_searches[key] = AttributeSearch(RuleSearch(bound_symbol), RuleSearch(attr_nt))
-                    final_expanded.append(new_searches)
-                    any_expanded = True
+                for level in range(0, self.descendant_levels):
+                    reach = reachable.get(level, ())
+                    paths_ = []
+                    for r in reach:
+                        paths = self.reachability_map.get_all_shortest_paths(bound_nt, r)
+                        if not paths:
+                            continue
+                        paths_.extend(paths)
+                    for combo in itertools.product(paths_, repeat=len(attr_keys)):
+                        new_searches = deepcopy(part)
+                        for key, path in zip(attr_keys, combo):
+                            path = path[::-1]
+                            tmp_ = RuleSearch(path[0])
+                            for nt_ in path[1:-1]:
+                                tmp_ = AttributeSearch(RuleSearch(nt_),tmp_)
+                            final = AttributeSearch(RuleSearch(bound_symbol),tmp_)
+                            print(final)
+                            new_searches[key] = final
+                        print("New:", new_searches)
+                        final_expanded.append(new_searches)
+                        any_expanded = True
+                    # else:
+                    #     for combo in itertools.product(reach, repeat=len(attr_keys)):
+                    #         new_searches = deepcopy(part)
+                    #         for key, attr_nt in zip(attr_keys, combo):
+                    #             # Replace placeholder with AttributeSearch(RuleSearch(bound_symbol), RuleSearch(attr_nt))
+                    #             new_searches[key] = DescendantAttributeSearch(RuleSearch(bound_symbol), RuleSearch(attr_nt))
+                    #         final_expanded.append(new_searches)
+                    #         any_expanded = True
 
             # If no bound_nt → reachable existed, this partial yields ZERO expansions
             # (i.e. if you had <ATTRIBUTE> but no valid bound_nts, you get no results)
@@ -341,7 +361,26 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
                 # (Intentionally drop this partial entirely—no valid expansions.)
                 pass
 
-        return final_expanded
+        final_final_expanded: list[dict[str, "RuleSearch | AttributeSearch | LengthSearch"]] = []
+        for part in final_expanded:
+            length_keys = [
+                key
+                for key, search in part.items()
+                if isinstance(search, LengthSearch) and isinstance(search.value, StarSearch) and NonTerminal("<NON_TERMINAL>") in search.get_access_points()
+            ]
+
+            if not length_keys:
+                final_final_expanded.append(part)
+                continue
+
+            # For every tuple of replacements (one non‐terminal per nt_key)
+            for combo in itertools.product(self.relevant_non_terminals, repeat=len(length_keys)):
+                new_searches = deepcopy(part)
+                for key, nt_repl in zip(length_keys, combo):
+                    new_searches[key] = LengthSearch(StarSearch(RuleSearch(nt_repl)))
+                final_final_expanded.append(new_searches)
+
+        return final_final_expanded
 
 
 class ValuePlaceholderTransformer(ConstraintVisitor, ABC):

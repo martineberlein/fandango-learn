@@ -18,6 +18,7 @@ from fdlearn.learning.instantiation import (
     NonTerminalPlaceholderTransformer,
     ValueMap,
 )
+from fdlearn.learning.value_map import get_reachability_map_level, ReachabilityMap
 from fdlearn.reduction.feature_class import get_direct_reachability_map
 from fdlearn.learning.value_transformer import IntegerPlaceholderTransformer
 
@@ -33,7 +34,7 @@ class TestPatternInstantiation(unittest.TestCase):
             cls.grammar, _ = parse(f, use_cache=False, use_stdlib=False)
 
         relevant_non_terminals = set(cls.grammar.rules.keys())
-        reachability_map = get_direct_reachability_map(cls.grammar)
+        reachability_map = ReachabilityMap(cls.grammar)
         cls.non_terminal_transformer = NonTerminalPlaceholderTransformer(
             relevant_non_terminals, reachability_map=reachability_map
         )
@@ -167,6 +168,8 @@ class TestPatternInstantiation(unittest.TestCase):
         self.assertIsInstance(pattern, ExistsConstraint)
 
         transformed_patterns = self.transform_pattern(pattern)
+        for p in transformed_patterns:
+            print(p)
         self.assertEqual(len(transformed_patterns), len(self.grammar.rules))
 
         for pattern in transformed_patterns:
@@ -237,6 +240,36 @@ class TestPatternInstantiation(unittest.TestCase):
             all(isinstance(p, ComparisonConstraint) for p in transformed_patterns)
         )
         self.assertEqual(len(transformed_patterns), 59)
+
+    def test_non_terminal_transformer_length_1(self):
+        pattern = parse_constraint(
+            "where forall <elem> in <NON_TERMINAL>: len(*<ATTRIBUTE>) <= 10"
+        )
+        transformed_patterns = self.non_terminal_transformer.transform(pattern)
+        for p in transformed_patterns:
+            print(p)
+
+        self.assertEqual(len(transformed_patterns), len(self.grammar.rules))
+
+        for pattern in transformed_patterns:
+            self.assertIsInstance(pattern, ForallConstraint)
+            self.assertIsInstance(pattern.statement, ComparisonConstraint)
+            self.assertTrue(
+                all(
+                    isinstance(att, AttributeSearch)
+                    for att in list(pattern.statement.searches.values())
+                )
+            )
+
+    def test_non_terminal_transformer_length_2(self):
+        pattern = parse_constraint(
+            "where len(*<NON_TERMINAL>) <= 10"
+        )
+        transformed_patterns = self.non_terminal_transformer.transform(pattern)
+        for p in transformed_patterns:
+            print(p)
+
+        self.assertEqual(len(transformed_patterns), len(self.grammar.rules))
 
     # def test_integer_transformer_15(self):
     #     pattern = parse_constraint(
