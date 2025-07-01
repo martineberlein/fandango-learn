@@ -164,6 +164,10 @@ Pattern(
     string_pattern="where exists <elem> in <NON_TERMINAL>: int(eval(str(<elem>))) == <INTEGER>",
 )
 
+# Pattern(
+#     string_pattern="where forall <elem> in <NON_TERMINAL>: str(<elem>.<xml_open_tag>.<id>) == str(<elem>.<xml_close_tag>.<id>)",
+# )
+
 Pattern(
-    string_pattern="where forall <elem> in <NON_TERMINAL>: str(<elem>.<xml_open_tag>.<id>) == str(<elem>.<xml_close_tag>.<id>)",
+    string_pattern="where forall <elem> in <NON_TERMINAL>: str(<ATTRIBUTE>) == str(<ATTRIBUTE>)",
 )
