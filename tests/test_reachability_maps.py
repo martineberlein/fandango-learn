@@ -102,22 +102,29 @@ class FeatureExtraction(unittest.TestCase):
 
         reachability_map = get_reachability_map_level(grammar)
 
-
     def test_grammar_dijkstra(self):
         from fdlearn.learning.value_map import ReachabilityMap
+
         with open(RESOURCES_ROOT / "xml.fan", "r") as grammar_file:
             grammar, _ = parse(grammar_file, use_cache=False, use_stdlib=False)
 
         reachability_map = ReachabilityMap(grammar)
-        path = reachability_map.shortest_path(NonTerminal("<start>"), NonTerminal("<id>"))
+        path = reachability_map.shortest_path(
+            NonTerminal("<start>"), NonTerminal("<id>")
+        )
         print(path)
-        path = reachability_map.shortest_path(NonTerminal("<start>"), NonTerminal("<text_char>"))
+        path = reachability_map.shortest_path(
+            NonTerminal("<start>"), NonTerminal("<text_char>")
+        )
         print(path)
 
-        paths = reachability_map.get_all_shortest_paths(NonTerminal("<start>"), NonTerminal("<id>"))
+        paths = reachability_map.get_all_shortest_paths(
+            NonTerminal("<start>"), NonTerminal("<id>")
+        )
         print("All shortest paths from <start> to <id>:")
         for path in paths:
             print(path)
+
 
 if __name__ == "__main__":
     unittest.main()

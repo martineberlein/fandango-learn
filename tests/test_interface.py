@@ -13,6 +13,7 @@ from fandango.constraints.base import (
 from fdlearn.interface.fandango import parse, parse_constraint, parse_contents
 from .utils import RESOURCES_ROOT
 
+
 class InterfaceTest(unittest.TestCase):
 
     GRAMMAR = """

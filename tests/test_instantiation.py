@@ -10,17 +10,23 @@ from fandango.constraints.base import (
     ExpressionConstraint,
     DisjunctionConstraint,
 )
-from fandango.language.search import RuleSearch, AttributeSearch
+from fandango.language.search import RuleSearch, AttributeSearch, LengthSearch
 
 from fdlearn.data import FandangoInput
 from fdlearn.interface import parse_constraint
+from fdlearn.learning.candidate import FandangoConstraintCandidate
 from fdlearn.learning.instantiation import (
     NonTerminalPlaceholderTransformer,
     ValueMap,
+    PatternProcessor,
 )
 from fdlearn.learning.value_map import get_reachability_map_level, ReachabilityMap
 from fdlearn.reduction.feature_class import get_direct_reachability_map
-from fdlearn.learning.value_transformer import IntegerPlaceholderTransformer
+from fdlearn.learning.value_transformer import (
+    IntegerPlaceholderTransformer,
+    StringPlaceholderTransformer,
+)
+from fdlearn.resources import Pattern
 
 from .utils import RESOURCES_ROOT, PlaceholderVisitor
 
@@ -36,7 +42,9 @@ class TestPatternInstantiation(unittest.TestCase):
         relevant_non_terminals = set(cls.grammar.rules.keys())
         reachability_map = ReachabilityMap(cls.grammar)
         cls.non_terminal_transformer = NonTerminalPlaceholderTransformer(
-            relevant_non_terminals, reachability_map=reachability_map
+            relevant_non_terminals,
+            reachability_map=reachability_map,
+            limit_descendant_levels=2,
         )
 
         cls.test_inputs = set()
@@ -48,6 +56,10 @@ class TestPatternInstantiation(unittest.TestCase):
             relevant_non_terminals=relevant_non_terminals, inputs=cls.test_inputs
         )
         cls.integer_transformer = IntegerPlaceholderTransformer(
+            value_map=cls.value_map,
+            test_inputs=cls.test_inputs,
+        )
+        cls.string_transformer = StringPlaceholderTransformer(
             value_map=cls.value_map,
             test_inputs=cls.test_inputs,
         )
@@ -170,7 +182,7 @@ class TestPatternInstantiation(unittest.TestCase):
         transformed_patterns = self.transform_pattern(pattern)
         for p in transformed_patterns:
             print(p)
-        self.assertEqual(len(transformed_patterns), len(self.grammar.rules))
+        self.assertEqual(len(transformed_patterns), 15)
 
         for pattern in transformed_patterns:
             self.assertIsInstance(pattern, ExistsConstraint)
@@ -191,7 +203,7 @@ class TestPatternInstantiation(unittest.TestCase):
         )
         self.assertIsInstance(pattern, ForallConstraint)
         transformed_patterns = self.transform_pattern(pattern)
-        self.assertEqual(len(transformed_patterns), len(self.grammar.rules))
+        self.assertEqual(len(transformed_patterns), 15)
 
         for pattern in transformed_patterns:
             self.assertIsInstance(pattern, ForallConstraint)
@@ -256,29 +268,67 @@ class TestPatternInstantiation(unittest.TestCase):
             self.assertIsInstance(pattern.statement, ComparisonConstraint)
             self.assertTrue(
                 all(
-                    isinstance(att, AttributeSearch)
+                    isinstance(att, LengthSearch)
                     for att in list(pattern.statement.searches.values())
                 )
             )
 
     def test_non_terminal_transformer_length_2(self):
-        pattern = parse_constraint(
-            "where len(*<NON_TERMINAL>) <= 10"
-        )
+        pattern = parse_constraint("where len(*<NON_TERMINAL>) <= 10")
         transformed_patterns = self.non_terminal_transformer.transform(pattern)
         for p in transformed_patterns:
             print(p)
 
         self.assertEqual(len(transformed_patterns), len(self.grammar.rules))
 
-    # def test_integer_transformer_15(self):
-    #     pattern = parse_constraint(
-    #         "where <STRING> in str(<function>) "
-    #     )
-    #     self.integer_transformer.visit(pattern)
-    #     transformed_patterns = self.integer_transformer.results
-    #     self.integer_transformer.reset()
-    #     self.assertEqual(len(transformed_patterns), 4)
+    def test_pattern_processor_xml(self):
+        with open(RESOURCES_ROOT / "xml.fan", "r") as grammar_file:
+            grammar, _ = parse(grammar_file, use_cache=False, use_stdlib=False)
+
+        pattern = [
+            Pattern(
+                string_pattern="where forall <elem> in <NON_TERMINAL>: str(<ATTRIBUTE>) == str(<ATTRIBUTE>)",
+            ).instantiated_pattern
+        ]
+        pattern_processor = PatternProcessor(
+            pattern,
+        )
+
+        valid_inputs = {
+            FandangoInput.from_str(grammar, "<h1><text>test</text></h1>", True),
+            FandangoInput.from_str(grammar, "<p>abc</p>", True),
+            FandangoInput.from_str(grammar, "<b/>", True),
+        }
+
+        relevant_non_terminals = set(grammar.rules.keys())
+        reachability_map = ReachabilityMap(grammar)
+        value_map = ValueMap.from_inputs(relevant_non_terminals, valid_inputs)
+        atomic_constraints = pattern_processor.instantiate_patterns(
+            relevant_non_terminals, valid_inputs, value_map, reachability_map
+        )
+        self.assertFalse(
+            any(
+                self.placeholder_visitor.visit(p.constraint) for p in atomic_constraints
+            )
+        )
+
+        expected_constraint = parse_constraint(
+            """where forall <elem> in <xml_tree>: str(<elem>.<xml_close_tag>.<id>) ==str(<elem>.<xml_open_tag>.<id>)"""
+        )
+        expected_constraint = FandangoConstraintCandidate(expected_constraint)
+
+        self.assertIn(expected_constraint, atomic_constraints)
+
+    def test_integer_transformer_15(self):
+        pattern = parse_constraint("where <STRING> in str(<function>) ")
+        transformed_patterns = self.string_transformer.transform(pattern)
+        self.assertEqual(len(transformed_patterns), 4)
+        self.assertTrue(
+            all(isinstance(p, ExpressionConstraint) for p in transformed_patterns)
+        )
+        self.assertFalse(
+            any(self.placeholder_visitor.visit(p) for p in transformed_patterns)
+        )
 
 
 if __name__ == "__main__":
