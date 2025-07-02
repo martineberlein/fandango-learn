@@ -8,6 +8,7 @@ from fandango.constraints.base import (
 )
 
 from fdlearn.data import FandangoInput, OracleResult
+from fdlearn.interface import parse_constraint
 from fdlearn.language.constraints import NegationConstraint
 
 
@@ -238,6 +239,14 @@ class FandangoConstraintCandidate(ConstraintCandidate):
             f"(based on {len(self.failing_inputs_eval_results)} failing "
             f"and {len(self.passing_inputs_eval_results)} passing inputs)"
         )
+
+    @classmethod
+    def from_str(cls, constraint_str: str):
+        """
+        Create a FandangoConstraintCandidate from a string representation of a constraint.
+        """
+        constraint = parse_constraint(constraint_str)
+        return cls(constraint)
 
 
 class CandidateSet:
