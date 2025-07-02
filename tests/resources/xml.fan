@@ -1,8 +1,9 @@
 <start> ::= <xml_tree> ;
-<xml_tree> ::= <xml_open_tag> <inner_xml_tree> <xml_close_tag> ;
+<xml_tree> ::= <xml_open_tag> <inner_xml_tree> <xml_close_tag> | <open_open_close_tag>;
 <inner_xml_tree> ::= <xml_tree> | <text> ;
 <xml_open_tag> ::= "<" <id> " " <xml_attributes> ">" | "<" <id> ">" ;
 <xml_close_tag> ::= "</" <id> ">" ;
+<open_open_close_tag> ::= "<" <id> "/>" ;
 <xml_attributes> ::= <xml_attribute> | <xml_attribute> " " <xml_attributes> ;
 <xml_attribute> ::= <id> '=\"' <text> '\"' ;
 <id> ::= <id_start_char> <id_chars> | <id_start_char> ;
