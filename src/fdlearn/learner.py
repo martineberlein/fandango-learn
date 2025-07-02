@@ -95,7 +95,7 @@ class FandangoLearner(BaseFandangoLearner):
             self.all_positive_inputs
         )
 
-        value_map = ValueMap.from_inputs(relevant_non_terminals, self.all_positive_inputs)
+        value_map = ValueMap.from_inputs(relevant_non_terminals, sorted_positive_inputs)
         reachability_map = ReachabilityMap(self.grammar)
 
         instantiated_candidates = self.pattern_processor.instantiate_patterns(
@@ -158,7 +158,8 @@ class FandangoLearner(BaseFandangoLearner):
         Returns:
             Set[FandangoInput]: A filtered subset of positive inputs.
         """
-        filtered_inputs = set(list(positive_inputs)[: self.positive_learning_size])
+        sorted_positive_inputs = sorted(list(positive_inputs), key=lambda inp: str(inp))
+        filtered_inputs = set(list(sorted_positive_inputs)[: self.positive_learning_size])
         LOGGER.info("Filtered positive inputs for learning: %s", len(filtered_inputs))
         return filtered_inputs
 
