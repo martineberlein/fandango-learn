@@ -2,14 +2,24 @@ from copy import deepcopy
 from typing import List, Dict, Set, Iterable, Tuple, Callable, Mapping
 
 from fandango.constraints.base import *
-from fandango.language.search import RuleSearch, AttributeSearch, Container, LengthSearch, StarSearch, DescendantAttributeSearch
+from fandango.language.search import (
+    RuleSearch,
+    AttributeSearch,
+    Container,
+    LengthSearch,
+    StarSearch,
+    DescendantAttributeSearch,
+)
 from fandango.language.symbol import NonTerminal
 
 from fdlearn.data import FandangoInput
 from fdlearn.learning.candidate import FandangoConstraintCandidate
 from fdlearn.learning.transformer import ConstraintTransformer
 from fdlearn.logger import LOGGER
-from fdlearn.learning.value_transformer import IntegerPlaceholderTransformer, StringPlaceholderTransformer
+from fdlearn.learning.value_transformer import (
+    IntegerPlaceholderTransformer,
+    StringPlaceholderTransformer,
+)
 from fdlearn.learning.value_map import ValueMap, ReachabilityMap
 
 
@@ -48,7 +58,7 @@ class PatternProcessor:
             StringPlaceholderTransformer(
                 value_map=value_maps,
                 test_inputs=positive_inputs,
-            )
+            ),
         ]
 
         final_constraints = self.patterns
@@ -78,7 +88,7 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
         relevant_non_terminals: Set[NonTerminal],
         reachability_map: ReachabilityMap = None,
         limit_descendant_levels: int = 2,
-        **kwargs
+        **kwargs,
     ):
         """
         Args:
@@ -90,11 +100,10 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
         self.reachability_map: ReachabilityMap = reachability_map
         self.descendant_levels: int = limit_descendant_levels
 
-
     def _visit_comparison(
         self,
         constraint: "ComparisonConstraint",
-        bounded_map: Dict[NonTerminal, NonTerminal]=None,
+        bounded_map: Dict[NonTerminal, NonTerminal] = None,
     ) -> List["Constraint"]:
         """
         1) Generate all fully‐expanded `searches` dicts via `_expand_searches`.
@@ -119,7 +128,7 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
     def _visit_expression(
         self,
         constraint: "ExpressionConstraint",
-        bounded_map: Dict[NonTerminal, NonTerminal]=None,
+        bounded_map: Dict[NonTerminal, NonTerminal] = None,
     ) -> List["Constraint"]:
         """
         Same pattern as ComparisonConstraint, but rebuild ExpressionConstraint.
@@ -141,7 +150,7 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
     def _visit_forall(
         self,
         constraint: "ForallConstraint",
-        bounded_map: Dict[NonTerminal, NonTerminal]=None,
+        bounded_map: Dict[NonTerminal, NonTerminal] = None,
     ) -> List["ForallConstraint"]:
         """
         Recurse into the inner statement; then wrap each instantiation
@@ -152,10 +161,9 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
 
         result: List["ForallConstraint"] = []
 
-        is_nt_placeholder = (
-            isinstance(constraint.search, RuleSearch)
-            and constraint.search.symbol == NonTerminal("<NON_TERMINAL>")
-        )
+        is_nt_placeholder = isinstance(
+            constraint.search, RuleSearch
+        ) and constraint.search.symbol == NonTerminal("<NON_TERMINAL>")
 
         for candidate_nt in self.relevant_non_terminals:
             if is_nt_placeholder:
@@ -167,10 +175,14 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
             new_bounded = {**bounded_map, candidate_nt: constraint.bound}
 
             # Recurse on the inner statement under new_bounded
-            inner_expanded = self.transform(constraint.statement, bounded_map=new_bounded)
+            inner_expanded = self.transform(
+                constraint.statement, bounded_map=new_bounded
+            )
             for inner in inner_expanded:
                 result.append(
-                    ForallConstraint(statement=inner, bound=constraint.bound, search=new_search)
+                    ForallConstraint(
+                        statement=inner, bound=constraint.bound, search=new_search
+                    )
                 )
 
         return result
@@ -178,7 +190,7 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
     def _visit_exists(
         self,
         constraint: "ExistsConstraint",
-            bounded_map=None,
+        bounded_map=None,
     ) -> List["ExistsConstraint"]:
         """
         If the `search` is a <NON_TERMINAL> placeholder, replace it with each
@@ -191,10 +203,9 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
         result: List["ExistsConstraint"] = []
 
         # Figure out if this ExistsConstraint.search is exactly <NON_TERMINAL>
-        is_nt_placeholder = (
-            isinstance(constraint.search, RuleSearch)
-            and constraint.search.symbol == NonTerminal("<NON_TERMINAL>")
-        )
+        is_nt_placeholder = isinstance(
+            constraint.search, RuleSearch
+        ) and constraint.search.symbol == NonTerminal("<NON_TERMINAL>")
 
         for candidate_nt in self.relevant_non_terminals:
             if is_nt_placeholder:
@@ -206,10 +217,14 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
             new_bounded = {**bounded_map, candidate_nt: constraint.bound}
 
             # Recurse on the inner statement under new_bounded
-            inner_expanded = self.transform(constraint.statement, bounded_map=new_bounded)
+            inner_expanded = self.transform(
+                constraint.statement, bounded_map=new_bounded
+            )
             for inner in inner_expanded:
                 result.append(
-                    ExistsConstraint(statement=inner, bound=constraint.bound, search=new_search)
+                    ExistsConstraint(
+                        statement=inner, bound=constraint.bound, search=new_search
+                    )
                 )
 
         return result
@@ -217,7 +232,7 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
     def _visit_conjunction(
         self,
         constraint: "ConjunctionConstraint",
-        bounded_map: Dict[NonTerminal, NonTerminal]=None,
+        bounded_map: Dict[NonTerminal, NonTerminal] = None,
     ) -> List["Constraint"]:
         """
         Expand each sub‐constraint in turn, collect lists of their instantiations,
@@ -235,7 +250,7 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
     def _visit_disjunction(
         self,
         constraint: "DisjunctionConstraint",
-        bounded_map: Dict[NonTerminal, NonTerminal]=None,
+        bounded_map: Dict[NonTerminal, NonTerminal] = None,
     ) -> List["DisjunctionConstraint"]:
         """
         Expand each sub‐constraint in turn, collect lists of their instantiations,
@@ -253,7 +268,7 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
     def _visit_implication(
         self,
         constraint: "ImplicationConstraint",
-        bounded_map: Dict[NonTerminal, NonTerminal]=None,
+        bounded_map: Dict[NonTerminal, NonTerminal] = None,
     ) -> List["Constraint"]:
         """
         Recursively expand antecedent and consequent, then combine pairwise.
@@ -290,14 +305,17 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
         nt_keys = [
             key
             for key, search in base_searches.items()
-            if isinstance(search, RuleSearch) and search.symbol == NonTerminal("<NON_TERMINAL>")
+            if isinstance(search, RuleSearch)
+            and search.symbol == NonTerminal("<NON_TERMINAL>")
         ]
 
         # Build “partially expanded” list by substituting <NON_TERMINAL>
         partials: List[Dict[str, "RuleSearch | AttributeSearch"]] = []
         if nt_keys:
             # For every tuple of replacements (one non‐terminal per nt_key)
-            for combo in itertools.product(self.relevant_non_terminals, repeat=len(nt_keys)):
+            for combo in itertools.product(
+                self.relevant_non_terminals, repeat=len(nt_keys)
+            ):
                 new_searches = deepcopy(base_searches)
                 for key, nt_repl in zip(nt_keys, combo):
                     new_searches[key] = RuleSearch(nt_repl)
@@ -306,13 +324,16 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
             partials.append(deepcopy(base_searches))
 
         # 2) For each partial, fill in <ATTRIBUTE> if any
-        final_expanded: List[Dict[str, "RuleSearch | AttributeSearch | DescendantAttributeSearch"]] = []
+        final_expanded: List[
+            Dict[str, "RuleSearch | AttributeSearch | DescendantAttributeSearch"]
+        ] = []
         for part in partials:
             # Find keys whose searches[...] is `<ATTRIBUTE>`
             attr_keys = [
                 key
                 for key, search in part.items()
-                if isinstance(search, RuleSearch) and search.symbol == NonTerminal("<ATTRIBUTE>")
+                if isinstance(search, RuleSearch)
+                and search.symbol == NonTerminal("<ATTRIBUTE>")
             ]
 
             if not attr_keys:
@@ -330,7 +351,9 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
                     reach = reachable.get(level, ())
                     paths_ = []
                     for r in reach:
-                        paths = self.reachability_map.get_all_shortest_paths(bound_nt, r)
+                        paths = self.reachability_map.get_all_shortest_paths(
+                            bound_nt, r
+                        )
                         if not paths:
                             continue
                         paths_.extend(paths)
@@ -340,8 +363,8 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
                             path = path[::-1]
                             tmp_ = RuleSearch(path[0])
                             for nt_ in path[1:-1]:
-                                tmp_ = AttributeSearch(RuleSearch(nt_),tmp_)
-                            final = AttributeSearch(RuleSearch(bound_symbol),tmp_)
+                                tmp_ = AttributeSearch(RuleSearch(nt_), tmp_)
+                            final = AttributeSearch(RuleSearch(bound_symbol), tmp_)
                             print(final)
                             new_searches[key] = final
                         print("New:", new_searches)
@@ -362,12 +385,16 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
                 # (Intentionally drop this partial entirely—no valid expansions.)
                 pass
 
-        final_final_expanded: list[dict[str, "RuleSearch | AttributeSearch | LengthSearch"]] = []
+        final_final_expanded: list[
+            dict[str, "RuleSearch | AttributeSearch | LengthSearch"]
+        ] = []
         for part in final_expanded:
             length_keys = [
                 key
                 for key, search in part.items()
-                if isinstance(search, LengthSearch) and isinstance(search.value, StarSearch) and NonTerminal("<NON_TERMINAL>") in search.get_access_points()
+                if isinstance(search, LengthSearch)
+                and isinstance(search.value, StarSearch)
+                and NonTerminal("<NON_TERMINAL>") in search.get_access_points()
             ]
 
             if not length_keys:
@@ -375,7 +402,9 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
                 continue
 
             # For every tuple of replacements (one non‐terminal per nt_key)
-            for combo in itertools.product(self.relevant_non_terminals, repeat=len(length_keys)):
+            for combo in itertools.product(
+                self.relevant_non_terminals, repeat=len(length_keys)
+            ):
                 new_searches = deepcopy(part)
                 for key, nt_repl in zip(length_keys, combo):
                     new_searches[key] = LengthSearch(StarSearch(RuleSearch(nt_repl)))
@@ -476,8 +505,10 @@ class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
         ), f"AttributeSearch not yet supported! {constraint}"
 
         self.update_value_map(constraint.bound, constraint.search)
-        #self.bounded_non_terminals[constraint.bound] = constraint.search.symbol
-        self.bounded_non_terminals[constraint.bound] = self.get_search_symbol(constraint.search)
+        # self.bounded_non_terminals[constraint.bound] = constraint.search.symbol
+        self.bounded_non_terminals[constraint.bound] = self.get_search_symbol(
+            constraint.search
+        )
         constraint.statement.accept(self)
         self.remove_value_map(constraint.bound)
 
@@ -522,9 +553,7 @@ class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
         all_conjunctions = all_combinations(all_transformed_constraints)
 
         for conjunction in all_conjunctions:
-            self.results.append(
-                ConjunctionConstraint(constraints=conjunction)
-            )
+            self.results.append(ConjunctionConstraint(constraints=conjunction))
 
     def visit_implication_constraint(self, constraint: "ImplicationConstraint"):
         """
@@ -558,7 +587,9 @@ class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
     ):
         nodes: List[List[Tuple[str, Container]]] = []
         for name, search in constraint.searches.items():
-            if isinstance(search, RuleSearch) and search.symbol == NonTerminal("<INTEGER>"):
+            if isinstance(search, RuleSearch) and search.symbol == NonTerminal(
+                "<INTEGER>"
+            ):
                 continue
             nodes.append(
                 [(name, container) for container in search.find(tree, scope=scope)]
@@ -576,7 +607,12 @@ class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
         for name, search in tmp_constraint.searches.items():
             if isinstance(search, AttributeSearch):
                 search.base = RuleSearch(self.bounded_non_terminals[search.base.symbol])
-            elif isinstance(search, RuleSearch) and search.symbol not in (NonTerminal("<INTEGER>"), NonTerminal("<STRING>")) and self.bounded_non_terminals[search.symbol]:
+            elif (
+                isinstance(search, RuleSearch)
+                and search.symbol
+                not in (NonTerminal("<INTEGER>"), NonTerminal("<STRING>"))
+                and self.bounded_non_terminals[search.symbol]
+            ):
                 search.symbol = self.bounded_non_terminals[search.symbol]
 
         for inp in self.test_inputs:
@@ -588,7 +624,9 @@ class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
                 )
                 try:
                     left_result = eval(
-                        tmp_constraint.left, tmp_constraint.global_variables, local_variables
+                        tmp_constraint.left,
+                        tmp_constraint.global_variables,
+                        local_variables,
                     )
                     results.add(str(left_result))
                 except Exception as e:
@@ -601,7 +639,7 @@ class ValuePlaceholderTransformer(ConstraintVisitor, ABC):
         self,
         initialized_patterns: List[Tuple[Constraint, Set[NonTerminal]]],
         placeholder: NonTerminal,
-        values: Dict[NonTerminal, Set[str|int|float]],
+        values: Dict[NonTerminal, Set[str | int | float]],
         format_value: Callable[[str], str],
     ) -> List[Tuple[Constraint, Set[NonTerminal]]]:
         """
@@ -758,9 +796,7 @@ class StringValuePlaceholderTransformer(ValuePlaceholderTransformer):
 
         if matches:
             for non_terminal in non_terminals:
-                values = set(
-                    self.value_maps.string_values[non_terminal]
-                )
+                values = set(self.value_maps.string_values[non_terminal])
 
                 for value in values:
                     new_expression = constraint.expression

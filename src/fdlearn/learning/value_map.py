@@ -282,9 +282,9 @@ class ReachabilityMap:
 
         return dist, prev
 
-    def _bfs_for_shortest_paths(self, source: NonTerminal) -> (
-            (dict[NonTerminal, int], dict[NonTerminal, list[NonTerminal]])
-    ):
+    def _bfs_for_shortest_paths(
+        self, source: NonTerminal
+    ) -> (dict[NonTerminal, int], dict[NonTerminal, list[NonTerminal]]):
         """
         Performs a BFS to find shortest path lengths and all predecessors.
 
@@ -293,7 +293,7 @@ class ReachabilityMap:
             predecessors (dict): Maps each node to a list of its predecessors
                                  on a shortest path.
         """
-        dist = {node: float('inf') for node in self.grammar.rules.keys()}
+        dist = {node: float("inf") for node in self.grammar.rules.keys()}
         predecessors = {node: [] for node in self.grammar.rules.keys()}
 
         dist[source] = 0
@@ -316,7 +316,10 @@ class ReachabilityMap:
         return dist, predecessors
 
     def _reconstruct_paths(
-            self, source: NonTerminal, target: NonTerminal, predecessors: dict[NonTerminal, list[NonTerminal]]
+        self,
+        source: NonTerminal,
+        target: NonTerminal,
+        predecessors: dict[NonTerminal, list[NonTerminal]],
     ) -> list[list[NonTerminal]]:
         """Recursively reconstructs all paths from source to target."""
         all_paths = []
@@ -334,7 +337,7 @@ class ReachabilityMap:
         return all_paths
 
     def get_all_shortest_paths(
-            self, source: NonTerminal, target: NonTerminal
+        self, source: NonTerminal, target: NonTerminal
     ) -> list[list[NonTerminal]]:
         """
         Returns a list of all shortest paths from source to target.
@@ -344,7 +347,7 @@ class ReachabilityMap:
         dist, predecessors = self._bfs_for_shortest_paths(source)
 
         # If target is unreachable, its distance will be infinity
-        if dist[target] == float('inf'):
+        if dist[target] == float("inf"):
             return []
 
         return self._reconstruct_paths(source, target, predecessors)

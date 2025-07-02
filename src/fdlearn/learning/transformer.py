@@ -41,7 +41,9 @@ class ConstraintTransformer(ABC):
 
         return [constraint]
 
-    def _visit_comparison(self, constraint: "ComparisonConstraint", **kwargs) -> list["Constraint"]:
+    def _visit_comparison(
+        self, constraint: "ComparisonConstraint", **kwargs
+    ) -> list["Constraint"]:
         raise NotImplementedError()
 
     def _visit_expression(self, constraint, **kwargs):
@@ -61,4 +63,3 @@ class ConstraintTransformer(ABC):
 
     def _visit_disjunction(self, constraint, **kwargs):
         raise NotImplementedError()
-

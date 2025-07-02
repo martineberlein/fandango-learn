@@ -14,7 +14,8 @@ from fandango.language.search import (
     RuleSearch,
     NonTerminalSearch,
     AttributeSearch,
-    Container, DescendantAttributeSearch,
+    Container,
+    DescendantAttributeSearch,
 )
 from fandango.language.symbol import NonTerminal
 from fandango.language.tree import DerivationTree
@@ -31,6 +32,7 @@ from copy import deepcopy
 
 # Assuming the class definitions from the user's prompt are loaded.
 # (e.g., Constraint, ExpressionConstraint, ConjunctionConstraint, etc.)
+
 
 def deep_copy_constraint(constraint: Constraint) -> Constraint:
     """
@@ -87,6 +89,7 @@ def deep_copy_constraint(constraint: Constraint) -> Constraint:
     # Fallback for any other constraint types.
     raise TypeError(f"Deep copy not implemented for type {type(constraint).__name__}")
 
+
 class ValuePlaceholderTransformer(ConstraintTransformer, ABC):
 
     def __init__(
@@ -130,7 +133,11 @@ class ValuePlaceholderTransformer(ConstraintTransformer, ABC):
         :param search:
         :return:
         """
-        assert isinstance(search, RuleSearch) or isinstance(search, AttributeSearch) or isinstance(search, DescendantAttributeSearch)
+        assert (
+            isinstance(search, RuleSearch)
+            or isinstance(search, AttributeSearch)
+            or isinstance(search, DescendantAttributeSearch)
+        )
         symbol = search.get_access_points()
         return symbol[0]
 
@@ -366,11 +373,11 @@ class ValuePlaceholderTransformer(ConstraintTransformer, ABC):
         for non_terminal in non_terminals:
             possible_values = value_map.get(non_terminal, [])
             if self.use_partial_evaluation:
-                partial_eval_results = self.evaluate_partial_constraint(constraint, bounded_non_terminals)
-                # print("Partials: ", partial_eval_results)
-                possible_values.update(
-                    partial_eval_results
+                partial_eval_results = self.evaluate_partial_constraint(
+                    constraint, bounded_non_terminals
                 )
+                # print("Partials: ", partial_eval_results)
+                possible_values.update(partial_eval_results)
 
             for possible_value in possible_values:
                 new_replacements.append((possible_value, matches))
@@ -384,7 +391,6 @@ class ValuePlaceholderTransformer(ConstraintTransformer, ABC):
                 # new_searches = deepcopy(constraint.searches)
                 # for match in matches:
                 #     del new_searches[match]
-
 
                 # new_constraints.append(
                 #     ComparisonConstraint(
@@ -433,8 +439,9 @@ class IntegerPlaceholderTransformer(ValuePlaceholderTransformer):
         """
         return f"{int(value)}"
 
-    def _visit_comparison(self, constraint: ComparisonConstraint, bounded_non_terminals=None, **kwargs) -> list[
-        ComparisonConstraint]:
+    def _visit_comparison(
+        self, constraint: ComparisonConstraint, bounded_non_terminals=None, **kwargs
+    ) -> list[ComparisonConstraint]:
 
         result: list[ComparisonConstraint] = []
 
@@ -502,8 +509,9 @@ class StringPlaceholderTransformer(ValuePlaceholderTransformer):
         """
         return f"'{str(value)}'"
 
-    def _visit_comparison(self, constraint: ComparisonConstraint, bounded_non_terminals=None, **kwargs) -> list[
-        ComparisonConstraint]:
+    def _visit_comparison(
+        self, constraint: ComparisonConstraint, bounded_non_terminals=None, **kwargs
+    ) -> list[ComparisonConstraint]:
 
         result: list[ComparisonConstraint] = []
 
@@ -552,8 +560,9 @@ class StringPlaceholderTransformer(ValuePlaceholderTransformer):
     def escape_string(s):
         return s.encode("unicode_escape").decode("utf-8")
 
-    def _visit_expression(self, constraint: ExpressionConstraint, bounded_non_terminals=None, **kwargs) -> list[
-        ExpressionConstraint]:
+    def _visit_expression(
+        self, constraint: ExpressionConstraint, bounded_non_terminals=None, **kwargs
+    ) -> list[ExpressionConstraint]:
 
         result: list[ExpressionConstraint] = []
 
@@ -572,15 +581,12 @@ class StringPlaceholderTransformer(ValuePlaceholderTransformer):
             # If only found placeholders but no replacements, return the original constraint
             return []
 
-
         for replacement in new_replacements:
             value, matches = replacement
             expression = constraint.expression
             # replace placeholder in with actual value
             for match in matches:
-                expression = expression.replace(
-                    match, self.format_value(value), 1
-                )
+                expression = expression.replace(match, self.format_value(value), 1)
             # remove placeholder search id from searches
             new_searches = deepcopy(constraint.searches)
             for match in matches:
