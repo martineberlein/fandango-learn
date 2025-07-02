@@ -28,10 +28,10 @@ def oracle(inp: str) -> OracleResult:
 if __name__ == "__main__":
     random.seed(1)  # For reproducibility
     with open("xml.fan", "r") as f:
-        grammar, _ = parse(f)
+        grammar, _ = parse(f, use_cache=False, use_stdlib=False)
 
     positive, negative = set(), set()
-    while len(positive) < 10 :
+    while len(positive) < 20 :
         tree = grammar.fuzz()
         inp = tree.to_string()
         if oracle(inp).is_failing():
