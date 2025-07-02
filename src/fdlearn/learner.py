@@ -4,16 +4,16 @@ import contextlib
 
 from fandango.language.grammar import Grammar
 from fandango.language.symbol import NonTerminal
+from fdlearn.learning.value_map import ReachabilityMap
 
 from .learning.candidate import FandangoConstraintCandidate
 from .data import FandangoInput, OracleResult
 from .logger import LOGGER, LoggerLevel
 from .learning.combination import ConjunctionProcessor, DisjunctionProcessor
-from .learning.instantiation import PatternProcessor, ValueMaps
+from .learning.instantiation import PatternProcessor, ValueMap
 from .core import BaseFandangoLearner
 from .types import OracleType
 from .resources.patterns import Pattern
-from .reduction.feature_class import get_direct_reachability_map
 
 
 class FandangoLearner(BaseFandangoLearner):
@@ -95,13 +95,11 @@ class FandangoLearner(BaseFandangoLearner):
             self.all_positive_inputs
         )
 
-        value_maps = ValueMaps(relevant_non_terminals)
-        value_maps.extract_non_terminal_values(self.all_positive_inputs)
-
-        reachability_map = get_direct_reachability_map(self.grammar)
+        value_map = ValueMap.from_inputs(relevant_non_terminals, sorted_positive_inputs)
+        reachability_map = ReachabilityMap(self.grammar)
 
         instantiated_candidates = self.pattern_processor.instantiate_patterns(
-            relevant_non_terminals, sorted_positive_inputs, value_maps=value_maps, reachability_map=reachability_map
+            relevant_non_terminals, sorted_positive_inputs, value_maps=value_map, reachability_map=reachability_map
         )
 
         candidates_to_evaluate: List[FandangoConstraintCandidate] = (
@@ -160,7 +158,8 @@ class FandangoLearner(BaseFandangoLearner):
         Returns:
             Set[FandangoInput]: A filtered subset of positive inputs.
         """
-        filtered_inputs = set(list(positive_inputs)[: self.positive_learning_size])
+        sorted_positive_inputs = sorted(list(positive_inputs), key=lambda inp: str(inp))
+        filtered_inputs = set(list(sorted_positive_inputs)[: self.positive_learning_size])
         LOGGER.info("Filtered positive inputs for learning: %s", len(filtered_inputs))
         return filtered_inputs
 

@@ -11,7 +11,9 @@ class NegationConstraint(Constraint):
     def fitness(
         self,
         tree: DerivationTree,
-        scope: Optional[Dict[NonTerminal, DerivationTree]] = None,
+        scope: Optional[dict[NonTerminal, DerivationTree]] = None,
+        population: Optional[list[DerivationTree]] = None,
+        local_variables: Optional[dict[str, Any]] = None,
     ) -> ConstraintFitness:
         """
         Computes the fitness for the negation of the inner constraint.

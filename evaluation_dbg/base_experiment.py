@@ -13,6 +13,7 @@ from dbg.data.oracle import OracleResult
 from fdlearn.reduction.feature_collector import GrammarFeatureCollector
 from fdlearn.reduction.reducer import FeatureReducer
 from fdlearn.refinement.core import FandangoRefinement
+from fdlearn.refinement.learner import FDLearnReducer
 
 
 class FDLearnExperiment(Experiment):
@@ -90,7 +91,7 @@ class LearnerExperiment(FDLearnExperiment):
         """Evaluate the learner and return formatted results."""
         random.seed(seed)
 
-        assert isinstance(self.tool, FandangoLearner)
+        assert isinstance(self.tool, FandangoLearner) or isinstance(self.tool, FDLearnReducer)
 
         parsed_inputs = self._prepare_inputs(self.initial_inputs)
 

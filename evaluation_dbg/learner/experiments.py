@@ -9,6 +9,7 @@ from debugging_benchmark.tests4py_benchmark.repository import (
     CookiecutterBenchmarkRepository,
 )
 from debugging_benchmark.heartbleed.heartbleed import HeartbleedBenchmarkRepository
+from debugging_benchmark.iban.iban import IBANBenchmarkRepository
 
 from fdlearn.data.oracle import OracleResult
 from fdlearn.learner import FandangoLearner
@@ -110,13 +111,17 @@ def get_cookiecutter2_experiment():
         custom_inputs_func=lambda p: p.get_passing_inputs()[:2] + p.get_failing_inputs()[:1]
     )
 
+def get_iban_experiment():
+    return create_experiment("IBAN", IBANBenchmarkRepository)
+
 
 if __name__ == "__main__":
     experiments = [
-        #get_calculator_experiment,
-        #get_heartbleed_experiment,
+        get_iban_experiment,
+        # get_calculator_experiment,
+        # get_heartbleed_experiment,
         # get_expression_experiment,
-        get_middle_experiment,
+        #get_middle_experiment,
         # get_markup1_experiment,
         #get_markup2_experiment,
         #get_pysnooper1_experiment,

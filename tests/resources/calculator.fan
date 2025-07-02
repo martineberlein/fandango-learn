@@ -7,4 +7,4 @@
 <maybedigits> ::= <digit>*;
 <digit>::=  "0" | <onenine>;
 
-str(<function>) == 'sqrt';
+where str(<function>) == 'sqrt'

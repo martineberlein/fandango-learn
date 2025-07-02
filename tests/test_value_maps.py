@@ -1,22 +1,19 @@
 import unittest
-import os
 
 from fandango.language.symbol import NonTerminal
+from fandango.language.parse import parse
 
 from fdlearn.data.input import FandangoInput
-from fdlearn.interface.fandango import parse_file
-from fdlearn.learning.instantiation import ValueMaps
+from fdlearn.learning.instantiation import ValueMap
+from .utils import RESOURCES_ROOT
 
 
 class TestConjunctionProcessor(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.base_path = os.path.dirname(__file__)
-
-    def setUp(self):
-        file = os.path.join(self.base_path, "resources", "calculator.fan")
-        self.grammar, _ = parse_file(file)
+        with open(RESOURCES_ROOT / "calculator.fan", "r") as grammar:
+            cls.grammar, _ = parse(grammar, use_cache=False, use_stdlib=False)
 
         test_inputs = [
             ("sqrt(-1)", True),
@@ -26,8 +23,8 @@ class TestConjunctionProcessor(unittest.TestCase):
             ("cos(3)", False),
             ("sin(-1)", False),
         ]
-        self.test_inputs = {
-            FandangoInput.from_str(self.grammar, inp, res) for inp, res in test_inputs
+        cls.test_inputs = {
+            FandangoInput.from_str(cls.grammar, inp, res) for inp, res in test_inputs
         }
 
     def test_value_map(self):
@@ -37,8 +34,9 @@ class TestConjunctionProcessor(unittest.TestCase):
             NonTerminal("<function>"),
         }
 
-        value_map = ValueMaps(relevant_non_terminals)
-        value_map.extract_non_terminal_values(self.test_inputs)
+        value_map = ValueMap.from_inputs(
+            relevant_non_terminals=relevant_non_terminals, inputs=self.test_inputs
+        )
 
         # Expected results
         expected_int_values = {
@@ -52,11 +50,8 @@ class TestConjunctionProcessor(unittest.TestCase):
             NonTerminal("<function>"): {"sin", "sqrt", "cos"},
         }
 
-        # Verify integer values are extracted correctly
-        self.assertEqual(value_map.get_int_values(), expected_int_values)
-
-        # Verify string values are extracted correctly
-        self.assertEqual(value_map.get_string_values(), expected_string_values)
+        self.assertEqual(value_map.numeric_values, expected_int_values)
+        self.assertEqual(value_map.string_values, expected_string_values)
 
     def test_value_map_min_max(self):
         relevant_non_terminals = {
@@ -64,12 +59,13 @@ class TestConjunctionProcessor(unittest.TestCase):
             NonTerminal("<maybeminus>"),
             NonTerminal("<function>"),
         }
-        value_map = ValueMaps(relevant_non_terminals)
-        value_map.extract_non_terminal_values(self.test_inputs)
 
-        result = value_map.get_filtered_int_values()
+        value_map = ValueMap.from_inputs(
+            relevant_non_terminals=relevant_non_terminals, inputs=self.test_inputs
+        )
+
         self.assertEqual(
-            result,
+            value_map.filtered_numeric_values,
             {
                 NonTerminal("<number>"): {3, -900},
             },
@@ -85,13 +81,13 @@ class TestConjunctionProcessor(unittest.TestCase):
             NonTerminal("<maybeminus>"),
             NonTerminal("<function>"),
         }
-        value_map = ValueMaps(relevant_non_terminals)
-        value_map.extract_non_terminal_values(test_inputs)
 
-        function_values = value_map.get_string_values_for_non_terminal(
-            NonTerminal("<function>")
+        value_map = ValueMap.from_inputs(
+            relevant_non_terminals=relevant_non_terminals, inputs=test_inputs
         )
-        reduced_int_values = value_map.get_filtered_int_values()
+
+        function_values = value_map.string_values[NonTerminal("<function>")]
+        reduced_int_values = value_map.filtered_numeric_values
 
         self.assertEqual(len(function_values), 4)
         self.assertEqual(len(reduced_int_values[NonTerminal("<number>")]), 2)

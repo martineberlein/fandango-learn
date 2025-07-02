@@ -26,18 +26,21 @@ MAX_CORRELATED_FEATURES: int = 10
 
 class FeatureReducer(ABC):
     """
-    A feature reducer is responsible for extracting the feature that are most relevant for the program failure.
+    A feature reducer is responsible for extracting the features that are most relevant for the program failure.
     """
 
     def __init__(
         self,
         grammar: Grammar,
         feature_types: Optional[List[Type[Feature]]] = None,
+        filter_features: bool = False,
     ):
         self.grammar = grammar
         self.features = FeatureFactory(self.grammar).build(
             feature_types or DEFAULT_FEATURE_TYPES
         )
+        if filter_features:
+            self.features = [f for f in self.features if f.non_terminal not in [NonTerminal("<digit>")]]
 
     @abstractmethod
     def learn(self, test_inputs: Set[FandangoInput]) -> Set[Feature]:
@@ -303,7 +306,7 @@ class GradientBoostingTreeRelevanceLearner(SKLearFeatureRelevanceLearner):
         Fit the gradient boosting tree classifier to the training data.
         """
         classifier = LGBMClassifier(
-            max_depth=5, n_estimators=100, objective="binary", verbose=-1
+            max_depth=5, n_estimators=200, objective="binary", verbose=-1
         )
         classifier.fit(x_train, y_train)
         return classifier

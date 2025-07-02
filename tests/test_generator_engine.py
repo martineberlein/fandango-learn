@@ -1,29 +1,30 @@
 import unittest
-import os
+
+from fandango.language.parse import parse
 
 from fdlearn.data.input import FandangoInput
-from fdlearn.interface.fandango import parse, parse_constraint
+from fdlearn.interface.fandango import parse_constraint
 from fdlearn.learning.candidate import FandangoConstraintCandidate
 from fdlearn.refinement.generator import FandangoGenerator
 from fdlearn.refinement.engine import (
     SingleEngine,
     ParallelEngine,
 )
+from .utils import RESOURCES_ROOT
 
 
 class TestEngine(unittest.TestCase):
 
     def setUp(self):
-        dirname = os.path.dirname(__file__)
-        filename = os.path.join(dirname, "resources", "calculator.fan")
-        self.grammar, self.constraints = parse(filename)
+        with open(RESOURCES_ROOT / "calculator.fan", "r") as calc:
+            self.grammar, self.constraints = parse(calc)
 
         self.candidate1 = FandangoConstraintCandidate(
-            parse_constraint("str(<function>) == 'cos';")
+            parse_constraint("where str(<function>) == 'cos'")
         )
 
         self.candidate2 = FandangoConstraintCandidate(
-            parse_constraint("str(<function>) == 'sqrt';")
+            parse_constraint("where str(<function>) == 'sqrt'")
         )
 
         self.fandango_generator = FandangoGenerator(self.grammar)

@@ -5,8 +5,8 @@ from fandango.language.grammar import NonTerminalNode, TerminalNode, Concatenati
 from numpy import inf
 
 from fandango.language.symbol import NonTerminal, Terminal
+from fandango.language.parse import parse
 
-from fdlearn.interface.fandango import parse
 from fdlearn.data.input import FandangoInput
 from fdlearn.reduction.feature_collector import GrammarFeatureCollector
 from fdlearn.reduction.feature_class import (
@@ -17,24 +17,34 @@ from fdlearn.reduction.feature_class import (
     LengthFeature,
     FeatureVector,
 )
+from .utils import RESOURCES_ROOT
 
 
 class FeatureExtraction(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.dirname = os.path.dirname(__file__)
+        with open(RESOURCES_ROOT / "grammar.fan", "r") as calc:
+            cls.grammar, _ = parse(calc, use_cache=False, use_stdlib=False)
 
-        cls.grammar, _ = parse(os.path.join(cls.dirname, "resources", "grammar.fan"))
-        cls.grammar_with_maybe_minus, _ = parse(
-            os.path.join(cls.dirname, "resources", "grammar_with_minus.fan")
-        )
-        cls.grammar_recursion, _ = parse(
-            os.path.join(cls.dirname, "resources", "grammar_recursion.fan")
-        )
-        cls.grammar_with_quotes, _ = parse(
-            os.path.join(cls.dirname, "resources", "grammar_with_quotes.fan")
-        )
+        with open(
+            RESOURCES_ROOT / "grammar_with_minus.fan", "r"
+        ) as grammar_with_maybe_minus:
+            cls.grammar_with_maybe_minus, _ = parse(
+                grammar_with_maybe_minus, use_cache=False, use_stdlib=False
+            )
+
+        with open(RESOURCES_ROOT / "grammar_recursion.fan", "r") as grammar_recursion:
+            cls.grammar_recursion, _ = parse(
+                grammar_recursion, use_cache=False, use_stdlib=False
+            )
+
+        with open(
+            RESOURCES_ROOT / "grammar_with_quotes.fan", "r"
+        ) as grammar_with_quotes:
+            cls.grammar_with_quotes, _ = parse(
+                grammar_with_quotes, use_cache=False, use_stdlib=False
+            )
 
     def test_build_existence_feature(self):
         expected_feature_list = [
@@ -440,7 +450,8 @@ class FeatureExtraction(unittest.TestCase):
             self.assertEqual(feature_vector.features, expected_feature_vectors)
 
     def test_features_calculator(self):
-        grammar, _ = parse(os.path.join(self.dirname, "resources", "calculator.fan"))
+        with open(RESOURCES_ROOT / "calculator.fan", "r") as calc:
+            grammar, _ = parse(calc, use_cache=False, use_stdlib=False)
 
         factory = FeatureFactory(grammar)
         features = factory.build()
@@ -449,9 +460,8 @@ class FeatureExtraction(unittest.TestCase):
             print(f)
 
     def test_features_calculator_extended(self):
-        grammar, _ = parse(
-            os.path.join(self.dirname, "resources", "calculator_extended.fan")
-        )
+        with open(RESOURCES_ROOT / "calculator_extended.fan", "r") as calc:
+            grammar, _ = parse(calc, use_cache=False, use_stdlib=False)
 
         factory = FeatureFactory(grammar)
         features = factory.build()
@@ -460,9 +470,8 @@ class FeatureExtraction(unittest.TestCase):
             print(f)
 
     def test_features_from_grammar_star(self):
-        grammar, _ = parse(
-            os.path.join(self.dirname, "resources", "grammar_recursion_plus.fan")
-        )
+        with open(RESOURCES_ROOT / "grammar_recursion_plus.fan", "r") as calc:
+            grammar, _ = parse(calc, use_cache=False, use_stdlib=False)
 
         inputs = ["1", "12", "3", "234234243789560243562", "a"]
 

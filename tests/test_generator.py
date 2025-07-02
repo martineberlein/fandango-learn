@@ -1,25 +1,26 @@
 import unittest
-import os
 
 from fandango.constraints.base import ConjunctionConstraint
+from fandango.language.parse import parse
 
 from fdlearn.data.input import FandangoInput
-from fdlearn.interface.fandango import parse, parse_constraint
+from fdlearn.interface.fandango import parse_constraint
 from fdlearn.learning.candidate import FandangoConstraintCandidate
 from fdlearn.refinement.negation import construct_negations
 from fdlearn.refinement.generator import (
     FandangoGenerator,
     FandangoGrammarGenerator,
 )
+from .utils import RESOURCES_ROOT
 
 
 class TestInputGenerator(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        dirname = os.path.dirname(__file__)
-        filename = os.path.join(dirname, "resources", "calculator.fan")
-        cls.grammar, cls.constraints = parse(filename)
+        with open(RESOURCES_ROOT / "calculator.fan", "r") as calc:
+            cls.grammar, cls.constraints = parse(calc)
+
         cls.generator = FandangoGenerator(cls.grammar)
         cls.grammar_generator = FandangoGrammarGenerator(cls.grammar)
 
@@ -39,7 +40,7 @@ class TestInputGenerator(unittest.TestCase):
                     self.assertTrue(constraint.check(inp.tree))
 
     def test_fandango_generator_with_constraints_2(self):
-        constraint = parse_constraint("int(<number>) <= 0;")
+        constraint = parse_constraint("where int(<number>) <= 0")
         candidate = FandangoConstraintCandidate(constraint)
         test_inputs = self.generate_and_test_inputs(candidate, 10)
 
@@ -48,7 +49,7 @@ class TestInputGenerator(unittest.TestCase):
                 self.assertTrue(constraint.check(inp.tree))
 
     def test_fandango_generator_with_negation(self):
-        constraint = parse_constraint("int(<number>) <= 0;")
+        constraint = parse_constraint("where int(<number>) <= 0")
         negation_candidate = -FandangoConstraintCandidate(constraint)
         test_inputs = self.generate_and_test_inputs(negation_candidate, 10)
 
@@ -57,8 +58,8 @@ class TestInputGenerator(unittest.TestCase):
                 self.assertTrue(negation_candidate.constraint.check(inp.tree))
 
     def test_fandango_generator_with_negation_conjunction(self):
-        constraint_1 = parse_constraint("int(<number>) <= 0;")
-        constraint_2 = parse_constraint("str(<function>) == 'sqrt';")
+        constraint_1 = parse_constraint("where int(<number>) <= 0")
+        constraint_2 = parse_constraint("where str(<function>) == 'sqrt'")
         candidate_conjunction = FandangoConstraintCandidate(
             ConjunctionConstraint([constraint_1, constraint_2])
         )

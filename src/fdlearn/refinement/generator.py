@@ -97,13 +97,17 @@ class FandangoGenerator(Generator):
         fandango = Fandango(
             grammar=self.grammar,
             constraints=[candidate.constraint],
-            max_generations=50,
-            desired_solutions=2,
-            # random_seed=1,
+            random_seed=1,
             warnings_are_errors=True,
         )
 
-        solutions = fandango.evolve()
+        solutions = []
+        fan_gen = fandango.generate(max_generations=50)
+        for inp in fan_gen:
+            solutions.append(inp)
+            if len(solutions) >= 10:
+                break
+
         return {FandangoInput(inp) for inp in solutions}
 
 

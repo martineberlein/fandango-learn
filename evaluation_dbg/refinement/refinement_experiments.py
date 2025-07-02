@@ -10,6 +10,7 @@ from debugging_benchmark.tests4py_benchmark.repository import (
     CookiecutterBenchmarkRepository,
 )
 from debugging_benchmark.heartbleed.heartbleed import HeartbleedBenchmarkRepository
+from debugging_benchmark.iban.iban import IBANBenchmarkRepository
 
 from dbg.logger import LoggerLevel
 from evaluation_dbg.base_experiment import FDLearnRefinementExperiment
@@ -32,8 +33,8 @@ def create_alhazen_experiment(name, repository_cls, program_index=0, custom_inpu
         result = result_[0] if isinstance(result_, (list, tuple)) else result_
         if result.is_failing():
             return OracleResult.FAILING
-        if str(result) == "UNDEFINED":
-            return OracleResult.UNDEFINED
+        # if str(result) == "UNDEFINED":
+        #     return OracleResult.UNDEFINED
         return OracleResult.PASSING
 
     if custom_inputs_func:
@@ -49,7 +50,7 @@ def create_alhazen_experiment(name, repository_cls, program_index=0, custom_inpu
         grammar=grammar,
         initial_inputs=initial_inputs,
         oracle=oracle,
-        #logger_level=LoggerLevel.CRITICAL,
+        logger_level=LoggerLevel.INFO,
     )
 
     return FDLearnRefinementExperiment(
@@ -112,6 +113,9 @@ def get_cookiecutter2_experiment():
         custom_inputs_func=lambda p: p.get_passing_inputs()[:2] + p.get_failing_inputs()[:1]
     )
 
+def get_iban_experiment():
+    return create_alhazen_experiment("IBAN", IBANBenchmarkRepository)
+
 
 if __name__ == "__main__":
     from fdlearn.learning.candidate import FandangoConstraintCandidate
@@ -123,13 +127,14 @@ if __name__ == "__main__":
 
 
     experiments = [
-        # get_calculator_experiment,
-        # get_heartbleed_experiment,
+        get_iban_experiment,
+        #get_calculator_experiment,
+        #get_heartbleed_experiment,
         # get_expression_experiment,
         # get_middle_experiment,
         # get_markup1_experiment,
         # get_markup2_experiment,
-        get_pysnooper1_experiment,
+        # get_pysnooper1_experiment,
         # get_pysnooper2_experiment,
         # get_cookiecutter1_experiment,
         # get_cookiecutter2_experiment,

@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     initial_inputs = {
         ("sqrt(-900)", True),
-        ("sqrt(-10)", True),
+        ("sqrt(-12)", True),
         ("sqrt(0)", False),
         ("sin(-900)", False),
         ("sqrt(2)", False),

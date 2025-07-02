@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Dict, List, Optional
 from abc import ABC, abstractmethod
 
@@ -8,6 +9,7 @@ from fandango.constraints.base import (
 )
 
 from fdlearn.data import FandangoInput, OracleResult
+from fdlearn.interface import parse_constraint
 from fdlearn.language.constraints import NegationConstraint
 
 
@@ -107,9 +109,10 @@ class FandangoConstraintCandidate(ConstraintCandidate):
         """
         Return whether two candidates are equal.
         """
-        return isinstance(other, FandangoConstraintCandidate) and str(
-            self.constraint
-        ) == str(other.constraint)
+        return (
+            isinstance(other, FandangoConstraintCandidate)
+            and self.__hash__() == other.__hash__()
+        )
 
     def __hash__(self):
         return self.__hash
@@ -124,10 +127,6 @@ class FandangoConstraintCandidate(ConstraintCandidate):
         :return: The conjunction of the candidate with the other candidate.
         """
         assert isinstance(other, FandangoConstraintCandidate)
-        # print(
-        #     f"Cache keys Self: {self.cache.keys()}, Other {other.cache.keys()}")
-        # print(self.constraint)
-        # print(other.constraint)
         assert self.cache.keys() == other.cache.keys(), "Cache keys must be the same"
 
         new_cache = {}
@@ -135,9 +134,7 @@ class FandangoConstraintCandidate(ConstraintCandidate):
 
         for inp, value_self in self.cache.items():
             value_other = other.cache[inp]
-            r = (
-                value_self and value_other
-            )  # or `value_self or value_other` for `__or__`
+            r = value_self and value_other
             new_cache[inp] = r
 
             (new_failing if inp.oracle == OracleResult.FAILING else new_passing).append(
@@ -238,6 +235,14 @@ class FandangoConstraintCandidate(ConstraintCandidate):
             f"(based on {len(self.failing_inputs_eval_results)} failing "
             f"and {len(self.passing_inputs_eval_results)} passing inputs)"
         )
+
+    @classmethod
+    def from_str(cls, constraint_str: str):
+        """
+        Create a FandangoConstraintCandidate from a string representation of a constraint.
+        """
+        constraint = parse_constraint(constraint_str)
+        return cls(constraint)
 
 
 class CandidateSet:
