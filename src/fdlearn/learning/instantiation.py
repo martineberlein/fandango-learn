@@ -77,6 +77,7 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
         self,
         relevant_non_terminals: Set[NonTerminal],
         reachability_map: ReachabilityMap = None,
+        limit_descendant_levels: int = 2,
         **kwargs
     ):
         """
@@ -87,7 +88,7 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
         """
         self.relevant_non_terminals: Set[NonTerminal] = relevant_non_terminals
         self.reachability_map: ReachabilityMap = reachability_map
-        self.descendant_levels: int = 2
+        self.descendant_levels: int = limit_descendant_levels
 
 
     def _visit_comparison(
