@@ -344,7 +344,7 @@ class ValuePlaceholderTransformer(ConstraintTransformer, ABC):
         placeholder: NonTerminal,
         value_map,
         **kwargs,
-    ) -> list[tuple[str, list[str]]]:
+    ) -> tuple[list[tuple[str, list[str]]], bool]:
 
         assert placeholder in (NonTerminal("<INTEGER>"), NonTerminal("<STRING>"))
 
@@ -352,7 +352,7 @@ class ValuePlaceholderTransformer(ConstraintTransformer, ABC):
 
         matches = self.find_placeholders(constraint, placeholder)
         if not matches:
-            return []
+            return [], False
         assert (
             len(matches) == 1
         ), "More than one Value-Placeholder is not yet supported."
@@ -367,7 +367,7 @@ class ValuePlaceholderTransformer(ConstraintTransformer, ABC):
             possible_values = value_map.get(non_terminal, [])
             if self.use_partial_evaluation:
                 partial_eval_results = self.evaluate_partial_constraint(constraint, bounded_non_terminals)
-                print("Partials: ", partial_eval_results)
+                # print("Partials: ", partial_eval_results)
                 possible_values.update(
                     partial_eval_results
                 )
@@ -397,7 +397,7 @@ class ValuePlaceholderTransformer(ConstraintTransformer, ABC):
                 #     )
                 # )
 
-        return new_replacements
+        return new_replacements, True
 
     @abstractmethod
     def _visit_comparison(
@@ -438,16 +438,20 @@ class IntegerPlaceholderTransformer(ValuePlaceholderTransformer):
 
         result: list[ComparisonConstraint] = []
 
-        new_replacements = self.replace_placeholders(
+        new_replacements, found_pl = self.replace_placeholders(
             constraint,
             bounded_non_terminals,
             placeholder=NonTerminal("<INTEGER>"),
             value_map=self.value_maps.filtered_numeric_values,
         )
 
-        if not new_replacements:
+        if not new_replacements and not found_pl:
             # If no replacements were found, return the original constraint
             return [constraint]
+
+        if not new_replacements and found_pl:
+            # If only found placeholders but no replacements, return the original constraint
+            return []
 
         for replacement in new_replacements:
             value, matches = replacement
@@ -503,16 +507,20 @@ class StringPlaceholderTransformer(ValuePlaceholderTransformer):
 
         result: list[ComparisonConstraint] = []
 
-        new_replacements = self.replace_placeholders(
+        new_replacements, found_pl = self.replace_placeholders(
             constraint,
             bounded_non_terminals,
             placeholder=NonTerminal("<STRING>"),
             value_map=self.value_maps.string_values,
         )
 
-        if not new_replacements:
+        if not new_replacements and not found_pl:
             # If no replacements were found, return the original constraint
             return [constraint]
+
+        if not new_replacements and found_pl:
+            # If only found placeholders but no replacements, return the original constraint
+            return []
 
         for replacement in new_replacements:
             value, matches = replacement
@@ -549,16 +557,20 @@ class StringPlaceholderTransformer(ValuePlaceholderTransformer):
 
         result: list[ExpressionConstraint] = []
 
-        new_replacements = self.replace_placeholders(
+        new_replacements, found_pl = self.replace_placeholders(
             constraint,
             bounded_non_terminals,
             placeholder=NonTerminal("<STRING>"),
             value_map=self.value_maps.string_values,
         )
 
-        if not new_replacements:
+        if not new_replacements and not found_pl:
             # If no replacements were found, return the original constraint
             return [constraint]
+
+        if not new_replacements and found_pl:
+            # If only found placeholders but no replacements, return the original constraint
+            return []
 
 
         for replacement in new_replacements:
