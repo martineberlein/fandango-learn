@@ -31,7 +31,7 @@ if __name__ == "__main__":
         grammar, _ = parse(f, use_cache=False, use_stdlib=False)
 
     positive, negative = set(), set()
-    while len(positive) < 20 :
+    while len(positive) < 10 :
         tree = grammar.fuzz()
         inp = tree.to_string()
         if oracle(inp).is_failing():
@@ -43,8 +43,8 @@ if __name__ == "__main__":
 
     print("--- Learning Invariant ---", end="\n\n")
 
-    positive_inputs = list({FandangoInput.from_str(grammar, inp, True) for inp in list(positive)[:100]})
-    negative_inputs = list({FandangoInput.from_str(grammar, inp, False) for inp in list(negative)[:100]})
+    positive_inputs = [FandangoInput.from_str(grammar, inp, True) for inp in list(positive)[:100]]
+    negative_inputs = [FandangoInput.from_str(grammar, inp, False) for inp in list(negative)[:100]]
     initial_inputs = positive_inputs + negative_inputs
 
     relevant_non_terminals = {

@@ -4,7 +4,7 @@ from fandango.evolution.algorithm import Fandango
 from fdlearn.data import OracleResult
 from fdlearn.learner import FandangoLearner, FandangoInput
 from fdlearn.interface.fandango import parse_contents
-from fdlearn.resources import Pattern
+
 
 grammar = """<start> ::= <arithexp>;
 <arithexp> ::= <term> | <number> | "(" <arithexp> ")";
