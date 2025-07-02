@@ -1,6 +1,7 @@
 from functools import lru_cache
 import fibheap as fh
 import sys
+from collections import defaultdict, deque
 
 from typing import Optional
 
@@ -126,52 +127,11 @@ def get_reachability_map_level(
     """
     reachability_map = dict()
     for non_terminal in grammar.rules:
-        reachability_map[non_terminal] = get_reachable_non_terminals_level(
+        reachability_map[non_terminal] = get_reachable_non_terminals_level_new(
             grammar, non_terminal
         )
 
     return reachability_map
-
-
-def get_reachable_non_terminals_level(
-    grammar: Grammar, non_terminal: NonTerminal
-) -> dict[int, set[NonTerminal]]:
-    """
-    Get all reachable non-terminals for a given non-terminal in a grammar.
-
-    :param grammar: The grammar to search in.
-    :param non_terminal: The non-terminal to search for.
-    :return: A set of reachable non-terminals.
-    """
-    reachable: dict[int, set[NonTerminal]] = dict()
-    already_reached: set[NonTerminal] = set()
-    non_terminal_visitor = NonTerminalVisitor()
-
-    def _find_reachable_nonterminals(
-        grammar_: Grammar, symbol: NonTerminal, level_: int
-    ):
-        nonlocal reachable
-        if level_ not in reachable:
-            reachable[level_] = set()
-
-        reachable[level_].add(symbol)
-        already_reached.add(symbol)
-
-        if symbol == non_terminal:
-            return
-        expansion_node = grammar_.rules.get(symbol, [])
-        for exp in non_terminal_visitor.visit(expansion_node):
-            if exp not in reachable and exp != symbol and not exp in already_reached:
-                _find_reachable_nonterminals(grammar_, exp, level_=level_ + 1)
-
-    level = 0
-    expansion = grammar.rules.get(non_terminal, [])
-    for exp in non_terminal_visitor.visit(expansion):
-        _find_reachable_nonterminals(grammar, exp, level_=level)
-    return reachable
-
-
-from collections import defaultdict, deque
 
 
 def get_reachable_non_terminals_level_new(
@@ -183,13 +143,12 @@ def get_reachable_non_terminals_level_new(
     """
     non_terminal_visitor = NonTerminalVisitor()
     # Queue stores (non_terminal, level)
-    queue = deque([(non_terminal, 0)])
+    queue = deque([(non_terminal, -1)])
 
     # visited tracks nodes for which we've found the shortest path
-    visited = {non_terminal}
+    visited = set()
 
     level_map = defaultdict(set)
-    level_map[0].add(non_terminal)
 
     while queue:
         current_nt, current_level = queue.popleft()
