@@ -4,3 +4,4 @@ lightgbm~=4.6.0
 scikit-learn~=1.6.1
 shap~=0.48.0
 fandango-fuzzer~=1.0.2
+fibheap~=0.2.1
