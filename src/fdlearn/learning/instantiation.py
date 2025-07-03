@@ -361,9 +361,9 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
                             for nt_ in path[1:-1]:
                                 tmp_ = AttributeSearch(RuleSearch(nt_), tmp_)
                             final = AttributeSearch(RuleSearch(bound_symbol), tmp_)
-                            print(final)
+                            #print(final)
                             new_searches[key] = final
-                        print("New:", new_searches)
+                        #print("New:", new_searches)
                         final_expanded.append(new_searches)
                         any_expanded = True
                     # else:
