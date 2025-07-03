@@ -25,7 +25,7 @@ class FandangoLearner(BaseFandangoLearner):
         self,
         grammar: Grammar,
         patterns: Optional[Iterable[str | Pattern]] = None,
-        logger_level: LoggerLevel = LoggerLevel.INFO,
+        logger_level: Optional[LoggerLevel] = None,
         max_conjunction_size=2,
         use_all_non_terminals=False,
         **kwargs,
