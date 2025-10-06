@@ -449,7 +449,7 @@ class IntegerPlaceholderTransformer(ValuePlaceholderTransformer):
             constraint,
             bounded_non_terminals,
             placeholder=NonTerminal("<INTEGER>"),
-            value_map=self.value_maps.filtered_numeric_values,
+            value_map=self.value_maps.numeric_values, # Changed from filtered_numeric_values
         )
 
         if not new_replacements and not found_pl:
