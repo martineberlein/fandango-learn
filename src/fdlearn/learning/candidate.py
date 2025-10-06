@@ -77,6 +77,15 @@ class FandangoConstraintCandidate(ConstraintCandidate):
             eval_result = self.constraint.check(inp.tree)
             self._update_eval_results_and_combination(eval_result, inp)
 
+    def check(self, inp: FandangoInput):
+        if inp in self.cache.keys():
+            return self.cache[inp]
+
+        eval_result = self.constraint.check(inp.tree)
+        self._update_eval_results_and_combination(eval_result, inp)
+
+        return eval_result
+
     def specificity(self) -> float:
         """
         Return the specificity of the candidate.
