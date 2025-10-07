@@ -10,7 +10,7 @@ from fandango.language.parse import (
 
 
 def parse(
-    file_path, disable_logging=True, use_cache=True,use_stdlib=False, **kwargs
+    file_path, disable_logging=True, use_cache=True, use_stdlib=False, **kwargs
 ) -> tuple[Grammar | None, list[Constraint]]:
     """
     Wrapper for the parse function from fandango.language.parse
@@ -62,7 +62,10 @@ def parse_contents(
 
     try:
         grammar, constraints = parse(
-            tmp_file_path, disable_logging=disable_logging,use_stdlib=use_stdlib, **kwargs
+            tmp_file_path,
+            disable_logging=disable_logging,
+            use_stdlib=use_stdlib,
+            **kwargs,
         )
     finally:
         os.remove(tmp_file_path)

@@ -275,7 +275,9 @@ class FandangoRefinement(HypothesisInputFeatureDebugger):
                 logger_level=logger_level,
             )
         )
-        generator: Generator = generator if generator else FandangoGrammarGenerator(grammar)
+        generator: Generator = (
+            generator if generator else FandangoGrammarGenerator(grammar)
+        )
         self.engine: Engine = ParallelEngine(generator)
 
         super().__init__(

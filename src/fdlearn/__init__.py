@@ -14,13 +14,16 @@ def __contains__(self, other) -> bool:
         return False
     return other in self.value()
 
+
 DerivationTree.__contains__ = __contains__
+
 
 def silence(self, *args, **kwargs):
     """
     Silence the fandango logger.
     """
     pass
+
 
 original = fandango.logger.print_exception
 

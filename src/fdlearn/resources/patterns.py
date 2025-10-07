@@ -167,4 +167,3 @@ Pattern(
 Pattern(
     string_pattern="where forall <elem> in <NON_TERMINAL>: str(<ATTRIBUTE>) == str(<ATTRIBUTE>)",
 )
-

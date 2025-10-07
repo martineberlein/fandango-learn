@@ -40,7 +40,11 @@ class FeatureReducer(ABC):
             feature_types or DEFAULT_FEATURE_TYPES
         )
         if filter_features:
-            self.features = [f for f in self.features if f.non_terminal not in [NonTerminal("<digit>")]]
+            self.features = [
+                f
+                for f in self.features
+                if f.non_terminal not in [NonTerminal("<digit>")]
+            ]
 
     @abstractmethod
     def learn(self, test_inputs: Set[FandangoInput]) -> Set[Feature]:

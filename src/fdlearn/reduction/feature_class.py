@@ -418,7 +418,9 @@ def get_direct_reachable_non_terminals(
     return reachable
 
 
-def get_direct_reachability_map(grammar: Grammar) -> dict[NonTerminal, Set[NonTerminal]]:
+def get_direct_reachability_map(
+    grammar: Grammar,
+) -> dict[NonTerminal, Set[NonTerminal]]:
     """
     Get the reachability map for a given grammar.
 
