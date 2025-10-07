@@ -419,6 +419,16 @@ class ValuePlaceholderTransformer(ConstraintTransformer, ABC):
 
 class IntegerPlaceholderTransformer(ValuePlaceholderTransformer):
 
+    def __init__(
+        self,
+        value_map: ValueMap,
+        test_inputs: set[FandangoInput],
+        use_partial_evaluation: bool = False,
+        use_filtered_integer_values=True,
+    ):
+        super().__init__(value_map, test_inputs, use_partial_evaluation)
+        self.use_filtered_integer_values = use_filtered_integer_values
+
     def update_value_map(self, bound: NonTerminal, search: RuleSearch):
         """Update the value map for the given bound with the search symbol."""
         if search.symbol in self.value_maps.numeric_values:
@@ -445,11 +455,17 @@ class IntegerPlaceholderTransformer(ValuePlaceholderTransformer):
 
         result: list[ComparisonConstraint] = []
 
+        integer_values = (
+            self.value_maps.filtered_numeric_values
+            if self.use_filtered_integer_values
+            else self.value_maps.numeric_values
+        )
+
         new_replacements, found_pl = self.replace_placeholders(
             constraint,
             bounded_non_terminals,
             placeholder=NonTerminal("<INTEGER>"),
-            value_map=self.value_maps.numeric_values, # Changed from filtered_numeric_values
+            value_map=integer_values,
         )
 
         if not new_replacements and not found_pl:

@@ -41,6 +41,7 @@ class PatternProcessor:
         positive_inputs: set[FandangoInput],
         value_maps: ValueMap,
         reachability_map: ReachabilityMap = None,
+        use_filtered_integer_values=True,
     ) -> set[FandangoConstraintCandidate]:
 
         transformers = [
@@ -51,6 +52,7 @@ class PatternProcessor:
             IntegerPlaceholderTransformer(
                 value_map=value_maps,
                 test_inputs=positive_inputs,
+                use_filtered_integer_values=use_filtered_integer_values,
             ),
             StringPlaceholderTransformer(
                 value_map=value_maps,
@@ -361,9 +363,9 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
                             for nt_ in path[1:-1]:
                                 tmp_ = AttributeSearch(RuleSearch(nt_), tmp_)
                             final = AttributeSearch(RuleSearch(bound_symbol), tmp_)
-                            #print(final)
+                            # print(final)
                             new_searches[key] = final
-                        #print("New:", new_searches)
+                        # print("New:", new_searches)
                         final_expanded.append(new_searches)
                         any_expanded = True
                     # else:
@@ -407,4 +409,3 @@ class NonTerminalPlaceholderTransformer(ConstraintTransformer):
                 final_final_expanded.append(new_searches)
 
         return final_final_expanded
-
