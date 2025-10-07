@@ -245,6 +245,9 @@ class FandangoConstraintCandidate(ConstraintCandidate):
             f"and {len(self.passing_inputs_eval_results)} passing inputs)"
         )
 
+    def __repr__(self):
+        return f"Candidate({self.constraint})"
+
     @classmethod
     def from_str(cls, constraint_str: str):
         """

@@ -3,7 +3,7 @@ import math
 from fandango.language.symbol import NonTerminal
 
 from fdlearn.types import OracleType
-from fdlearn.data import FandangoInput
+from fdlearn.data import FandangoInput, OracleResult
 from fdlearn.learner import FandangoLearner
 from fdlearn.learning.value_map import ValueMap, ReachabilityMap
 
@@ -113,6 +113,11 @@ class RuleInductionLearner(FandangoLearner):
                 for pattern in patterns:
                     if pattern in rule:
                         continue  # already in rule
+
+                    all_posi = [inp for inp in covered if inp.oracle == OracleResult.FAILING]
+                    posi = [inp for inp in all_posi if pattern.check(inp)]
+                    if (len(posi) / len(all_posi)) < 0.1:
+                        continue
 
                     new_cover = [inp for inp in covered if pattern.check(inp)]
                     P_new = sum(inp.oracle.is_failing() for inp in new_cover)
