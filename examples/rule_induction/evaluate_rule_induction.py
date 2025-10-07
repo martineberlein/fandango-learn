@@ -9,9 +9,9 @@ from fdlearn.data.input import FandangoInput
 from fdlearn.logger import LOGGER, LoggerLevel
 
 from examples.grammar_fuzzer.evaluate_grammar_fuzzer import generate_inputs
-from examples.subjects.heartbeat.heartbeat_evaluation import get_heartbeat_subject
-from examples.subjects.xml.xml_evaluation import get_xml_subject
-from examples.subjects.iban.iban_evaluation import get_iban_subject
+#from examples.subjects.heartbeat.heartbeat_evaluation import get_heartbeat_subject
+from examples.subjects.valid.xml.xml_evaluation import get_xml_subject
+#from examples.subjects.iban.iban_evaluation import get_iban_subject
 from examples import row_print_averages
 
 
@@ -79,22 +79,3 @@ def run_evaluation(subject: tuple, seconds: int = 60):
     #
     # solutions = generate_inputs(grammar, constraints=[best_invariant], seconds=10)
     return solutions
-
-
-def evaluate():
-    random.seed(1)
-    subjects = [
-        # get_xml_subject,
-        # get_iban_subject,
-        get_heartbeat_subject,
-    ]
-
-    for subject in subjects:
-        subject_data = subject()
-        solutions = run_evaluation(subject_data, seconds=60)
-        results = evaluate_generated_inputs(subject_data, solutions)
-        row_print_averages(results, write_to_file=False)
-
-
-if __name__ == "__main__":
-    evaluate()
