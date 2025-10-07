@@ -28,12 +28,21 @@ def is_syntactically_valid_csv(csv_string):
         return False
 
 
-def get_csv_subjects()-> tuple[Grammar, list[FandangoInput], Callable[[Union[str|FandangoInput]], OracleResult], dict]:
+def get_csv_subjects() -> tuple[
+    Grammar,
+    list[FandangoInput],
+    Callable[[Union[str | FandangoInput]], OracleResult],
+    dict,
+]:
 
-    def oracle(inp: str |FandangoInput):
+    def oracle(inp: str | FandangoInput):
         if isinstance(inp, FandangoInput):
             inp = str(inp)
-        return OracleResult.PASSING if is_syntactically_valid_csv(inp) else OracleResult.FAILING
+        return (
+            OracleResult.PASSING
+            if is_syntactically_valid_csv(inp)
+            else OracleResult.FAILING
+        )
 
     with open("csv.fan", "r") as file:
         grammar, _ = parse(file, use_cache=False, use_stdlib=False)
@@ -44,16 +53,18 @@ def get_csv_subjects()-> tuple[Grammar, list[FandangoInput], Callable[[Union[str
     return grammar, initial_inputs, oracle, additional_param
 
 
-def evaluate_grammar_fuzzer(param, seconds=60) -> tuple[str, int, int, float, tuple[float, int, int], float, float]:
+def evaluate_grammar_fuzzer(
+    param, seconds=60
+) -> tuple[str, int, int, float, tuple[float, int, int], float, float]:
 
     solutions = []
     end_time = time.time() + seconds
 
     grammar: Grammar = param.get("grammar")
 
-    fand = Fandango(grammar=grammar,constraints=[], max_nodes=200)
+    fand = Fandango(grammar=grammar, constraints=[], max_nodes=200)
 
-    for tree in fand.generate() :
+    for tree in fand.generate():
         solutions.append(tree)
         if time.time() >= end_time:
             break
@@ -77,7 +88,6 @@ def evaluate_grammar_fuzzer(param, seconds=60) -> tuple[str, int, int, float, tu
         set_mean_length,
         set_medium_length,
     )
-
 
 
 def evaluate_csv(
@@ -132,12 +142,13 @@ def evaluate_csv(
 
     end_time = time.time() + seconds
     solutions = []
-    fan_gen = Fandango(grammar=grammar, constraints=[best_invariant.constraint]).generate()
+    fan_gen = Fandango(
+        grammar=grammar, constraints=[best_invariant.constraint]
+    ).generate()
     for inp in fan_gen:
         solutions.append(inp)
         if time.time() >= end_time:
             break
-
 
     coverage = grammar.compute_grammar_coverage(solutions, 4)
 
@@ -167,7 +178,7 @@ if __name__ == "__main__":
         "grammar": grammar,
         "initial_inputs": initial_inputs,
         "oracle": oracle,
-        "additional_param": additional_param
+        "additional_param": additional_param,
     }
 
     result = evaluate_grammar_fuzzer(param, seconds=10)

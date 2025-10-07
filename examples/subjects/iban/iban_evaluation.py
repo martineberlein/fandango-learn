@@ -26,7 +26,7 @@ def validate_iban(iban: str) -> bool:
         return False
 
 
-def oracle(iban: str| FandangoInput) -> OracleResult:
+def oracle(iban: str | FandangoInput) -> OracleResult:
     """
     Oracle function to validate IBANs.
     """
@@ -35,7 +35,12 @@ def oracle(iban: str| FandangoInput) -> OracleResult:
     return OracleResult.FAILING if validate_iban(iban) else OracleResult.PASSING
 
 
-def get_iban_subject()-> tuple[Grammar, list[FandangoInput], Callable[[str|FandangoInput], OracleResult], dict]:
+def get_iban_subject() -> tuple[
+    Grammar,
+    list[FandangoInput],
+    Callable[[str | FandangoInput], OracleResult],
+    dict,
+]:
     base_dir = Path(__file__).parent
     with open(base_dir / "iban.fan", "r") as file:
         grammar, _ = parse(file, use_cache=False, use_stdlib=False)

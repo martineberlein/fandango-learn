@@ -25,6 +25,7 @@ def is_syntactically_valid_csv(csv_string):
         # If there's a CSV parsing error, it's not valid
         return False
 
+
 def is_syntactically_valid_csv(csv_string):
     try:
         csv_file = StringIO(csv_string)
@@ -58,7 +59,9 @@ def evaluate_csv(
     #     tree = grammar.fuzz(max_nodes=1000)
     #     solutions.append(tree)
 
-    fandango = Fandango(grammar, constraints=constraints, logger_level=LoggerLevel.ERROR)
+    fandango = Fandango(
+        grammar, constraints=constraints, logger_level=LoggerLevel.ERROR
+    )
     fan_gen = fandango.generate()
     for solution in fan_gen:
         solutions.append(solution)

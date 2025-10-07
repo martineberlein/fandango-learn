@@ -7,7 +7,6 @@ from typing import Union
 from fdlearn.data import FandangoInput as Input, OracleResult
 
 
-
 def vulnerable_heartbeat(payload, fake_length):
     memory = payload + str(os.urandom(100))  # Simulating extra memory after payload.
     return memory[:fake_length]
@@ -174,9 +173,7 @@ def _test_heartbleed_vulnerability(request_str, response_hex):
     return False
 
 
-def oracle(
-    test_input: Union[Input, str]
-) -> OracleResult:
+def oracle(test_input: Union[Input, str]) -> OracleResult:
     try:
         heartbeat_request_str = str(test_input)
         hex_request = heartbeat_string_to_hex(heartbeat_request_str)
@@ -184,11 +181,7 @@ def oracle(
         is_vulnerable = _test_heartbleed_vulnerability(heartbeat_request_str, response)
     except OverflowError:
         return OracleResult.UNDEFINED
-    return (
-        OracleResult.FAILING
-        if is_vulnerable
-        else OracleResult.PASSING
-    )
+    return OracleResult.FAILING if is_vulnerable else OracleResult.PASSING
 
 
 if __name__ == "__main__":

@@ -15,7 +15,8 @@ def row_print_averages(
 
     row = (
         f"{results[0]:<15} {results[1]:<6} {results[2]:<8} {results[3]:<10.2f} "
-        f"{results[4][0]:<20} {results[5]:<14.4f} {results[6]:<10} "    )
+        f"{results[4][0]:<20} {results[5]:<14.4f} {results[6]:<10} "
+    )
     print(row)
     if write_to_file:
         with open(log_file, "a") as file:

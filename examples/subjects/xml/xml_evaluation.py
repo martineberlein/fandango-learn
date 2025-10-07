@@ -12,7 +12,7 @@ from fdlearn.data import OracleResult
 from fdlearn.learner import FandangoLearner, FandangoInput, NonTerminal
 
 
-def oracle(inp: str| FandangoInput) -> OracleResult:
+def oracle(inp: str | FandangoInput) -> OracleResult:
     """
     Oracle function to validate IBANs.
     """
@@ -25,7 +25,12 @@ def oracle(inp: str| FandangoInput) -> OracleResult:
     return OracleResult.FAILING
 
 
-def get_xml_subject()-> tuple[Grammar, list[FandangoInput], Callable[[str|FandangoInput], OracleResult], dict]:
+def get_xml_subject() -> tuple[
+    Grammar,
+    list[FandangoInput],
+    Callable[[str | FandangoInput], OracleResult],
+    dict,
+]:
     base_dir = Path(__file__).parent
     with open(base_dir / "xml.fan", "r") as file:
         grammar, _ = parse(file, use_cache=False, use_stdlib=False)

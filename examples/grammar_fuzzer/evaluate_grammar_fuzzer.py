@@ -4,11 +4,13 @@ from fandango.constraints.base import Constraint
 from fandango.language import DerivationTree
 from fandango.evolution.algorithm import Fandango
 
-from new_eval.subjects.xml.xml_evaluation import get_xml_subject
-from new_eval.subjects.iban.iban_evaluation import get_iban_subject
+from examples.subjects.xml.xml_evaluation import get_xml_subject
+from examples.subjects.iban.iban_evaluation import get_iban_subject
 
 
-def evaluate_generated_inputs(subject: tuple, solutions: list[DerivationTree]) -> tuple[str, int, int, float, tuple[float, int, int], float, float]:
+def evaluate_generated_inputs(
+    subject: tuple, solutions: list[DerivationTree]
+) -> tuple[str, int, int, float, tuple[float, int, int], float, float]:
     grammar, initial_inputs, oracle, additional_param = subject
     coverage = grammar.compute_grammar_coverage(solutions, 4)
 
@@ -31,7 +33,9 @@ def evaluate_generated_inputs(subject: tuple, solutions: list[DerivationTree]) -
     )
 
 
-def generate_inputs(grammar, constraints: list[Constraint] |None =None, seconds: int = 60):
+def generate_inputs(
+    grammar, constraints: list[Constraint] | None = None, seconds: int = 60
+):
     if constraints is None:
         constraints = []
 
@@ -42,13 +46,14 @@ def generate_inputs(grammar, constraints: list[Constraint] |None =None, seconds:
     fand_gen = Fandango(grammar, constraints=constraints, max_nodes=200)
     for tree in fand_gen.generate():
         solutions.append(tree)
+        print(tree)
         if time.time() >= end_time:
             break
 
     return solutions
 
 
-def run_evaluation(subject: tuple, seconds:int=60):
+def run_evaluation(subject: tuple, seconds: int = 60):
     # Subject is a tuple containing (grammar, initial_inputs, oracle, additional_param)
     grammar, initial_inputs, oracle, additional_param = subject
     return generate_inputs(grammar, seconds)
@@ -63,7 +68,8 @@ def evaluate():
     for subject in subjects:
         subject_data = subject()
         solutions = run_evaluation(subject_data, seconds=10)
-        print( evaluate_generated_inputs(subject_data, solutions))
+        print(evaluate_generated_inputs(subject_data, solutions))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     evaluate()
