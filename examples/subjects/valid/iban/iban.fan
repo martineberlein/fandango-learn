@@ -1,5 +1,4 @@
-<start> ::= <iban>;
-<iban> ::= <country><checksum><bban>;
+<start> ::= <country><checksum><bban>;
 <country> ::= "DE" | "AT" | "CH" | "ES" | "FR" | "IT" | "NL" | "BE" | "LU" | "GB";
 <checksum> ::= <digit><digit>;
 <bban> ::= <number>;

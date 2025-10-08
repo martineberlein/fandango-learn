@@ -29,5 +29,5 @@ def get_calculator_subject() -> Subject:
         name="Calculator",
         grammar=grammar,
         initial_inputs=initial_inputs,
-        oracle=calculator_oracle
+        oracle=calculator_oracle,
     )

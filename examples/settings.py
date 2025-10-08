@@ -1,5 +1,5 @@
 from typing import Any
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import logging
 
 from fdlearn.logger import LoggerLevel
@@ -17,16 +17,19 @@ class Settings:
     seed: int = 42
     timeout: int = 60
     log_level: int = LoggerLevel.DEBUG
-    exp_log_level: LoggerLevel = LoggerLevel.DEBUG
+    exp_log_level: LoggerLevel = LoggerLevel.WARNING
 
     # Evaluation Strategies
     producer = False
-    predictor = False
+
+    predictor = True
+    eval_num_positive_inputs: int = 200
+    eval_num_negatives_inputs: int = 200
 
     # initial inputs generation
     generate_initial_inputs: bool = True
-    num_positive_inputs: int = 50
-    num_negative_inputs: int = 50
+    num_positive_inputs: int = 200
+    num_negative_inputs: int = 100
 
 
 @dataclass
@@ -37,15 +40,3 @@ class RuleInductionSettings:
 @dataclass
 class FDLearnSettings:
     pass
-
-
-@dataclass
-class Result:
-    experiment_settings: object = None
-    tool_settings: object = None
-
-    invariants: list[Any] = None
-    runtime: float = 0.0
-
-    # Run successful?
-    success: bool = False

@@ -34,8 +34,5 @@ def get_xml_subject() -> Subject:
     initial_inputs = []
 
     return Subject(
-        name="XML",
-        grammar=grammar,
-        initial_inputs=initial_inputs,
-        oracle=oracle
+        name="XML", grammar=grammar, initial_inputs=initial_inputs, oracle=oracle
     )

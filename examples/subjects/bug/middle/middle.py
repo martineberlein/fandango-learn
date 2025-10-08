@@ -27,7 +27,11 @@ def middle_oracle(x, y, z):
 
 def oracle(inp):
     x, y, z = map(lambda x: int(x), str(inp).split(" "))
-    return OracleResult.PASSING if middle(x, y, z) == middle_oracle(x, y, z) else OracleResult.FAILING
+    return (
+        OracleResult.PASSING
+        if middle(x, y, z) == middle_oracle(x, y, z)
+        else OracleResult.FAILING
+    )
 
 
 def get_middle_subject() -> Subject:
@@ -38,8 +42,5 @@ def get_middle_subject() -> Subject:
     initial_inputs = set()
 
     return Subject(
-        name="Middle",
-        grammar=grammar,
-        initial_inputs=initial_inputs,
-        oracle=oracle
+        name="Middle", grammar=grammar, initial_inputs=initial_inputs, oracle=oracle
     )
