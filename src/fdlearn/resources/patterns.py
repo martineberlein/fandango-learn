@@ -148,11 +148,12 @@ def iban_checksum(iban: str) -> str:
     country = iban[:2]
     bban = iban[4:]
     moved = bban + country + "00"
-    numeric = "".join(str(int(ch, 36)) for ch in moved)
+    numeric = ''.join(str(ord(ch) - 55) if ch.isalpha() else ch for ch in moved)
     remainder = int(numeric) % 97
-    return 98 - remainder
-
-where iban_checksum(str(<NON_TERMINAL>)) == int(<NON_TERMINAL>)
+    check_digits = 98 - remainder
+    return check_digits
+    
+where int(iban_checksum(str(<NON_TERMINAL>))) == int(<NON_TERMINAL>)
 """
 )
 
