@@ -1,7 +1,10 @@
 import math
+from typing import Iterable, Optional
 
+from fandango.constraints.base import Constraint, DisjunctionConstraint, ConjunctionConstraint
 from fandango.language.symbol import NonTerminal
 
+from fdlearn.learning.candidate import FandangoConstraintCandidate
 from fdlearn.types import OracleType
 from fdlearn.data import FandangoInput, OracleResult
 from fdlearn.learner import FandangoLearner
@@ -18,13 +21,22 @@ def foil_gain(P, N, P_new, N_new):
 class Rule:
 
     def __init__(self, predicates: set = None):
-        self.predicates = predicates if predicates else set()
+        self.predicates: set[FandangoConstraintCandidate] = predicates if predicates else set()
 
     def __contains__(self, item):
         return item in self.predicates
 
     def add(self, item):
         self.predicates.add(item)
+
+    def to_constraint(self) -> ConjunctionConstraint:
+        constraints = [predicate.constraint for predicate in self.predicates]
+        return ConjunctionConstraint(
+            constraints=constraints
+        )
+
+    def to_constraint_candidate(self) -> FandangoConstraintCandidate:
+        return FandangoConstraintCandidate(self.to_constraint())
 
     def __str__(self):
         return (
@@ -42,102 +54,137 @@ class RuleSet:
     def add(self, rule):
         self.rules.append(rule)
 
+    def to_constraint(self) -> DisjunctionConstraint:
+        constraints = [rule.to_constraint() for rule in self.rules]
+        return DisjunctionConstraint(
+            constraints=constraints
+        )
+
+    def to_constraint_candidate(self) -> FandangoConstraintCandidate:
+        return FandangoConstraintCandidate(
+            self.to_constraint()
+        )
+
     def __str__(self):
         return " OR ".join(str(rule) for rule in self.rules)
 
 
 class RuleInductionLearner(FandangoLearner):
+    """Learns rules using a FOIL-like induction algorithm."""
 
     def instantiate_patterns(
         self,
         test_inputs: set[FandangoInput],
-        relevant_non_terminals: set[NonTerminal] = None,
+        relevant_non_terminals: Optional[set[NonTerminal]] = None,
     ):
+        """
+        Instantiates the pattern predicates.
 
+        :param test_inputs:
+        :param relevant_non_terminals:
+        :return: ConstraintCandidates
+        """
         relevant_non_terminals = self.get_relevant_non_terminals(
             relevant_non_terminals, test_inputs
         )
 
-        positive_inputs, negative_inputs = self.categorize_inputs(test_inputs)
-        self.update_inputs(positive_inputs, negative_inputs)
+        pos_inputs, neg_inputs = self.categorize_inputs(test_inputs)
+        self.update_inputs(pos_inputs, neg_inputs)
 
-        sorted_positive_inputs = self.sort_and_filter_positive_inputs(
+        sorted_pos_inputs = self.sort_and_filter_positive_inputs(
             self.all_positive_inputs
         )
 
-        value_map = ValueMap.from_inputs(relevant_non_terminals, sorted_positive_inputs)
-        reachability_map = ReachabilityMap(self.grammar)
+        value_map = ValueMap.from_inputs(relevant_non_terminals, sorted_pos_inputs)
+        reach_map = ReachabilityMap(self.grammar)
 
-        instantiated_candidates = self.pattern_processor.instantiate_patterns(
+        return self.pattern_processor.instantiate_patterns(
             relevant_non_terminals,
-            sorted_positive_inputs,
+            sorted_pos_inputs,
             value_maps=value_map,
-            reachability_map=reachability_map,
+            reachability_map=reach_map,
             use_filtered_integer_values=False,
         )
-
-        return instantiated_candidates
 
     def learn_constraints(
         self,
         test_inputs: set[FandangoInput] | set[str],
-        relevant_non_terminals: set[NonTerminal] = None,
-        oracle: OracleType = None,
+        relevant_non_terminals: Optional[set[NonTerminal]] = None,
+        oracle: Optional[OracleType] = None,
         **kwargs,
-    ) -> RuleSet:
+    ) -> list[FandangoConstraintCandidate]:
         if any(isinstance(inp, str) for inp in test_inputs):
             test_inputs = self.parse_string_initial_inputs(test_inputs, oracle)
 
         patterns = self.instantiate_patterns(test_inputs, relevant_non_terminals)
+        positives = set(self.all_positive_inputs)
 
         rule_set = RuleSet()
-        positives = self.all_positive_inputs
 
         while positives:
-            # start with empty rule
-            rule = Rule()
-            covered = [
-                d for d in test_inputs if d in positives or not d.oracle.is_failing()
-            ]
-            improved = True
-
-            while improved:
-                improved = False
-                P = sum(inp.oracle.is_failing() for inp in covered)
-                N = sum(not inp.oracle.is_failing() for inp in covered)
-
-                best_gain = -float("inf")
-                best_pred = None
-                best_new_cover = None
-
-                for pattern in patterns:
-                    if pattern in rule:
-                        continue  # already in rule
-
-                    all_posi = [inp for inp in covered if inp.oracle == OracleResult.FAILING]
-                    posi = [inp for inp in all_posi if pattern.check(inp)]
-                    if (len(posi) / len(all_posi)) < 0.1:
-                        continue
-
-                    new_cover = [inp for inp in covered if pattern.check(inp)]
-                    P_new = sum(inp.oracle.is_failing() for inp in new_cover)
-                    N_new = sum(not inp.oracle.is_failing() for inp in new_cover)
-
-                    gain = foil_gain(P, N, P_new, N_new)
-                    if gain > best_gain:
-                        best_gain = gain
-                        best_pred = pattern
-                        best_new_cover = new_cover
-
-                if best_pred and best_gain > 0:
-                    rule.add(best_pred)
-                    covered = best_new_cover
-                    improved = True
-            # finalize rule
+            # print(f"Remaining Positives ({len(positives)}):")
+            # for inp in positives:
+            #     print(inp, inp.oracle)
+            rule, covered = self._learn_single_rule(patterns, test_inputs, positives)
             rule_set.add(rule)
+            positives -= {d for d in covered if d.oracle.is_failing()}
 
-            # remove covered positives
-            covered_pos = {d for d in covered if d.oracle.is_failing()}
-            positives = {p for p in positives if p not in covered_pos}
+        return [rule_set.to_constraint_candidate()]
 
-        return rule_set
+    def _learn_single_rule(
+        self,
+        patterns: Iterable,
+        test_inputs: set[FandangoInput],
+        positives: set[FandangoInput],
+    ) -> tuple[Rule, list[FandangoInput]]:
+        """Constructs one rule that covers part of the positives."""
+        rule = Rule()
+        covered = self._cover_inputs(test_inputs, positives)
+        improved = True
+
+        while improved:
+            improved = False
+            P, N = self._count_pos_neg(covered)
+            best_pred, best_cover, best_gain = self._select_best_predicate(
+                patterns, rule, covered, P, N
+            )
+
+            if best_pred and best_gain > 0:
+                rule.add(best_pred)
+                covered = best_cover
+                improved = True
+
+        return rule, covered
+
+    @staticmethod
+    def _cover_inputs(test_inputs, positives):
+        """Return inputs relevant to current rule."""
+        return [d for d in test_inputs if d in positives or not d.oracle.is_failing()]
+
+    @staticmethod
+    def _count_pos_neg(inputs: list[FandangoInput]) -> tuple[int, int]:
+        P = sum(inp.oracle.is_failing() for inp in inputs)
+        N = len(inputs) - P
+        return P, N
+
+    def _select_best_predicate(self, patterns, rule, covered, P, N):
+        best_gain = float("-inf")
+        best_pred = best_cover = None
+        positives_only = [i for i in covered if i.oracle == OracleResult.FAILING]
+
+        for pattern in patterns:
+            if pattern in rule:
+                continue
+
+            posi = [i for i in positives_only if pattern.check(i)]
+            if len(posi) / max(len(positives_only), 1) < 0.9:
+                continue
+
+            new_cover = [i for i in covered if pattern.check(i)]
+            P_new, N_new = self._count_pos_neg(new_cover)
+            gain = foil_gain(P, N, P_new, N_new)
+
+            if gain > best_gain:
+                best_gain, best_pred, best_cover = gain, pattern, new_cover
+
+        return best_pred, best_cover, best_gain
