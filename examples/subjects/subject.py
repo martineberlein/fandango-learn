@@ -13,3 +13,4 @@ class Subject:
     initial_inputs: set[FandangoInput] = None
     oracle: OracleType = None
     other_parameter: dict = field(default_factory=dict)
+    fuzzer_max_nodes: int = 50

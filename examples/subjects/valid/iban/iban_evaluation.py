@@ -21,10 +21,20 @@ def validate_iban(iban: str) -> bool:
     if not (2 <= chk <= 97):
         return False
 
+    length_check = False
+    if str(iban[:2]) == "DE":
+        if len(iban) == 22:
+            length_check = True
+    elif str(iban[:2]) == "AT":
+        length_check = len(iban) == 20
+
     rotated = iban[4:] + iban[:4]
     numeric = ''.join(str(ord(ch) - 55) if ch.isalpha() else ch for ch in rotated)
     try:
-        return int(numeric) % 97 == 1
+        checksum_check =  int(numeric) % 97 == 1
+        if checksum_check and length_check:
+            return True
+        return False
     except ValueError:
         return False
 
@@ -59,38 +69,6 @@ def get_iban_subject() -> Subject:
         name="IBAN",
         grammar=grammar,
         initial_inputs=initial_inputs,
-        oracle=oracle
+        oracle=oracle,
+        fuzzer_max_nodes=200,
     )
-
-
-if __name__ =="__main__":
-    # print(validate_iban("DE89370400440532013000"))
-    # print(oracle("DE89370400440532013000"))
-    # print(iban_checksum("DE89370400440532013000"))
-    print(validate_iban("LU0122"))
-    print(iban_checksum("LU0122"))
-
-
-    """
-    NL9969
-BE016774
-LU0122
-NL0008
-BE002
-LU994
-ES013
-BE0181
-GB01888
-
-
-Remaining Positives (6):
-BE002 FAILING
-GB01888 FAILING
-NL0008 FAILING
-LU0122 FAILING
-BE0181 FAILING
-ES013 FAILING
-Remaining Positives (1):
-ES013 FAILING
-
-"""

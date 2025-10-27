@@ -1,7 +1,7 @@
 import csv
 import time
 from io import StringIO
-from typing import Union, Callable
+from pathlib import Path
 
 from fandango.evolution.algorithm import Fandango
 from fandango.language import Grammar
@@ -11,6 +11,8 @@ from fdlearn.learner import FandangoLearner
 from fdlearn.data.input import FandangoInput
 from fdlearn.resources import Pattern
 from fdlearn.data.oracle import OracleResult
+
+from examples.subjects.subject import Subject
 
 
 def is_syntactically_valid_csv(csv_string):
@@ -28,12 +30,7 @@ def is_syntactically_valid_csv(csv_string):
         return False
 
 
-def get_csv_subjects() -> tuple[
-    Grammar,
-    list[FandangoInput],
-    Callable[[Union[str | FandangoInput]], OracleResult],
-    dict,
-]:
+def get_csv_subjects() -> Subject:
 
     def oracle(inp: str | FandangoInput):
         if isinstance(inp, FandangoInput):
@@ -44,13 +41,15 @@ def get_csv_subjects() -> tuple[
             else OracleResult.FAILING
         )
 
-    with open("csv.fan", "r") as file:
+    base_dir = Path(__file__).parent
+    with open(base_dir / "csv.fan", "r") as file:
         grammar, _ = parse(file, use_cache=False, use_stdlib=False)
 
-    initial_inputs = []
-    additional_param = {}
+    initial_inputs = set()
 
-    return grammar, initial_inputs, oracle, additional_param
+    return Subject(
+        name="CSV", grammar=grammar, initial_inputs=initial_inputs, oracle=oracle, fuzzer_max_nodes=200
+    )
 
 
 def evaluate_grammar_fuzzer(
