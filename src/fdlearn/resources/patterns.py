@@ -168,3 +168,8 @@ Pattern(
 Pattern(
     string_pattern="where forall <elem> in <NON_TERMINAL>: str(<ATTRIBUTE>) == str(<ATTRIBUTE>)",
 )
+
+Pattern(
+    string_pattern=f"where len(str(<NON_TERMINAL>)) == <INTEGER>",
+    use_cache=False
+)
