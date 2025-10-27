@@ -45,7 +45,7 @@ class FandangoLearner(BaseFandangoLearner):
         super().__init__(grammar, patterns, **kwargs)
         self.max_conjunction_size = max_conjunction_size
         self.max_disjunction_size = 2
-        self.positive_learning_size = 5
+        self.positive_learning_size = 10
         self.use_all_non_terminals = use_all_non_terminals
 
         self.pattern_processor = PatternProcessor(self.patterns)
@@ -188,7 +188,8 @@ class FandangoLearner(BaseFandangoLearner):
             positive_inputs (Set[FandangoInput]): A set of positive inputs.
             negative_inputs (Set[FandangoInput]): A set of negative inputs.
         """
-        for candidate in candidates:
+        from tqdm import tqdm
+        for candidate in tqdm(candidates):
             if candidate not in self.candidates:
                 if self.evaluate_candidate(
                     candidate, self.all_positive_inputs, self.all_negative_inputs
