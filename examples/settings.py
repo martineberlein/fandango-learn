@@ -14,29 +14,29 @@ logging.basicConfig(
 
 @dataclass
 class Settings:
-    seed: int = 42
+    seed: int = 0 # 42
     timeout: int = 60
     log_level: int = LoggerLevel.DEBUG
-    exp_log_level: LoggerLevel = LoggerLevel.WARNING
+    exp_log_level: LoggerLevel = LoggerLevel.DEBUG
 
     # Evaluation Strategies
     producer = False
 
-    predictor = True
-    eval_num_positive_inputs: int = 200
-    eval_num_negatives_inputs: int = 200
+    predictor = False
+    eval_num_positive_inputs: int = 100
+    eval_num_negatives_inputs: int = 100
 
     # initial inputs generation
     generate_initial_inputs: bool = True
-    num_positive_inputs: int = 200
+    num_positive_inputs: int = 100
     num_negative_inputs: int = 100
 
 
 @dataclass
 class RuleInductionSettings:
-    pass
-
+    logger_level: LoggerLevel = LoggerLevel.DEBUG
+    min_recall: float = 0.9
 
 @dataclass
 class FDLearnSettings:
-    pass
+    logger_level: LoggerLevel = LoggerLevel.INFO
