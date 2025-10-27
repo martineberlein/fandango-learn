@@ -244,6 +244,7 @@ class TestPatternInstantiation(unittest.TestCase):
             value_map=self.value_map,
             test_inputs=self.test_inputs,
             use_partial_evaluation=True,
+            use_filtered_integer_values=False
         )
         transformed_patterns = integer_transformer.transform(pattern)
         for p in transformed_patterns:
@@ -251,7 +252,7 @@ class TestPatternInstantiation(unittest.TestCase):
         self.assertTrue(
             all(isinstance(p, ComparisonConstraint) for p in transformed_patterns)
         )
-        self.assertEqual(len(transformed_patterns), 59)
+        self.assertEqual(len(transformed_patterns), 57)
 
     def test_non_terminal_transformer_length_1(self):
         pattern = parse_constraint(
@@ -325,6 +326,18 @@ class TestPatternInstantiation(unittest.TestCase):
         self.assertEqual(len(transformed_patterns), 4)
         self.assertTrue(
             all(isinstance(p, ExpressionConstraint) for p in transformed_patterns)
+        )
+        self.assertFalse(
+            any(self.placeholder_visitor.visit(p) for p in transformed_patterns)
+        )
+
+    def test_integer_transformer_16(self):
+        pattern = parse_constraint("where len(str(<function>)) == <INTEGER> ")
+        self.integer_transformer.use_partial_evaluation = True
+        transformed_patterns = self.integer_transformer.transform(pattern)
+        self.assertEqual(len(transformed_patterns), 2)
+        self.assertTrue(
+            all(isinstance(p, ComparisonConstraint) for p in transformed_patterns)
         )
         self.assertFalse(
             any(self.placeholder_visitor.visit(p) for p in transformed_patterns)
