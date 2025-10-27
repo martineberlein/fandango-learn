@@ -53,6 +53,7 @@ class PatternProcessor:
                 value_map=value_maps,
                 test_inputs=positive_inputs,
                 use_filtered_integer_values=use_filtered_integer_values,
+                use_partial_evaluation=True
             ),
             StringPlaceholderTransformer(
                 value_map=value_maps,
