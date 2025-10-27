@@ -317,9 +317,12 @@ class ValuePlaceholderTransformer(ConstraintTransformer, ABC):
         except TypeError as e:
             return set()
 
-        constraint_wt_bounded_nt = self.resolve_bounded_non_terminals_in_constraint(
-            tmp_constraint, bounded_non_terminals, **kwargs
-        )
+        try:
+            constraint_wt_bounded_nt = self.resolve_bounded_non_terminals_in_constraint(
+                tmp_constraint, bounded_non_terminals, **kwargs
+            )
+        except AttributeError:
+            return set()
         assert isinstance(constraint_wt_bounded_nt, ComparisonConstraint)
 
         for inp in self.test_inputs:
@@ -371,13 +374,13 @@ class ValuePlaceholderTransformer(ConstraintTransformer, ABC):
                 non_terminals.add(nt)
 
         for non_terminal in non_terminals:
-            possible_values = value_map.get(non_terminal, [])
+            possible_values = value_map.get(non_terminal, set())
             if self.use_partial_evaluation:
                 partial_eval_results = self.evaluate_partial_constraint(
                     constraint, bounded_non_terminals
                 )
-                # print("Partials: ", partial_eval_results)
-                possible_values.update(partial_eval_results)
+                if len(partial_eval_results) < 10:
+                    possible_values.update(partial_eval_results)
 
             for possible_value in possible_values:
                 new_replacements.append((possible_value, matches))
