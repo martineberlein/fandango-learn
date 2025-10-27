@@ -1,9 +1,13 @@
 import random
 from time import time
+from typing import Callable
 
 from examples.results import Result, print_results_table, ResultInvariant
 from examples.subjects.bug.middle.middle import get_middle_subject
 from examples.subjects.valid.iban.iban_evaluation import get_iban_subject
+from examples.subjects.valid.csv.csv_evaluation import get_csv_subjects
+from fdlearn.refinement.core import HypothesisInputFeatureDebugger
+from fdlearn.refinement.learner import FDLearnReducer
 from subjects.bug.calculator.calculator_evaluation import get_calculator_subject
 from examples.subjects.subject import Subject
 from examples.subjects.valid.heartbeat.heartbeat_evaluation import get_heartbeat_subject
@@ -12,6 +16,7 @@ from subjects.valid.xml.xml_evaluation import get_xml_subject
 
 from fdlearn.learner import FandangoLearner
 from fdlearn.learning.rule_induction.rule_induction import RuleInductionLearner
+from fdlearn.matador.fr import RDLearnFR, Matador
 from fdlearn.core import BaseFandangoLearner
 
 from settings import (
@@ -27,11 +32,12 @@ def generate_initial_inputs(
 ) -> tuple[set[FandangoInput], set[FandangoInput]]:
 
     positive, negative = set(), set()
+    i = 0
     while (
         len(positive) < min_positives
         or len(negative) < min_negatives
     ):
-        tree = subject.grammar.fuzz()
+        tree = subject.grammar.fuzz(max_nodes=subject.fuzzer_max_nodes)
         inp = tree.to_string()
         if subject.oracle(inp).is_failing():
             if len(positive) < min_positives:
@@ -39,8 +45,11 @@ def generate_initial_inputs(
         else:
             if len(negative) < min_negatives:
                 negative.add(FandangoInput(tree=tree, oracle=OracleResult.PASSING))
+        if i % 1000 == 1:
+            EXP_LOGGER.debug(f"{len(positive)} | {len(negative)} inputs.")
+        i += 1
 
-    EXP_LOGGER.debug(
+    EXP_LOGGER.info(
         f"Generated {len(positive)} positive inputs and {len(negative)} negative inputs."
     )
     return positive, negative
@@ -54,9 +63,9 @@ def evaluate_predictor(result: Result, exp_config: Settings, evaluation_inputs: 
     negatives = [inp for inp in evaluation_inputs if inp.oracle == OracleResult.PASSING]
 
     for result_inv in result.invariants:
-        for inp in evaluation_inputs:
-            if inp.oracle.is_failing() != result_inv.invariant.check(inp):
-                print(inp, inp.oracle, result_inv.invariant.check(inp))
+        # for inp in evaluation_inputs:
+        #     if inp.oracle.is_failing() != result_inv.invariant.check(inp):
+        #         print(inp, inp.oracle, result_inv.invariant.check(inp))
         result_inv.tp = sum(result_inv.invariant.check(inp) for inp in positives)
         result_inv.fn = len(positives) - result_inv.tp
         result_inv.fp = sum(result_inv.invariant.check(inp) for inp in negatives)
@@ -69,14 +78,12 @@ def run_tool(
     settings,
     experiment_settings,
     result: Result,
+    rnr: Callable
 ):
     start_time = time()
 
     try:
-        invariants = tool(grammar=subject.grammar, **vars(settings)).learn_constraints(
-            test_inputs=subject.initial_inputs,
-            # relevant_non_terminals={NonTerminal("<x>"), NonTerminal("<y>"), NonTerminal("<z>")}
-        )
+        invariants = rnr(subject, tool, settings)
         result.runtime = time() - start_time
 
         for invariant in invariants:
@@ -87,6 +94,7 @@ def run_tool(
             )
         result.success = True
     except Exception as e:
+        EXP_LOGGER.debug(e)
         result.success = False
 
 
@@ -114,12 +122,12 @@ def evaluate(subjects, tools):
             )
             evaluation_inputs = positive_inputs.union(negative_inputs)
 
-        for name, tool, config in tools:
+        for name, tool, config, rnr in tools:
             result = Result(tool_name=name, subject_name=subject_data.name)
             result.experiment_settings = exp_config
             result.tool_settings = config
 
-            run_tool(tool, subject_data, config, exp_config, result)
+            run_tool(tool, subject_data, config, exp_config, result, rnr)
 
             evaluate_predictor(result, exp_config, evaluation_inputs)
             results.append(result)
@@ -132,18 +140,33 @@ def evaluate(subjects, tools):
             # row_print_averages(results, write_to_file=False)
 
 
+def runner(subject, tool: type[HypothesisInputFeatureDebugger], settings: Settings) -> list:
+    invariants = tool(
+        grammar=subject.grammar,
+        initial_inputs=subject.initial_inputs,
+        oracle=subject.oracle, **vars(settings)
+    ).explain()
+    return invariants
+
+
 if __name__ == "__main__":
     subjects_ = [
-        get_iban_subject,
-        get_middle_subject,
-        get_calculator_subject,
+        #get_csv_subjects,
+        # get_iban_subject,
+        # get_middle_subject,
+        # # get_calculator_subject,
         get_xml_subject,
-        get_heartbeat_subject,
+        # # get_heartbeat_subject,
     ]
 
     tools_ = [
-        ("RDLearn", RuleInductionLearner, RuleInductionSettings()),
-        ("FDLearn", FandangoLearner, FDLearnSettings()),
+        #("FDLearn", FandangoLearner, FDLearnSettings()),
+        # ("FDLearnFR", FDLearnReducer, RuleInductionSettings()),
+        #("RDLearn", RuleInductionLearner, RuleInductionSettings()),
+        # ("RDLearnFR", RDLearnFR, RuleInductionSettings()),
+        ("Matador", Matador, RuleInductionSettings(), runner),
+        #("BeamRDLearn", RuleInductionLearnerBeamSearch, RuleInductionSettings())
+        #("FDLearn", FandangoLearner, FDLearnSettings()),
     ]
 
     evaluate(subjects_, tools_)
