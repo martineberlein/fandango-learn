@@ -232,7 +232,15 @@ class HypothesisInputFeatureDebugger(InputFeatureDebugger, ABC):
         """
         Convert a list of input strings to a set of Input objects.
         """
-        return set([FandangoInput.from_str(self.grammar, inp, None) for inp in inputs])
+        res = set()
+        for inp in inputs:
+            if isinstance(inp, str):
+                res.add(
+                    FandangoInput.from_str(self.grammar, inp, None)
+                )
+            else:
+                res.add(inp)
+        return res
 
     @staticmethod
     def check_initial_conditions(test_inputs: Set[FandangoInput]):
