@@ -101,7 +101,7 @@ class RuleInductionLearner(FandangoLearner):
 
         super().__init__(grammar, patterns, **kwargs)
 
-        self.positive_learning_size = 10
+        self.positive_learning_size = 100
 
     def instantiate_patterns(
         self,
@@ -162,7 +162,7 @@ class RuleInductionLearner(FandangoLearner):
 
     def _learn_single_rule(
         self,
-        patterns: Iterable,
+        patterns: set,
         test_inputs: set[FandangoInput],
         positives: set[FandangoInput],
     ) -> tuple[Rule, list[FandangoInput]]:
@@ -207,8 +207,8 @@ class RuleInductionLearner(FandangoLearner):
 
             pattern.evaluate(positives_only)
             # posi = [i for i in positives_only if pattern.check(i)]
-            if pattern.recall() < self.min_recall:
-                continue
+            # if pattern.recall() < self.min_recall:
+            #     continue
 
             new_cover = [i for i in covered if pattern.check(i)]
 
