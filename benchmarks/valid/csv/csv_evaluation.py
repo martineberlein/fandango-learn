@@ -12,7 +12,7 @@ from fdlearn.data.input import FandangoInput
 from fdlearn.resources import Pattern
 from fdlearn.data.oracle import OracleResult
 
-from examples.subjects.subject import Subject
+from benchmarks.subject import Subject
 
 
 def is_syntactically_valid_csv(csv_string):

@@ -1,16 +1,20 @@
 import random
 import time
 
-from fandango.language import DerivationTree
-from fdlearn.learner import FandangoLearner
+from fandango.language.tree import DerivationTree
+from fandango.language.symbol import NonTerminal
+
+from fdlearn.learning.rule_induction.rule_induction import RuleInductionLearner
 from fdlearn.data.input import FandangoInput
 from fdlearn.logger import LOGGER, LoggerLevel
 
-from examples.grammar_fuzzer.evaluate_grammar_fuzzer import generate_inputs
-from examples.subjects.heartbeat.heartbeat_evaluation import get_heartbeat_subject
-from examples.subjects.xml.xml_evaluation import get_xml_subject
-from examples.subjects.iban.iban_evaluation import get_iban_subject
-from examples import row_print_averages
+from eval.grammar_fuzzer.evaluate_grammar_fuzzer import generate_inputs
+
+# from benchmarks.valid.heartbeat.heartbeat import get_heartbeat_subject
+from benchmarks.valid.xml.xml_evaluation import get_xml_subject
+
+# from benchmarks.valid.iban.iban_evaluation import get_iban_subject
+from eval import row_print_averages
 
 
 def evaluate_generated_inputs(
@@ -41,11 +45,12 @@ def evaluate_generated_inputs(
 
 
 def learn_invariants(grammar, initial_inputs, oracle, additional_param):
-    fdlearn = FandangoLearner(
+    fdlearn = RuleInductionLearner(
         grammar=grammar,
     )
-    _ = fdlearn.learn_constraints(test_inputs=initial_inputs)
-    return fdlearn.get_best_candidates()
+
+    invariant = fdlearn.learn_constraints(test_inputs=initial_inputs)
+    return invariant
 
 
 def run_evaluation(subject: tuple, seconds: int = 60):
@@ -70,28 +75,9 @@ def run_evaluation(subject: tuple, seconds: int = 60):
     initial_inputs = set(valid_inputs + invalid_inputs)
     invariants = learn_invariants(grammar, initial_inputs, oracle, additional_param)
 
-    for inv in invariants:
-        print(inv)
-    best_invariant = invariants[0].constraint if invariants else None
-
-    solutions = generate_inputs(grammar, constraints=[best_invariant], seconds=10)
+    print(invariants)
+    exit()
+    # best_invariant = invariants[0].constraint if invariants else None
+    #
+    # solutions = generate_inputs(grammar, constraints=[best_invariant], seconds=10)
     return solutions
-
-
-def evaluate():
-    random.seed(1)
-    subjects = [
-        # get_xml_subject,
-        # get_iban_subject,
-        get_heartbeat_subject,
-    ]
-
-    for subject in subjects:
-        subject_data = subject()
-        solutions = run_evaluation(subject_data, seconds=60)
-        results = evaluate_generated_inputs(subject_data, solutions)
-        row_print_averages(results, write_to_file=False)
-
-
-if __name__ == "__main__":
-    evaluate()

@@ -83,10 +83,10 @@ uninstall:
 .PHONY: evaluation evaluate experiment experiments
 
 evaluation evaluate:
-	$(PYTHON) -m evaluation.run_evaluation
+	$(PYTHON) eval/evaluate.py
 
 experiment experiments:
-	$(PYTHON) -m evaluation.experiments.run_experiments
+	$(PYTHON) eval/evaluate.py
 
 clean-pip:
 	$(PIP) freeze | xargs $(PIP) uninstall -y

@@ -4,7 +4,7 @@ from pathlib import Path
 from fandango.language.parse import parse
 from fdlearn.data.oracle import OracleResult
 
-from examples.subjects.subject import Subject
+from benchmarks.subject import Subject
 
 
 def calculator_oracle(inp):

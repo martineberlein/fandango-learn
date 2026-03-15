@@ -1,11 +1,11 @@
 import time
 
 from fandango.constraints.base import Constraint
-from fandango.language import DerivationTree
+from fandango.language.tree import DerivationTree
 from fandango.evolution.algorithm import Fandango
 
-from examples.subjects.xml.xml_evaluation import get_xml_subject
-from examples.subjects.iban.iban_evaluation import get_iban_subject
+from benchmarks.valid.xml.xml_evaluation import get_xml_subject
+from benchmarks.valid.iban.iban_evaluation import get_iban_subject
 
 
 def evaluate_generated_inputs(

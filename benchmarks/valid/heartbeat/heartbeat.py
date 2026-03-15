@@ -184,6 +184,18 @@ def oracle(test_input: Union[Input, str]) -> OracleResult:
     return OracleResult.FAILING if is_vulnerable else OracleResult.PASSING
 
 
+from benchmarks.subject import Subject
+
+
+def get_heartbeat_subject() -> Subject:
+    return Subject(
+        name="Heartbeat",
+        grammar=grammar,
+        initial_inputs=initial_inputs,
+        oracle=oracle,
+    )
+
+
 if __name__ == "__main__":
     # Simulate a Heartbleed request
     hex_request = "01 00 64 48 65 6C 6C 6F 52 41 4E 44 4F 4D"

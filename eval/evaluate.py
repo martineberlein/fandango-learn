@@ -2,24 +2,24 @@ import random
 from time import time
 from typing import Callable
 
-from examples.results import Result, print_results_table, ResultInvariant
-from examples.subjects.bug.middle.middle import get_middle_subject
-from examples.subjects.valid.iban.iban_evaluation import get_iban_subject
-from examples.subjects.valid.csv.csv_evaluation import get_csv_subjects
+from eval.results import Result, print_results_table, ResultInvariant
+from benchmarks.bug.middle.middle import get_middle_subject
+from benchmarks.valid.iban.iban_evaluation import get_iban_subject
+from benchmarks.valid.csv.csv_evaluation import get_csv_subjects
 from fdlearn.refinement.core import HypothesisInputFeatureDebugger
 from fdlearn.refinement.learner import FDLearnReducer
-from subjects.bug.calculator.calculator_evaluation import get_calculator_subject
-from examples.subjects.subject import Subject
-from examples.subjects.valid.heartbeat.heartbeat_evaluation import get_heartbeat_subject
+from benchmarks.bug.calculator.calculator_evaluation import get_calculator_subject
+from benchmarks.subject import Subject
+from benchmarks.valid.heartbeat.heartbeat import get_heartbeat_subject
 from fdlearn.data import FandangoInput, OracleResult
-from subjects.valid.xml.xml_evaluation import get_xml_subject
+from benchmarks.valid.xml.xml_evaluation import get_xml_subject
 
 from fdlearn.learner import FandangoLearner
 from fdlearn.learning.rule_induction.rule_induction import RuleInductionLearner
 from fdlearn.matador.fr import RDLearnFR, Matador
 from fdlearn.core import BaseFandangoLearner
 
-from settings import (
+from eval.settings import (
     Settings,
     RuleInductionSettings,
     FDLearnSettings,
@@ -160,11 +160,11 @@ if __name__ == "__main__":
     ]
 
     tools_ = [
-        #("FDLearn", FandangoLearner, FDLearnSettings()),
+        ("FDLearn", FandangoLearner, FDLearnSettings(), runner),
         # ("FDLearnFR", FDLearnReducer, RuleInductionSettings()),
-        #("RDLearn", RuleInductionLearner, RuleInductionSettings()),
+        #("RDLearn", RuleInductionLearner, RuleInductionSettings(), runner),
         # ("RDLearnFR", RDLearnFR, RuleInductionSettings()),
-        ("Matador", Matador, RuleInductionSettings(), runner),
+        #("Matador", Matador, RuleInductionSettings(), runner),
         #("BeamRDLearn", RuleInductionLearnerBeamSearch, RuleInductionSettings())
         #("FDLearn", FandangoLearner, FDLearnSettings()),
     ]

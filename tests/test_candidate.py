@@ -1,6 +1,6 @@
 import unittest
 
-from fandango import DerivationTree
+from fandango.language.tree import DerivationTree
 from fandango.constraints.base import ConjunctionConstraint
 from fandango.evolution.algorithm import Fandango
 

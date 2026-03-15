@@ -8,7 +8,7 @@ from pathlib import Path
 from fandango.evolution.algorithm import Fandango
 from fandango.language.parse import parse, Grammar
 
-from examples.subjects.subject import Subject
+from benchmarks.subject import Subject
 from fdlearn.data import OracleResult
 from fdlearn.learner import FandangoLearner, FandangoInput, NonTerminal
 

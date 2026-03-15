@@ -31,6 +31,7 @@ class InputFeatureDebugger(ABC):
         oracle: OracleType,
         initial_inputs: Union[Iterable[str], Iterable[FandangoInput]],
         logger_level: LoggerLevel = LoggerLevel.INFO,
+        **kwargs,
     ):
         """
         Initialize the input feature debugger with a grammar, oracle, and initial inputs.
@@ -40,6 +41,7 @@ class InputFeatureDebugger(ABC):
         self.initial_inputs = initial_inputs
         self.grammar = grammar
         self.oracle = oracle
+        self.kwargs = kwargs
 
     @abstractmethod
     def explain(self, *args, **kwargs):

@@ -6,14 +6,12 @@ from typing import Callable, Union
 from pathlib import Path
 
 from fandango.evolution.algorithm import Fandango
-from fandango.language import DerivationTree
+from fandango.language.tree import DerivationTree
 from fandango.language.parse import parse, Grammar
 
-from examples.subjects.subject import Subject
+from benchmarks.subject import Subject
 from fdlearn.data import OracleResult
 from fdlearn.learner import FandangoLearner, FandangoInput, NonTerminal
-
-from examples.subjects.subject import Subject
 
 
 def validate_iban(iban: str) -> bool:

@@ -2,7 +2,7 @@ import csv
 import time
 from io import StringIO
 
-from fandango import DerivationTree
+from fandango.language.tree import DerivationTree
 from fandango.evolution.algorithm import Fandango, LoggerLevel
 from fandango.language.parse import parse
 

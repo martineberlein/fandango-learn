@@ -2,7 +2,7 @@ from pathlib import Path
 from fdlearn.data import OracleResult
 from fandango.language.parse import parse
 
-from examples.subjects.subject import Subject
+from benchmarks.subject import Subject
 
 
 def middle(x, y, z):
